@@ -1,0 +1,160 @@
+include Serializable.con
+include DirectoryList.con
+
+class Main {
+	stringify(content, line_size = 80) {
+		var out = "";
+		var line = "";
+		for (var i = 0; i < length content; i ++) {
+			var char = content[i];
+			/* if ((char >= ' ') && (char <= '~')) {
+				if ((char == '\\') || (char == '"'))
+					char = '\\' + char;
+				line += char;
+			} else */
+			if (char == '\t')
+				line += '\\t';
+			else
+			if (char == '\n')
+				line += '\\n';
+			else
+			if (char == '\r')
+				line += '\\r';
+			else
+			if (char == '\0')
+				line += '\\0';
+			else
+				line += "\\x" + StringToHex(char);
+			if (length line >= line_size) {
+				out += "    \"$line\" \\\n";
+				line = "";
+			}
+		}
+		out += "    \"$line\"";
+		return out;
+	}
+
+	stringify2(content, line_size = 80) {
+		var out = "";
+		var line = "";
+		var new_line = true;
+		var skip_line = false;
+		for (var i = 0; i < length content; i ++) {
+			var char = content[i];
+			if (skip_line) {
+				if (char == '\n') {
+					skip_line = false;
+					new_line = true;
+				}
+				continue;
+			}	
+			if (new_line) {
+				if (char + content[i + 1] == "//") {
+					skip_line = true;
+					i ++;
+					continue;
+				}
+				if (char + content[i + 1] == "/*") {
+					i ++;
+					do {
+						i ++;
+					} while ((content[i] + content[i + 1] != "*/") && (i < length content));
+					i ++;
+					continue;
+				}
+			}
+			new_line = false;
+			if (char == '\t')
+				line += '\\t';
+			else
+			if (char == '\n') {
+				line += '\\n';
+				new_line = true;
+			} else
+			if (char == '\r')
+				line += '\\r';
+			else
+			if (char == '\0')
+				line += '\\0';
+			else
+			if (char == '"')
+				line += '\\"';
+			else
+			if (char == '\\')
+				line += '\\\\';
+			else
+			if ((char < ' ') || (char > '~'))
+				line += '\\x' + StringToHex(char);
+			else
+				line += char;
+			if (length line >= line_size) {
+				out += "    \"$line\" \\\n";
+				line = "";
+			}
+		}
+		out += "    \"$line\"";
+		return out;
+	}
+
+	line_compress(content) {
+		var arr = StrSplit(StrReplace(content, "\r", ""), "\n");
+		var out = "";
+		for (var i = 0; i < length arr; i ++) {
+			var line = trim(arr[i]);
+			if ((!line) || (line[0] + line[1] == "//"))
+				continue;
+			if (out)
+				out += "\n";
+			out += trim(line);
+		}
+		return out;
+	}
+
+	Main() {
+		var arr = DirectoryList::ListByExt(".", ["js"]);
+		var content = "";
+		for (var i = 0; i < length arr; i ++) {
+			var filename = arr[i];
+			var file = ReadFile(filename);
+			if (file) {
+				var orig_size = length file;
+				filename = StrReplace(filename, ".js", "");
+				var size;
+				var plain_data = false;
+				if (orig_size > 30 * 1024) {
+					plain_data = true;
+					content += "#ifndef ESP32\n";
+				}
+
+				content += "#ifdef NO_COMPRESSION\n";
+				var flag = true;
+				if (orig_size <= 512 * 1024) {
+					flag = false;
+					var file2 = line_compress(file);
+					file = file2;
+					file2 = stringify2(file2);
+					size = length file2;
+					// WriteFile(file, filename + ".min.js");
+					content += "{\"$filename\",\n$file2,\n$size, $size, 0},\n";
+				} else
+					content += "// file is too big to store uncompressed ($orig_size) bytes\n";
+
+				orig_size = length file;
+
+				content += "#else\n";
+				file = compress(file);
+				size = length file;
+				file = stringify(file);
+				if (flag)
+					content += "#ifndef LIGHT_BUILD\n";
+				content += "{\"$filename\",\n$file,\n$size, $orig_size, 1},\n";
+				if (orig_size > 512 * 1024)
+					content += "#endif\n";
+				content += "#endif\n";
+				if (plain_data)
+					content += "#endif\n";
+			}
+		}
+		echo content;
+	}
+}
