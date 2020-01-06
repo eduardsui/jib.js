@@ -168,7 +168,7 @@ JS_C_FUNCTION(js_access) {
 }
 
 static js_object_type stat_to_js(JS_CONTEXT ctx, struct stat *st_buf) {
-    js_object_type obj = JS_NewObject(ctx, "Stats");
+    js_object_type obj = JS_NewClassObject(ctx, "Stats");
 
     JS_ObjectSetNumber(ctx, obj, "dev", st_buf->st_dev);
     JS_ObjectSetNumber(ctx, obj, "ino", st_buf->st_ino);
@@ -398,7 +398,7 @@ JS_C_FUNCTION(js_write) {
 
 
 void register_io_functions(void *main_loop, void *js_ctx) {
-    JS_CONTEXT ctx = (JS_CONTEXT )js_ctx;
+    JS_CONTEXT ctx = (JS_CONTEXT)js_ctx;
 
     register_object(ctx, "_C_library",
         "open", js_open,

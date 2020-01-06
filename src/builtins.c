@@ -976,7 +976,7 @@ JS_C_FUNCTION(native_window) {
         ui_set_event(UI_EVENT_WINDOW_CLOSE, ui_close_callback, NULL);
     }
 
-    js_object_type obj_id = JS_NewObject(ctx, "HTMLUIWindow");
+    js_object_type obj_id = JS_NewClassObject(ctx, "HTMLUIWindow");
     
     JS_ObjectSetPointer(ctx, obj_id, JS_HIDDEN_SYMBOL("__native_handle"), window_ptr);
     JS_ObjectSetFunction(ctx, obj_id, "close", native_ui_window_close, 0);
@@ -1370,7 +1370,7 @@ JS_C_FUNCTION(native_require) {
     js_object_type parent_module = JS_GetPropertyStr(ctx, JS_GetGlobalObject(ctx), "module");
 
     const char *filename = JS_GetStringParameter(ctx, 0);
-    js_object_type module = JS_NewObject(ctx, "Module");
+    js_object_type module = JS_NewClassObject(ctx, "Module");
     
     JS_ObjectSetString(ctx, module, "id", module_id);
     JS_ObjectSetString(ctx, module, "filename", module_id);
@@ -1768,7 +1768,7 @@ void duk_run_file(JS_CONTEXT ctx, const char *path) {
 #ifdef WITH_DUKTAPE
     duk_push_global_object(ctx); 
     // duk_push_object(ctx);
-    JS_NewObject(ctx, "Module");
+    JS_NewClassObject(ctx, "Module");
 
         duk_push_string(ctx, path);
         duk_put_prop_string(ctx, -2, "id");
@@ -1800,7 +1800,7 @@ void duk_run_file(JS_CONTEXT ctx, const char *path) {
 	    duk_put_prop_string(ctx, -2, "module");
     duk_pop(ctx);
 #else
-    js_object_type obj = JS_NewObject(ctx, "Module");
+    js_object_type obj = JS_NewClassObject(ctx, "Module");
     JS_ObjectSetObject(ctx, JS_GetGlobalObject(ctx), "module", obj);
 
     JS_ObjectSetString(ctx, obj, "id", path);
@@ -1851,7 +1851,7 @@ void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *
         duk_put_prop_string(ctx, -2, "loaded_modules");
     duk_pop(js_ctx);
 #else
-    JS_SetPropertyStr(js_ctx, global_stash(ctx), "loaded_modules", JS_NewPlainObject(ctx));
+    JS_SetPropertyStr(ctx, global_stash(ctx), "loaded_modules", JS_NewPlainObject(ctx));
 #endif
 
     register_global_function(ctx, "setInterval", setInterval, 2);
@@ -1951,15 +1951,16 @@ void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *
 #else
     js_object_type process = JS_GetPropertyStr(ctx, JS_GetGlobalObject(ctx), "process");
     js_object_type arr = JS_NewArray(ctx);
-    JS_SetPropertyStr(ctx, process, "argv", arr);
     js_object_type arrExec = JS_NewArray(ctx);
-    JS_SetPropertyStr(ctx, process, "execArgv", arrExec);
 
     for (i = 0; i < argc; i ++) {
         JS_SetPropertyUint32(ctx, arr, (unsigned int)i, JS_NewString(ctx, argv[i]));
         if (i > 2)
             JS_SetPropertyUint32(ctx, arrExec, (unsigned int)i - 2, JS_NewString(ctx, argv[i]));
     }
+
+    JS_SetPropertyStr(ctx, process, "argv", arr);
+    JS_SetPropertyStr(ctx, process, "execArgv", arrExec);
 
     if ((argv) && (argv[0]))
         JS_ObjectSetString(ctx, process, "execPath", argv[0]);

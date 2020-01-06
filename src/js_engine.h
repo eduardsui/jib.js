@@ -78,7 +78,7 @@
     #define JS_RETURN_NOTHING(ctx)                              return 0
     #define JS_RETURN_OBJECT(ctx, obj)                          return 1
 
-    static inline js_object_type JS_NewObject(JS_CONTEXT ctx, const char *class_name) {
+    static inline js_object_type JS_NewClassObject(JS_CONTEXT ctx, const char *class_name) {
         duk_get_global_string(ctx, class_name);
         duk_new(ctx, 0);
         return duk_get_top(ctx) - 1;
@@ -92,7 +92,7 @@
     #include "quickjs/quickjs.h"
 
     #define JS_CONTEXT                                          JSContext *
-    #define JS_CreateContext(on_error)                          JS_NewContextRaw(JS_NewRuntime())
+    #define JS_CreateContext(on_error)                          JS_NewContext(JS_NewRuntime())
     #define JS_DestroyContext(ctx)                              { JSRuntime *rt = JS_GetRuntime(ctx); JS_FreeContext(ctx); JS_FreeRuntime(rt); }
     #define JS_EvalSimple(ctx, str)                             JS_FreeValue(ctx, (JS_Eval)(ctx, str, strlen(str), "builtin", JS_EVAL_TYPE_GLOBAL));
     #define JS_EvalSimplePath(ctx, str, path)                   JS_FreeValue(ctx, (JS_Eval)(ctx, str, strlen(str), path, JS_EVAL_TYPE_GLOBAL));
@@ -165,8 +165,8 @@
     #define JS_RETURN_NOTHING(ctx)                              return JS_UNDEFINED
     #define JS_RETURN_OBJECT(ctx, obj)                          return (obj)
 
-    #define JS_NewObject(ctx, class_name)                       _JS_NewObject((ctx), (class_name))
-    #define JS_NewPlainObject(ctx)                              (JS_NewObject)((ctx))
+    #define JS_NewClassObject(ctx, class_name)                  _JS_NewClassObject((ctx), (class_name))
+    #define JS_NewPlainObject(ctx)                              JS_NewObject((ctx))
 
     static inline int _JS_GetIntParameter(JS_CONTEXT ctx, JSValueConst v) {
         uint32_t val = 0;
@@ -214,8 +214,8 @@
         JS_SetPropertyStr(ctx, obj, mem_buf, JS_NewStringLen(ctx, val, len_val));
     }
 
-    static inline JSValue _JS_NewObject(JS_CONTEXT ctx, const char *class_name) {
-        JSValue obj = (JS_NewObject)(ctx);
+    static inline JSValue _JS_NewClassObject(JS_CONTEXT ctx, const char *class_name) {
+        JSValue obj = JS_NewObject(ctx);
         JS_SetPrototype(ctx, obj, JS_GetPropertyStr(ctx, JS_GetGlobalObject(ctx), class_name));
         return obj;
     }

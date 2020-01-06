@@ -20,8 +20,10 @@ int main(int argc, char *argv[], char *envp[]) {
     } else {
         fprintf(stdout, "jib.js v0.1\n\n");
 
-        while (fgets(buf, sizeof(buf), stdin) != NULL)
-            JS_Eval(ctx, buf, "[cli]");
+        while (fgets(buf, sizeof(buf), stdin) != NULL) {
+            if (buf[0])
+                JS_Eval(ctx, buf, "[cli]");
+        }
     }
 
     loop_run(main_loop);
