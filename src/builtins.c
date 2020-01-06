@@ -36,6 +36,7 @@
 #endif
 
 #ifdef ESP32
+    #include <esp_system.h>
     #include "builtins_esp32.h"
 #endif
 
