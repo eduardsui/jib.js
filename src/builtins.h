@@ -13,6 +13,9 @@
 
 #define DEFAULT_FRAMEWORK_DIR   "framework"
 
+#ifndef WITH_DUKTAPE
+js_object_type global_stash(JS_CONTEXT ctx);
+#endif
 void log_log(int level, const char *file, int line, const char *data);
 void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *argv[], char *envp[]);
 void register_global_function(JS_CONTEXT ctx, const char *func_name, js_c_function function, int nargs);

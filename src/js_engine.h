@@ -57,6 +57,7 @@
 
     #define js_object_type                                      duk_idx_t
     #define js_size_t                                           duk_size_t
+    #define js_uint_t                                           duk_uint_t
 
     #define JS_Error(ctx, text)                                 duk_error(ctx, DUK_ERR_TYPE_ERROR, text)
 
@@ -94,6 +95,7 @@
     #define JS_CreateContext(on_error)                          JS_NewContextRaw(JS_NewRuntime())
     #define JS_DestroyContext(ctx)                              { JSRuntime *rt = JS_GetRuntime(ctx); JS_FreeContext(ctx); JS_FreeRuntime(rt); }
     #define JS_EvalSimple(ctx, str)                             JS_FreeValue(ctx, (JS_Eval)(ctx, str, strlen(str), "builtin", JS_EVAL_TYPE_GLOBAL));
+    #define JS_EvalSimplePath(ctx, str, path)                   JS_FreeValue(ctx, (JS_Eval)(ctx, str, strlen(str), path, JS_EVAL_TYPE_GLOBAL));
     #define JS_Eval(ctx, str, path)                             (JS_Eval)(ctx, str, strlen(str), path, JS_EVAL_TYPE_GLOBAL)
 
     #define JS_Eval_File(ctx, filename)                         duk_run_file((ctx), filename)
@@ -122,7 +124,7 @@
     #define JS_ObjectSetNumber(ctx, obj, mem, val)              JS_SetPropertyStr((ctx), (obj), (mem), JS_NewInt32((ctx), (val)))
     #define JS_ObjectSetString(ctx, obj, mem, val)              JS_SetPropertyStr((ctx), (obj), (mem), JS_NewString((ctx), (val)))
     #define JS_ObjectSetStringLen(ctx, obj, mem, val, len)      JS_SetPropertyStr((ctx), (obj), (mem), JS_NewStringLen((ctx), (val), (len)))
-    #define JS_ObjectSetStringLenLen(ctx, obj, mem, lm, val, lv){ duk_push_lstring((ctx), (val), (lv)); duk_put_prop_lstring((ctx), (obj), (mem), (lm)); }
+    #define JS_ObjectSetStringLenLen(ctx, obj, mem, lm, val, lv) _JS_ObjectSetStringLenLen((ctx), (obj), (mem), (lm), (val), (lv))
 #ifdef ESP32
     #define JS_ObjectSetPointer(ctx, obj, mem, val)             JS_SetPropertyStr((ctx), (obj), (mem), JS_NewUint32((ctx), (uint32_t)(val)))
 #else
@@ -131,12 +133,15 @@
     #define JS_ObjectSetObject(ctx, obj, mem, obj_id)           JS_SetPropertyStr((ctx), (obj), (mem), (obj_id))
     #define JS_ObjectSetFunction(ctx, obj, mem, f, len)         JS_SetPropertyStr((ctx), (obj), (mem), JS_NewCFunction((ctx), (f), (mem), (len)))
     #define JS_ObjectSetBoolean(ctx, obj, mem, val)             JS_SetPropertyStr((ctx), (obj), (mem), (val) ? JS_TRUE : JS_FALSE)
+    #define JS_ObjectSetNull(ctx, obj, mem)                     JS_SetPropertyStr((ctx), (obj), (mem), JS_NULL)
+    #define JS_ObjectSetUndefined(ctx, obj, mem)                JS_SetPropertyStr((ctx), (obj), (mem), JS_UNDEFINED)
 
-    #define JS_HIDDEN_SYMBOL                                    
+    #define JS_HIDDEN_SYMBOL
     #define JS_VARARGS                                          1
 
     #define js_object_type                                      JSValue
     #define js_size_t                                           size_t
+    #define js_uint_t                                           unsigned int
 
     #define JS_Error(ctx, text)                                 JS_ThrowTypeError(ctx, "%s", text)
 
@@ -163,28 +168,28 @@
     #define JS_NewObject(ctx, class_name)                       _JS_NewObject((ctx), (class_name))
     #define JS_NewPlainObject(ctx)                              (JS_NewObject)((ctx))
 
-    static int _JS_GetIntParameter(JS_CONTEXT ctx, JSValueConst v) {
+    static inline int _JS_GetIntParameter(JS_CONTEXT ctx, JSValueConst v) {
         uint32_t val = 0;
         if (JS_ToInt32(ctx, &val, v))
             JS_ThrowTypeError(ctx, "Number expected");
         return val;
     }
 
-    static double _JS_GetNumberParameter(JS_CONTEXT ctx, JSValueConst v) {
+    static inline double _JS_GetNumberParameter(JS_CONTEXT ctx, JSValueConst v) {
         double val = 0;
         if (JS_ToFloat64(ctx, &val, v))
             JS_ThrowTypeError(ctx, "Number expected");
         return val;
     }
 
-    static int _JS_GetBooleanParameter(JS_CONTEXT ctx, JSValueConst v) {
+    static inline int _JS_GetBooleanParameter(JS_CONTEXT ctx, JSValueConst v) {
         int val = JS_ToBool(ctx, v);
         if (val == -1)
             JS_ThrowTypeError(ctx, "Boolean expected");
         return val;
     }
 
-    static void *_JS_GetPointerParameter(JS_CONTEXT ctx, JSValueConst v) {
+    static inline void *_JS_GetPointerParameter(JS_CONTEXT ctx, JSValueConst v) {
 #ifdef ESP32
         uint32 val = 0;
         if (JS_ToUint32(ctx, &val, v))
@@ -197,7 +202,19 @@
         return (void *)(uintptr_t)val;
     }
 
-    static JSValue _JS_NewObject(JS_CONTEXT ctx, const char *class_name) {
+    static inline void _JS_ObjectSetStringLenLen(JS_CONTEXT ctx, JSValue obj, const char *mem, int len_mem, const char *val, int len_val) {
+        char mem_buf[0x100];
+        if (len_mem >= sizeof(mem_buf))
+            len_mem = sizeof(mem_buf) - 1;
+
+        if (len_mem < 0)
+            return;
+
+        memcpy(mem_buf, mem, len_mem);
+        JS_SetPropertyStr(ctx, obj, mem_buf, JS_NewStringLen(ctx, val, len_val));
+    }
+
+    static inline JSValue _JS_NewObject(JS_CONTEXT ctx, const char *class_name) {
         JSValue obj = (JS_NewObject)(ctx);
         JS_SetPrototype(ctx, obj, JS_GetPropertyStr(ctx, JS_GetGlobalObject(ctx), class_name));
         return obj;

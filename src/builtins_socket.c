@@ -568,6 +568,7 @@ static void io_get_object(JS_CONTEXT ctx, int fd, const char *method) {
     char func_buffer[20]; 
     snprintf(func_buffer, sizeof(func_buffer), "io%u", fd); 
 
+#ifdef WITH_DUKTAPE
     duk_push_global_stash(ctx);
         duk_get_prop_string(ctx, -1, func_buffer);
         if (duk_is_object(ctx, -1)) {
@@ -579,6 +580,14 @@ static void io_get_object(JS_CONTEXT ctx, int fd, const char *method) {
             duk_pop(ctx);
         }
     duk_pop(ctx);
+#else
+    js_object_type obj = JS_GetPropertyStr(ctx, global_stash(ctx), func_buffer);
+    if (JS_IsObject(obj)) {
+        js_object_type function_obj = JS_GetPropertyStr(ctx, obj, method);
+        if (JS_IsFunction(ctx, function_obj))
+            JS_FreeValue(ctx, JS_Call(ctx, function_obj, obj, 0, NULL));
+    }
+#endif
 }
 
 static void io_read_callback(struct doops_loop *loop, int fd) {
@@ -609,11 +618,15 @@ JS_C_FUNCTION(js_poll) {
             loop_io(js_loop(), io_read_callback, io_write_callback);
             io_set = 1;
         }
+        snprintf(func_buffer, sizeof(func_buffer), "io%u", fd); 
+#ifdef WITH_DUKTAPE
         duk_push_global_stash(ctx);
-            snprintf(func_buffer, sizeof(func_buffer), "io%u", fd); 
             duk_dup(ctx, 2);
             duk_put_prop_string(ctx, -2, func_buffer);
         duk_pop_2(ctx);
+#else
+        JS_ObjectSetObject(ctx, global_stash(ctx), func_buffer, JS_GetObjectParameter(ctx, 2));
+#endif
     }
     JS_RETURN_NUMBER(ctx, err);
 }
@@ -628,10 +641,14 @@ JS_C_FUNCTION(js_unpoll) {
 
     if (!err) {
         snprintf(func_buffer, sizeof(func_buffer), "io%u", fd);
+#ifdef WITH_DUKTAPE
         duk_push_global_stash(ctx);
         duk_push_string(ctx, func_buffer);
         duk_del_prop(ctx, -2);
         duk_pop_2(ctx);
+#else
+        JS_DeleteProperty(ctx, global_stash(ctx), JS_ValueToAtom(ctx, JS_GetPropertyStr(ctx, global_stash(ctx), func_buffer)), 0);
+#endif
     }
     JS_RETURN_NUMBER(ctx, err);
 }

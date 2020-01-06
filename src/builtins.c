@@ -78,6 +78,20 @@ static struct {
 } log_context;
 
 
+#ifndef WITH_DUKTAPE
+js_object_type global_stash(JS_CONTEXT ctx) {
+    void *opaque = JS_GetContextOpaque(ctx);
+    if (!opaque) {
+        js_object_type *obj = (js_object_type *)malloc(sizeof(js_object_type));
+        *obj = JS_NewPlainObject(ctx);
+        JS_SetContextOpaque(ctx, obj);
+        opaque = obj;
+    }
+
+    return *(js_object_type *)opaque;
+}
+#endif
+
 static void log_init() {
 #ifdef _WIN32
     HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -92,6 +106,7 @@ static void log_init() {
 #endif
     log_context.initialized = 1;
 }
+
 void log_log(int level, const char *file, int line, const char *data) {
     if (!log_context.initialized)
         log_init();
@@ -127,6 +142,7 @@ void log_log(int level, const char *file, int line, const char *data) {
     }
 }
 
+#ifdef WITH_DUKTAPE
 int native_line_number(JS_CONTEXT ctx, int level, char *func_name, int max_len) {
     if (!ctx)
         ctx = js_ctx;
@@ -168,12 +184,14 @@ int native_line_number(JS_CONTEXT ctx, int level, char *func_name, int max_len) 
     duk_pop_2(ctx);
     return line_number;
 }
+#endif
 
 static int setInterval_callback(struct doops_loop *loop) {
     char func_buffer[50]; 
     unsigned int callbackIndex = (unsigned int)(uintptr_t)loop_event_data(loop);
     snprintf(func_buffer, sizeof(func_buffer), "interval%u", callbackIndex); 
 
+#ifdef WITH_DUKTAPE
     duk_push_global_stash(js_ctx);
     duk_get_prop_string(js_ctx, 1, func_buffer);
 
@@ -187,14 +205,25 @@ static int setInterval_callback(struct doops_loop *loop) {
         return 1;
     }
     duk_pop_2(js_ctx);
+#else
+    js_object_type obj = JS_GetPropertyStr(js_ctx, global_stash(js_ctx), func_buffer);
+    js_object_type ret_value = JS_Call(js_ctx, obj, obj, 0, NULL);
+    if ((JS_IsBool(ret_value)) && (_JS_GetBooleanParameter(js_ctx, ret_value))) {
+        JS_DeleteProperty(js_ctx, global_stash(js_ctx), JS_ValueToAtom(js_ctx, obj), 0);
+        JS_FreeValue(js_ctx, ret_value);
+        return 1;
+    }
+    JS_FreeValue(js_ctx, ret_value);
+#endif
     return 0;
 }
 
 static int setTimeout_callback(struct doops_loop *loop) {
-    char func_buffer[50]; 
+    char func_buffer[50];
     unsigned int callbackIndex = (unsigned int)(uintptr_t)loop_event_data(loop);
     snprintf(func_buffer, sizeof(func_buffer), "timeout%u", callbackIndex); 
 
+#ifdef WITH_DUKTAPE
     duk_push_global_stash(js_ctx);
     duk_get_prop_string(js_ctx, 1, func_buffer);
 
@@ -204,6 +233,11 @@ static int setTimeout_callback(struct doops_loop *loop) {
     duk_push_string(js_ctx, func_buffer);
     duk_del_prop(js_ctx, -2);
     duk_pop_3(js_ctx);
+#else
+    js_object_type obj = JS_GetPropertyStr(js_ctx, global_stash(js_ctx), func_buffer);
+    JS_FreeValue(js_ctx, JS_Call(js_ctx, obj, obj, 0, NULL));
+    JS_DeleteProperty(js_ctx, global_stash(js_ctx), JS_ValueToAtom(js_ctx, obj), 0);
+#endif
     return 1;
 }
 
@@ -212,6 +246,7 @@ static int setImmediate_callback(struct doops_loop *loop) {
     unsigned int callbackIndex = (unsigned int)(uintptr_t)loop_event_data(loop);
     snprintf(func_buffer, sizeof(func_buffer), "immediate%u", callbackIndex); 
 
+#ifdef WITH_DUKTAPE
     duk_push_global_stash(js_ctx);
     duk_get_prop_string(js_ctx, 1, func_buffer);
 
@@ -221,6 +256,11 @@ static int setImmediate_callback(struct doops_loop *loop) {
     duk_push_string(js_ctx, func_buffer);
     duk_del_prop(js_ctx, -2);
     duk_pop_3(js_ctx);
+#else
+    js_object_type obj = JS_GetPropertyStr(js_ctx, global_stash(js_ctx), func_buffer);
+    JS_FreeValue(js_ctx, JS_Call(js_ctx, obj, obj, 0, NULL));
+    JS_DeleteProperty(js_ctx, global_stash(js_ctx), JS_ValueToAtom(js_ctx, obj), 0);
+#endif
     return 1;
 }
 
@@ -237,13 +277,17 @@ JS_C_FUNCTION_FORWARD(registerCallback, const char *prefix, doop_callback callba
         callbackIndex ++;
 
     double ms = JS_GetNumberParameter(ctx, 1);
+    snprintf(func_buffer, sizeof(func_buffer), "%s%u", prefix, callbackIndex); 
 
+#ifdef WITH_DUKTAPE
     duk_push_global_stash(ctx);
     duk_dup(ctx, 0);
-    snprintf(func_buffer, sizeof(func_buffer), "%s%u", prefix, callbackIndex); 
     duk_put_prop_string(ctx, -2, func_buffer);
-    loop_add(main_loop, callback, (int)ms, (void *)(uintptr_t)callbackIndex);
     duk_pop_2(js_ctx);
+#else
+    JS_SetPropertyStr(js_ctx, global_stash(js_ctx), func_buffer, argv[0]);
+#endif
+    loop_add(main_loop, callback, (int)ms, (void *)(uintptr_t)callbackIndex);
 
     JS_RETURN_NUMBER(ctx, callbackIndex);
 }
@@ -261,9 +305,14 @@ JS_C_FUNCTION(clearInterval) {
     unsigned int callbackIndex = (unsigned int)event_id;
     snprintf(func_buffer, sizeof(func_buffer), "interval%u", callbackIndex); 
 
+#ifdef WITH_DUKTAPE
     duk_push_global_stash(js_ctx);
     duk_del_prop_string(js_ctx, -1, func_buffer);
     duk_pop(js_ctx);
+#else
+    js_object_type obj = JS_GetPropertyStr(js_ctx, global_stash(js_ctx), func_buffer);
+    JS_DeleteProperty(js_ctx, global_stash(js_ctx), JS_ValueToAtom(js_ctx, obj), 0);
+#endif
 
 	JS_RETURN_NOTHING(ctx);
 }
@@ -281,9 +330,14 @@ JS_C_FUNCTION(clearTimeout) {
     unsigned int callbackIndex = (unsigned int)event_id;
     snprintf(func_buffer, sizeof(func_buffer), "timeout%u", callbackIndex); 
 
+#ifdef WITH_DUKTAPE
     duk_push_global_stash(js_ctx);
     duk_del_prop_string(js_ctx, -1, func_buffer);
     duk_pop(js_ctx);
+#else
+    js_object_type obj = JS_GetPropertyStr(js_ctx, global_stash(js_ctx), func_buffer);
+    JS_DeleteProperty(js_ctx, global_stash(js_ctx), JS_ValueToAtom(js_ctx, obj), 0);
+#endif
 
 	JS_RETURN_NOTHING(ctx);
 }
@@ -298,14 +352,18 @@ JS_C_FUNCTION(setImmediate) {
     if (!callbackIndex)
         callbackIndex ++;
 
-
     JS_ParameterFunction(ctx, 0);
+    snprintf(func_buffer, sizeof(func_buffer), "immediate%u", callbackIndex); 
+
+#ifdef WITH_DUKTAPE
     duk_push_global_stash(ctx);
     duk_dup(ctx, 0);
-    snprintf(func_buffer, sizeof(func_buffer), "immediate%u", callbackIndex); 
     duk_put_prop_string(ctx, -2, func_buffer);
-    loop_add(main_loop, setImmediate_callback, (int)0, (void *)(uintptr_t)callbackIndex);
     duk_pop_2(js_ctx);
+#else
+    JS_SetPropertyStr(js_ctx, global_stash(js_ctx), func_buffer, argv[0]);
+#endif
+    loop_add(main_loop, setImmediate_callback, (int)0, (void *)(uintptr_t)callbackIndex);
 
     JS_RETURN_NUMBER(ctx, callbackIndex);
 }
@@ -338,6 +396,9 @@ JS_C_FUNCTION(randomBytes) {
         free(key);
     }
 #else
+#ifdef ESP32
+    esp_fill_random(key, len);
+#else
     FILE *fp = fopen("/dev/urandom", "r");
     if (fp) {
         int key_len = fread(key, 1, len, fp);
@@ -347,7 +408,8 @@ JS_C_FUNCTION(randomBytes) {
     }
 #endif
 #endif
-    return 0;
+#endif
+    JS_RETURN_UNDEFINED(ctx);
 }
 
 JS_C_FUNCTION(clearImmediate) {
@@ -359,35 +421,47 @@ JS_C_FUNCTION(clearImmediate) {
     unsigned int callbackIndex = (unsigned int)event_id;
     snprintf(func_buffer, sizeof(func_buffer), "immediate%u", callbackIndex); 
 
+#ifdef WITH_DUKTAPE
     duk_push_global_stash(js_ctx);
     duk_del_prop_string(js_ctx, -1, func_buffer);
     duk_pop(js_ctx);
+#else
+    js_object_type obj = JS_GetPropertyStr(js_ctx, global_stash(js_ctx), func_buffer);
+    JS_DeleteProperty(js_ctx, global_stash(js_ctx), JS_ValueToAtom(js_ctx, obj), 0);
+#endif
 
 	JS_RETURN_NOTHING(ctx);
 }
 
-static void native_print(JS_CONTEXT ctx, int level) {
+JS_C_FUNCTION_FORWARD(native_print, int level) {
+#ifdef WITH_DUKTAPE
     char func_name[50];
     int line_number = native_line_number(ctx, -2, func_name, sizeof(func_name));
 	duk_push_string(ctx, " ");
 	duk_insert(ctx, 0);
 	duk_join(ctx, duk_get_top(ctx) - 1);
     log_log(level, func_name, line_number, duk_safe_to_string(ctx, -1));
+#else
+    const char *text = "";
+    if (JS_ParameterCount(ctx) > 0)
+        text = JS_GetAsStringParameter(ctx, 0);
+
+    log_log(level, "(none)", 0, text);
+#endif
+
+    JS_RETURN_NOTHING(ctx);
 }
 
 JS_C_FUNCTION(native_log) {
-    native_print(ctx, 2);
-	JS_RETURN_NOTHING(ctx);
+	return native_print(JS_C_FORWARD_PARAMETERS, 2);
 }
 
 JS_C_FUNCTION(native_warning) {
-    native_print(ctx, 3);
-	JS_RETURN_NOTHING(ctx);
+    return native_print(JS_C_FORWARD_PARAMETERS, 3);
 }
 
 JS_C_FUNCTION(native_error) {
-    native_print(ctx, 4);
-	JS_RETURN_NOTHING(ctx);
+    return native_print(JS_C_FORWARD_PARAMETERS, 4);
 }
 
 void register_global_function(JS_CONTEXT ctx, const char *func_name, js_c_function function, int nargs) {
@@ -395,13 +469,17 @@ void register_global_function(JS_CONTEXT ctx, const char *func_name, js_c_functi
         ctx = js_ctx;
     if (!ctx)
         return;
+#ifdef WITH_DUKTAPE
     duk_push_c_function(ctx, function, nargs);
 	duk_put_global_string(ctx, func_name);
+#else
+    JS_ObjectSetFunction(ctx, JS_GetGlobalObject(ctx), func_name, function, JS_VARARGS);
+#endif
 }
 
 void register_object(JS_CONTEXT ctx, const char *object_name, ...) {
     va_list ap;
-
+#ifdef WITH_DUKTAPE
     duk_push_object(ctx);
 
     va_start(ap, object_name);
@@ -420,6 +498,24 @@ void register_object(JS_CONTEXT ctx, const char *object_name, ...) {
     va_end(ap);
 
     duk_put_global_string(ctx, object_name);
+#else
+    JSValue obj = JS_NewPlainObject(ctx);
+
+    JS_ObjectSetObject(ctx, JS_GetGlobalObject(ctx), object_name, obj);
+    va_start(ap, object_name);
+    while (1) {
+        const char *func_name = va_arg(ap, const char *);
+        if (!func_name)
+            break;
+
+        js_c_function function = va_arg(ap, js_c_function);
+        if (!function)
+            break;
+
+        JS_ObjectSetFunction(ctx, obj, func_name, function, JS_VARARGS);
+    }
+    va_end(ap);
+#endif
 }
 
 JS_C_FUNCTION(native_quit) {
@@ -453,9 +549,13 @@ int on_header_field(struct http_parser *_, const char *at, size_t len) {
 }
 
 int on_header_value(struct http_parser *_, const char *at, size_t len) {
-    if (!((struct http_parser_container *)(_->data))->header_obj) {
+#ifdef WITH_DUKTAPE
+    if (!((struct http_parser_container *)(_->data))->header_obj)
         ((struct http_parser_container *)(_->data))->header_obj = JS_NewPlainObject(js());
-    }
+#else
+    if (JS_IsUndefined(((struct http_parser_container *)(_->data))->header_obj))
+        ((struct http_parser_container *)(_->data))->header_obj = JS_NewPlainObject(js());
+#endif
 
     if (((struct http_parser_container *)(_->data))->last_header)
         JS_ObjectSetStringLenLen(js(), ((struct http_parser_container *)(_->data))->header_obj, ((struct http_parser_container *)(_->data))->last_header, ((struct http_parser_container *)(_->data))->last_header_len, at, len);
@@ -469,8 +569,13 @@ int on_url(http_parser *_, const char *at, size_t len) {
 }
 
 int on_headers_complete(http_parser *_) {
+#ifdef WITH_DUKTAPE
     if (((struct http_parser_container *)(_->data))->header_obj)
         JS_ObjectSetObject(js(), ((struct http_parser_container *)(_->data))->obj_id, "headers", ((struct http_parser_container *)(_->data))->header_obj);
+#else
+    if (!JS_IsUndefined(((struct http_parser_container *)(_->data))->header_obj))
+        JS_ObjectSetObject(js(), ((struct http_parser_container *)(_->data))->obj_id, "headers", ((struct http_parser_container *)(_->data))->header_obj);
+#endif
     return 0;
 }
 
@@ -503,7 +608,11 @@ JS_C_FUNCTION_FORWARD(parseHeader, int type) {
     data.obj_id = obj_id;
     data.last_header = NULL;
     data.last_header_len = 0;
+#ifdef WITH_DUKTAPE
     data.header_obj = 0;
+#else
+    data.header_obj = JS_UNDEFINED;
+#endif
     parser.data = &data;
 
     size_t nparsed = http_parser_execute(&parser, &settings_null, header, header_len);
@@ -536,10 +645,10 @@ JS_C_FUNCTION_FORWARD(parseHeader, int type) {
             JS_ObjectSetNumber(ctx, obj_id, "contentLength", parser.content_length);
         JS_ObjectSetNumber(ctx, obj_id, "httpVersion", (double)parser.http_major + ((double)parser.http_minor)/10);
     }
-#ifdef WITH_QUICKJS
-    return obj_id;
-#else
+#ifdef WITH_DUKTAPE
     return 1;
+#else
+    return obj_id;
 #endif
 }
 
@@ -557,6 +666,7 @@ void gui_callback(void *window) {
     char wnd_buffer[50]; 
     snprintf(wnd_buffer, sizeof(wnd_buffer), "wnd%X", (unsigned int)(uintptr_t)window); 
 
+#ifdef WITH_DUKTAPE
     duk_push_global_stash(js_ctx);
     duk_get_prop_string(js_ctx, -1, wnd_buffer);
 
@@ -567,6 +677,14 @@ void gui_callback(void *window) {
         duk_pop(js_ctx);
     }
     duk_pop(js_ctx);
+#else
+    js_object_type obj = JS_GetPropertyStr(js_ctx, global_stash(js_ctx), wnd_buffer);
+    if (JS_IsObject(obj)) {
+        js_object_type function_obj = JS_GetPropertyStr(js_ctx, obj, "onuievent");
+        if (JS_IsFunction(js_ctx, function_obj))
+            JS_FreeValue(js_ctx, JS_Call(js_ctx, function_obj, obj, 0, NULL));
+    }
+#endif
 }
 
 static int ui_callback(struct doops_loop *loop) {
@@ -580,6 +698,7 @@ static void ui_close_callback(void *event_data, void *userdata) {
     char wnd_buffer[50]; 
     snprintf(wnd_buffer, sizeof(wnd_buffer), "wnd%X", (unsigned int)(uintptr_t)event_data); 
 
+#ifdef WITH_DUKTAPE
     duk_push_global_stash(js_ctx);
     duk_get_prop_string(js_ctx, -1, wnd_buffer);
 
@@ -597,64 +716,95 @@ static void ui_close_callback(void *event_data, void *userdata) {
     duk_push_string(js_ctx, wnd_buffer);
     duk_del_prop(js_ctx, -3);
     duk_pop_3(js_ctx);
+#else
+    js_object_type obj = JS_GetPropertyStr(js_ctx, global_stash(js_ctx), wnd_buffer);
+    if (JS_IsObject(obj)) {
+        JS_ObjectSetPointer(js_ctx, obj, JS_HIDDEN_SYMBOL("__native_handle"), NULL);
+        js_object_type function_obj = JS_GetPropertyStr(js_ctx, obj, "ondestroy");
+        if (JS_IsFunction(js_ctx, function_obj))
+            JS_FreeValue(js_ctx, JS_Call(js_ctx, function_obj, obj, 0, NULL));
+        JS_DeleteProperty(js_ctx, global_stash(js_ctx), JS_ValueToAtom(js_ctx, obj), 0);
+    }
+#endif
 }
 
 JS_C_FUNCTION(native_ui_window_close) {
+#ifdef WITH_DUKTAPE
     duk_push_this(ctx);
     duk_get_prop_string(ctx, -1, JS_HIDDEN_SYMBOL("__native_handle"));
 
     void *window_ptr = duk_get_pointer_default(ctx, -1, NULL);
+    duk_pop_2(ctx);
+#else
+    void *window_ptr = _JS_GetPointerParameter(ctx, JS_GetPropertyStr(ctx, this_val, JS_HIDDEN_SYMBOL("__native_handle")));
+#endif
     if (window_ptr)
         ui_window_close(window_ptr);
-    duk_pop_2(ctx);
     JS_RETURN_NOTHING(ctx);
 }
 
 JS_C_FUNCTION(native_ui_window_maximize) {
+#ifdef WITH_DUKTAPE
     duk_push_this(ctx);
     duk_get_prop_string(ctx, -1, JS_HIDDEN_SYMBOL("__native_handle"));
 
     void *window_ptr = duk_get_pointer_default(ctx, -1, NULL);
+    duk_pop_2(ctx);
+#else
+    void *window_ptr = _JS_GetPointerParameter(ctx, JS_GetPropertyStr(ctx, this_val, JS_HIDDEN_SYMBOL("__native_handle")));
+#endif
     if (window_ptr)
         ui_window_maximize(window_ptr);
-    duk_pop_2(ctx);
     JS_RETURN_NOTHING(ctx);
 }
 
 JS_C_FUNCTION(native_ui_window_minimize) {
+#ifdef WITH_DUKTAPE
     duk_push_this(ctx);
     duk_get_prop_string(ctx, -1, JS_HIDDEN_SYMBOL("__native_handle"));
 
     void *window_ptr = duk_get_pointer_default(ctx, -1, NULL);
+    duk_pop_2(ctx);
+#else
+    void *window_ptr = _JS_GetPointerParameter(ctx, JS_GetPropertyStr(ctx, this_val, JS_HIDDEN_SYMBOL("__native_handle")));
+#endif
     if (window_ptr)
         ui_window_minimize(window_ptr);
-    duk_pop_2(ctx);
     JS_RETURN_NOTHING(ctx);
 }
 
 JS_C_FUNCTION(native_ui_window_restore) {
+#ifdef WITH_DUKTAPE
     duk_push_this(ctx);
     duk_get_prop_string(ctx, -1, JS_HIDDEN_SYMBOL("__native_handle"));
 
     void *window_ptr = duk_get_pointer_default(ctx, -1, NULL);
+    duk_pop_2(ctx);
+#else
+    void *window_ptr = _JS_GetPointerParameter(ctx, JS_GetPropertyStr(ctx, this_val, JS_HIDDEN_SYMBOL("__native_handle")));
+#endif
     if (window_ptr)
         ui_window_restore(window_ptr);
-    duk_pop_2(ctx);
     JS_RETURN_NOTHING(ctx);
 }
 
 JS_C_FUNCTION(native_ui_window_top) {
+#ifdef WITH_DUKTAPE
     duk_push_this(ctx);
     duk_get_prop_string(ctx, -1, JS_HIDDEN_SYMBOL("__native_handle"));
 
     void *window_ptr = duk_get_pointer_default(ctx, -1, NULL);
+    duk_pop_2(ctx);
+#else
+    void *window_ptr = _JS_GetPointerParameter(ctx, JS_GetPropertyStr(ctx, this_val, JS_HIDDEN_SYMBOL("__native_handle")));
+#endif
     if (window_ptr)
         ui_window_top(window_ptr);
-    duk_pop_2(ctx);
     JS_RETURN_NOTHING(ctx);
 }
 
 JS_C_FUNCTION(native_ui_window_content) {
+#ifdef WITH_DUKTAPE
     duk_push_this(ctx);
     duk_get_prop_string(ctx, -1, JS_HIDDEN_SYMBOL("__native_handle"));
 
@@ -667,10 +817,20 @@ JS_C_FUNCTION(native_ui_window_content) {
         ui_window_set_content(window_ptr, duk_safe_to_string(ctx, -1));
         duk_pop(ctx);
     }
+#else
+    void *window_ptr = _JS_GetPointerParameter(ctx, JS_GetPropertyStr(ctx, this_val, JS_HIDDEN_SYMBOL("__native_handle")));
+    if (window_ptr) {
+        if (JS_ParameterCount(ctx) > 0)
+            ui_window_set_content(window_ptr, JS_GetAsStringParameter(ctx, 0));
+        else
+            ui_window_set_content(window_ptr, "");
+    }
+#endif
     JS_RETURN_NOTHING(ctx);
 }
 
 JS_C_FUNCTION(native_ui_window_js) {
+#ifdef WITH_DUKTAPE
     duk_push_this(ctx);
     duk_get_prop_string(ctx, -1, JS_HIDDEN_SYMBOL("__native_handle"));
 
@@ -683,6 +843,14 @@ JS_C_FUNCTION(native_ui_window_js) {
         ui_js(window_ptr, duk_safe_to_string(ctx, -1));
         duk_pop(ctx);
     }
+#else
+    void *window_ptr = _JS_GetPointerParameter(ctx, JS_GetPropertyStr(ctx, this_val, JS_HIDDEN_SYMBOL("__native_handle")));
+    if (window_ptr) {
+        if (JS_ParameterCount(ctx) > 0)
+            ui_js(window_ptr, JS_GetAsStringParameter(ctx, 0));
+    }
+#endif
+
     JS_RETURN_NOTHING(ctx);
 }
 
@@ -691,11 +859,15 @@ JS_C_FUNCTION(native_ui_window_execute) {
     if (parameters < 1)
         JS_RETURN_NOTHING(ctx);
 
+#ifdef WITH_DUKTAPE
     duk_push_this(ctx);
     duk_get_prop_string(ctx, -1, JS_HIDDEN_SYMBOL("__native_handle"));
 
     void *window_ptr = duk_get_pointer_default(ctx, -1, NULL);
     duk_pop_2(ctx);
+#else
+    void *window_ptr = _JS_GetPointerParameter(ctx, JS_GetPropertyStr(ctx, this_val, JS_HIDDEN_SYMBOL("__native_handle")));
+#endif
     if (window_ptr) {
         const char *arguments[0x80];
         int i;
@@ -704,38 +876,53 @@ JS_C_FUNCTION(native_ui_window_execute) {
 
         arguments[0] = 0;
         for (i = 1; i < parameters; i ++) {
-            arguments[i - 1] = duk_safe_to_string(ctx, i);
+            arguments[i - 1] = JS_GetAsStringParameter(ctx, i);
             arguments[i] = 0;
         }
 
-        char *val = ui_call(window_ptr, duk_safe_to_string(ctx, 0), arguments);
-        duk_pop(ctx);
+        char *val = ui_call(window_ptr, JS_GetAsStringParameter(ctx, 0), arguments);
         if (val) {
+#ifdef WITH_DUKTAPE
             duk_push_string(ctx, val);
             ui_free_string(val);
             return 1;
+#else
+            js_object_type jsval = JS_NewString(ctx, val);
+            ui_free_string(val);
+            return jsval;
+#endif
         }
     }
     JS_RETURN_NOTHING(ctx);
 }
 
 JS_C_FUNCTION(native_ui_window_is_opened) {
+#ifdef WITH_DUKTAPE
     duk_push_this(ctx);
     duk_get_prop_string(ctx, -1, JS_HIDDEN_SYMBOL("__native_handle"));
 
     void *window_ptr = duk_get_pointer_default(ctx, -1, NULL);
     duk_pop_2(ctx);
+#else
+    void *window_ptr = _JS_GetPointerParameter(ctx, JS_GetPropertyStr(ctx, this_val, JS_HIDDEN_SYMBOL("__native_handle")));
+#endif
     JS_RETURN_BOOLEAN(ctx, (window_ptr != 0));
 }
 
 JS_C_FUNCTION(native_alert) {
     char func_name[50];
+#ifdef WITH_DUKTAPE
     int line_number = native_line_number(ctx, -2, func_name, sizeof(func_name));
 	duk_push_string(ctx, " ");
 	duk_insert(ctx, 0);
 	duk_join(ctx, duk_get_top(ctx) - 1);
     const char *text = duk_safe_to_string(ctx, -1);
     log_log(2, func_name, line_number, text);
+#else
+    const char *text = "";
+    if (JS_ParameterCount(ctx) > 0)
+        text = JS_GetAsStringParameter(ctx, 0);
+#endif
     ui_message("", text, 1);
     JS_RETURN_NOTHING(ctx);
 }
@@ -801,21 +988,26 @@ JS_C_FUNCTION(native_window) {
     JS_ObjectSetFunction(ctx, obj_id, "call", native_ui_window_execute, JS_VARARGS);
     JS_ObjectSetFunction(ctx, obj_id, "isOpen", native_ui_window_is_opened, 0);
 
-    duk_push_global_stash(js_ctx);
-
     char wnd_buffer[50];
-    duk_dup(ctx, -2);
     snprintf(wnd_buffer, sizeof(wnd_buffer), "wnd%X", (unsigned int)(uintptr_t)window_ptr); 
+
+#ifdef WITH_DUKTAPE
+    duk_push_global_stash(js_ctx);
+    duk_dup(ctx, -2);
     duk_put_prop_string(ctx, -2, wnd_buffer);
-
     duk_pop(ctx);
-
     return 1;
+#else
+    JS_ObjectSetObject(ctx, global_stash(ctx), wnd_buffer, obj_id);
+    JS_RETURN_OBJECT(ctx, obj_id);
+#endif
+
 #endif
 	JS_RETURN_NOTHING(ctx);
 }
 
 void helper_notify(JS_CONTEXT ctx, const char *object, const char *event_name) {
+#ifdef WITH_DUKTAPE
     duk_push_global_object(ctx);
     duk_get_prop_string(ctx, -1, object);
     if (duk_is_object(ctx, -1)) {
@@ -825,8 +1017,17 @@ void helper_notify(JS_CONTEXT ctx, const char *object, const char *event_name) {
         duk_pop(ctx);
     }
     duk_pop(ctx);
+#else
+    js_object_type obj = JS_GetPropertyStr(ctx, JS_GetGlobalObject(ctx), object);
+    if (JS_IsObject(obj)) {
+        js_object_type function_obj = JS_GetPropertyStr(ctx, obj, event_name);
+        if (JS_IsFunction(ctx, function_obj))
+            JS_FreeValue(ctx, JS_Call(ctx, function_obj, obj, 0, NULL));
+    }
+#endif
 }
 
+#ifdef WITH_DUKTAPE
 static void _push_dirname(JS_CONTEXT ctx, const char *path) {
     if ((!path) || (!path[0])) {
         duk_push_string(ctx, ".");
@@ -846,9 +1047,34 @@ static void _push_dirname(JS_CONTEXT ctx, const char *path) {
     else
         duk_push_string(ctx, ".");
 }
+#else
+static void _push_dirname(JS_CONTEXT ctx, js_object_type obj, const char *member_name, const char *path) {
+    if ((!path) || (!path[0])) {
+        JS_ObjectSetString(ctx, obj, member_name, ".");
+        return;
+    }
+    int len = strlen(path);
+    int i;
+    int directory = 0;
+    for (i = len - 1; i >= 0; i --) {
+        if ((path[i] == '/') || (path[i] == '\\')) {
+            directory = i;
+            break;
+        }
+    }
+    if (directory)
+        JS_ObjectSetStringLen(ctx, obj, member_name, path, directory);
+    else
+        JS_ObjectSetString(ctx, obj, member_name, ".");
+}
+#endif
 
 #ifndef NO_IO
-static const char *duk_push_string_file_raw(JS_CONTEXT ctx, const char *path, const char *directory, duk_uint_t flags) {
+#ifdef WITH_DUKTAPE
+static const char *duk_push_string_file_raw(JS_CONTEXT ctx, const char *path, const char *directory, js_uint_t flags) {
+#else
+static char *duk_push_string_file_raw(JS_CONTEXT ctx, const char *path, const char *directory) {
+#endif
 	FILE *f = NULL;
 	char *buf;
 	long sz;
@@ -882,6 +1108,7 @@ static const char *duk_push_string_file_raw(JS_CONTEXT ctx, const char *path, co
             }
         }
         if (f) {
+#ifdef WITH_DUKTAPE
             duk_push_global_object(ctx);
                 duk_get_prop_string(ctx, -1, "module");
 
@@ -891,6 +1118,11 @@ static const char *duk_push_string_file_raw(JS_CONTEXT ctx, const char *path, co
                 _push_dirname(ctx, js_path);
                 duk_put_prop_string(ctx, -2, "path");
             duk_pop_2(ctx);
+#else
+            js_object_type obj = JS_GetPropertyStr(ctx, JS_GetGlobalObject(ctx), "module");
+            JS_ObjectSetString(ctx, obj, "filename", js_path);
+            _push_dirname(ctx, obj, "path", js_path);
+#endif
         }
     }
     
@@ -907,31 +1139,53 @@ static const char *duk_push_string_file_raw(JS_CONTEXT ctx, const char *path, co
 	if (fseek(f, 0, SEEK_SET) < 0)
 		goto fail;
 
+#ifdef WITH_DUKTAPE
 	buf = (char *) duk_push_fixed_buffer(ctx, (duk_size_t) sz);
+#else
+	buf = (char *) js_malloc(ctx, sz + 1);
+    buf[sz] = 0;
+#endif
 	if ((size_t) fread(buf, 1, (size_t) sz, f) != (size_t) sz) {
+#ifdef WITH_DUKTAPE
 		duk_pop(ctx);
+#endif
 		goto fail;
 	}
 	(void) fclose(f);
+#ifdef WITH_DUKTAPE
 	return duk_buffer_to_string(ctx, -1);
+#else
+    return buf;
+#endif
 
  fail:
 	if (f)
 		(void) fclose(f);
 
+#ifdef WITH_DUKTAPE
 	if (flags & DUK_STRING_PUSH_SAFE)
 		duk_push_undefined(ctx);
 	else
+#endif
         JS_Error(ctx, "read file error");
+
 	return NULL;
 }
 
 void duk_eval_file(JS_CONTEXT ctx, const char *path, const char *directory) {
+#ifdef WITH_DUKTAPE
 	duk_push_string_file_raw(ctx, path, directory, DUK_STRING_PUSH_SAFE);
 	duk_push_string(ctx, path);
 	duk_compile(ctx, DUK_COMPILE_EVAL | DUK_COMPILE_SHEBANG);
 	duk_push_global_object(ctx); 
 	duk_call_method(ctx, 0);
+#else
+    char *buf = duk_push_string_file_raw(ctx, path, directory);
+    if (buf) {
+        JS_EvalSimplePath(ctx, buf, path);
+        js_free(ctx, buf);
+    }
+#endif
 }
 #endif
 
@@ -978,8 +1232,9 @@ static int builtin_module_lookup(JS_CONTEXT ctx, const char *path) {
 JS_C_FUNCTION(native_require) {
     JS_ParameterString(ctx, 0);
 
-    const char *module_id = duk_safe_to_string(ctx, 0);
+    const char *module_id = JS_GetStringParameter(ctx, 0);
 
+#ifdef WITH_DUKTAPE
     if (module_id) {
         duk_push_heap_stash(js_ctx);
         duk_get_prop_string(ctx, -1, "loaded_modules");
@@ -996,7 +1251,6 @@ JS_C_FUNCTION(native_require) {
     duk_push_global_object(ctx); 
 
     char *path = NULL;
-
     duk_get_prop_string(ctx, -1, "module");
         duk_get_prop_string(ctx, -1, "path");
         const char *parent_path = duk_safe_to_string(ctx, -1);
@@ -1104,6 +1358,52 @@ JS_C_FUNCTION(native_require) {
     // JS_EvalSimple(ctx, "module.loaded = true; if (module.parent) module.parent.children.push(module); module = module.parent;");
 
     return 1;
+#else
+    js_object_type loaded_modules = JS_GetPropertyStr(ctx, global_stash(ctx), "loaded_modules");
+    if (module_id) {
+        js_object_type mod = JS_GetPropertyStr(ctx, loaded_modules, module_id);
+        if (!JS_IsUndefined(mod))
+            return JS_GetPropertyStr(ctx, mod, "exports");
+    }
+
+    js_object_type parent_module = JS_GetPropertyStr(ctx, JS_GetGlobalObject(ctx), "module");
+
+    const char *filename = JS_GetStringParameter(ctx, 0);
+    js_object_type module = JS_NewObject(ctx, "Module");
+    
+    JS_ObjectSetString(ctx, module, "id", module_id);
+    JS_ObjectSetString(ctx, module, "filename", module_id);
+    _push_dirname(ctx, module, "path", module_id);
+    JS_ObjectSetObject(ctx, module, "parent", parent_module);
+
+    JS_ObjectSetBoolean(ctx, module, "loaded", 0);
+    JS_SetPropertyStr(ctx, module, "children", JS_NewArray(ctx));
+    js_object_type exports_obj = JS_NewPlainObject(ctx);
+    JS_ObjectSetObject(ctx, module, "exports", exports_obj);   
+    JS_ObjectSetFunction(ctx, module, "require", native_require, 1);
+
+    JS_ObjectSetObject(ctx, JS_GetGlobalObject(ctx), "exports", exports_obj);
+
+    JS_ObjectSetObject(ctx, loaded_modules, module_id, module);
+
+    JS_ObjectSetObject(ctx, JS_GetGlobalObject(ctx), "module", module);
+    if (!builtin_module_lookup(ctx, module_id)) {
+#ifdef NO_IO
+        JS_Error(ctx, "no sourcecode");
+#else
+        const char *path = JS_ToCString(ctx, JS_GetPropertyStr(ctx, parent_module, "path"));
+        duk_eval_file(ctx, filename, path ? path : "");
+#endif
+    }
+    JS_ObjectSetBoolean(ctx, module, "loaded", 1);
+   
+    JS_SetPropertyUint32(ctx, JS_GetPropertyStr(ctx, parent_module, "children"), _JS_GetIntParameter(ctx, JS_GetPropertyStr(ctx, parent_module, "length")), module);
+
+    JS_ObjectSetObject(ctx, JS_GetGlobalObject(ctx), "module", parent_module);
+    JS_ObjectSetObject(ctx, JS_GetGlobalObject(ctx), "exports", JS_GetPropertyStr(ctx, parent_module, "exports"));
+
+    return JS_GetPropertyStr(ctx, module, "exports");
+#endif
 }
 
 #ifdef _WIN32
@@ -1464,6 +1764,7 @@ JS_C_FUNCTION(js_kill) {
 }
 
 void duk_run_file(JS_CONTEXT ctx, const char *path) {
+#ifdef WITH_DUKTAPE
     duk_push_global_object(ctx); 
     // duk_push_object(ctx);
     JS_NewObject(ctx, "Module");
@@ -1497,6 +1798,22 @@ void duk_run_file(JS_CONTEXT ctx, const char *path) {
 
 	    duk_put_prop_string(ctx, -2, "module");
     duk_pop(ctx);
+#else
+    js_object_type obj = JS_NewObject(ctx, "Module");
+    JS_ObjectSetObject(ctx, JS_GetGlobalObject(ctx), "module", obj);
+
+    JS_ObjectSetString(ctx, obj, "id", path);
+    JS_ObjectSetString(ctx, obj, "filename", path);
+    _push_dirname(ctx, obj, "path", path);
+    JS_ObjectSetNull(ctx, obj, "parent");
+    JS_ObjectSetBoolean(ctx, obj, "loaded", 0);
+    JS_SetPropertyStr(ctx, obj, "children", JS_NewArray(ctx));
+    js_object_type exports_obj = JS_NewPlainObject(ctx);
+    JS_ObjectSetObject(ctx, obj, "exports", exports_obj);   
+    JS_ObjectSetFunction(ctx, obj, "require", native_require, 1);
+
+    JS_ObjectSetObject(ctx, JS_GetGlobalObject(ctx), "exports", exports_obj);
+#endif
 
     if (!builtin_module_lookup(ctx, path)) {
 #ifdef NO_IO
@@ -1516,6 +1833,8 @@ struct doops_loop *js_loop() {
 }
 
 void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *argv[], char *envp[]) {
+    int i;
+
     js_ctx = ctx;
     main_loop = loop;
 
@@ -1525,10 +1844,14 @@ void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *
     #endif
 #endif
 
+#ifdef WITH_DUKTAPE
     duk_push_heap_stash(js_ctx);
         duk_push_object(ctx);
         duk_put_prop_string(ctx, -2, "loaded_modules");
     duk_pop(js_ctx);
+#else
+    JS_SetPropertyStr(js_ctx, global_stash(ctx), "loaded_modules", JS_NewPlainObject(ctx));
+#endif
 
     register_global_function(ctx, "setInterval", setInterval, 2);
     register_global_function(ctx, "setTimeout", setTimeout, 2);
@@ -1563,19 +1886,20 @@ void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *
     register_global_function(ctx, "require", native_require, 1);
     register_object(ctx, "console", "log", native_log, "warn", native_warning, "error", native_error, (void *)NULL);
     register_object(ctx, "app", "quit", native_quit, "exit", native_exit, "window", native_window, (void *)NULL);
-
+#ifdef WITH_DUKTAPE
     duk_push_global_object(ctx);
+#endif
 
 #ifndef NO_HTTP
     register_object(ctx, "_http_helpers", "parseRequest", parseRequest, "parseResponse", parseResponse, (void *)NULL);
 #endif
     
     register_object(ctx, "process", "abort", native_quit, "exit", native_exit, "chdir", native_chdir, "cwd", native_cwd, "nextTick", setImmediate, "randomBytes", randomBytes, "cpuUsage", cpuUsage, "mapSignal", js_signal, "kill", js_kill, (void *)NULL);
+#ifdef WITH_DUKTAPE
     duk_push_string(ctx, "process");
     duk_get_prop(ctx, -2);
 
     duk_idx_t arr_idx = duk_push_array(ctx);
-    int i;
     for (i = 0; i < argc; i ++) {
         duk_push_string(ctx, argv[i]);
         duk_put_prop_index(ctx, arr_idx, i);
@@ -1623,17 +1947,60 @@ void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *
 
     duk_push_string(ctx, "v1.0.0");
     duk_put_prop_string(ctx, -2, "version");
+#else
+    js_object_type process = JS_GetPropertyStr(ctx, JS_GetGlobalObject(ctx), "process");
+    js_object_type arr = JS_NewArray(ctx);
+    JS_SetPropertyStr(ctx, process, "argv", arr);
+    js_object_type arrExec = JS_NewArray(ctx);
+    JS_SetPropertyStr(ctx, process, "execArgv", arrExec);
+
+    for (i = 0; i < argc; i ++) {
+        JS_SetPropertyUint32(ctx, arr, (unsigned int)i, JS_NewString(ctx, argv[i]));
+        if (i > 2)
+            JS_SetPropertyUint32(ctx, arrExec, (unsigned int)i - 2, JS_NewString(ctx, argv[i]));
+    }
+
+    if ((argv) && (argv[0]))
+        JS_ObjectSetString(ctx, process, "execPath", argv[0]);
+
+#ifdef _WIN32
+    JS_ObjectSetString(ctx, process, "platform", "win32");
+#else
+#ifdef ESP32
+    JS_ObjectSetString(ctx, process, "platform", "esp");
+#else
+    JS_ObjectSetString(ctx, process, "platform", "v1.0.0");
+#endif
+#endif
+    js_object_type arrEnv = JS_NewPlainObject(ctx);
+    if (envp) {
+        i = 0;
+        char *env = envp[i ++];
+        while (env) {
+            char *var = strstr(env, "=");
+            if ((var) && (var != env))
+                JS_ObjectSetStringLenLen(ctx, arrEnv, env, (int)((uintptr_t)var - (uintptr_t)env), var + 1, strlen(var + 1));
+            env = envp[i ++];
+        }
+    }
+    JS_SetPropertyStr(ctx, process, "env", arrEnv);
+
+    JS_ObjectSetString(ctx, process, "version", "unix");
+#endif
 
     JS_EvalSimple(ctx, "process.constants = {SIGHUP: 1, SIGINT: 2, SIGQUIT: 3, SIGILL: 4, SIGTRAP: 5, SIGABRT: 6, SIGBUS:  7, SIGFPE: 8, SIGKILL: 9, SIGUSR1: 10, SIGSEGV: 11, SIGUSR2: 12, SIGPIPE: 13, SIGALRM: 14, SIGTERM: 15, "
                                             "SIGSTKFLT: 16, SIGCHLD: 17, SIGCONT: 18, SIGSTOP: 19, SIGTSTP: 20, SIGTTIN: 21, SIGTTOU: 22, SIGURG: 23, SIGXCPU: 24, SIGXFSZ: 25, SIGVTALRM: 26, SIGPROF: 28, SIGIO: 29, SIGPWR: 30, SIGSYS: 31};"
                                             "process.on = function(sig, handler) { if (typeof sig == 'string') sig = process.constants[sig]; if (process.mapSignal(sig)) return; if (!process._sig_handler) process._sig_handler = [ ]; process._sig_handler[sig] = handler; };"
                                             "process.signal = process.on;"
     );
+#ifdef WITH_DUKTAPE
     duk_pop_2(ctx);
-
+#endif
     JS_EvalSimple(ctx, JS_GLOBAL);
 #ifdef WITH_DUKTAPE
-    JS_EvalSimple(ctx, "global.gc = Duktape.gc; global.__destructor = Duktape.fin");
+    JS_EvalSimple(ctx, "global.gc = Duktape.gc; global.__destructor = Duktape.fin;");
+#else
+    JS_EvalSimple(ctx, "global.gc = std.gc; global.__destructor = function() { /* to do */ };");
 #endif
     JS_EvalSimple(ctx, JS_MODULE);
     JS_EvalSimple(ctx, JS_WINDOW);
