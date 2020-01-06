@@ -1,7 +1,7 @@
 var net = require('net');
 var util = require('util');
 var Stream = require('stream').Stream;
-
+var EventEmitter = require('events').EventEmitter;
 
 function _concatenateUint8Arrays(header_buf, buf) {
 	if (header_buf) {
@@ -205,7 +205,7 @@ var http = {
 							request = _http_helpers.parseRequest(new TextDecoder("utf-8").decode(buf.subarray(0, header_pos)));
 						if (header_pos < buf.length)
 							pending_buffer = buf.subarray(header_pos);
-						delete c._header_buf;
+						c._header_buf = undefined;
 					} else
 					if (buf.length < 0x10000) {
 						c._header_buf = buf;
@@ -232,7 +232,7 @@ var http = {
 										message.emit("data", pending_buffer.subarray(0, remaining));
 										c.emit("data", pending_buffer.subarray(request.contentLength));
 									}
-									delete pending_buffer;
+									pending_buffer = undefined;
 								} else
 									c.emit("data", pending_buffer);
 							}

@@ -15,6 +15,7 @@
 
 #ifndef WITH_DUKTAPE
 js_object_type global_stash(JS_CONTEXT ctx);
+void js_std_dump_error(JSContext *ctx);
 #endif
 void log_log(int level, const char *file, int line, const char *data);
 void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *argv[], char *envp[]);

@@ -93,10 +93,10 @@
 
     #define JS_CONTEXT                                          JSContext *
     #define JS_CreateContext(on_error)                          JS_NewContext(JS_NewRuntime())
-    #define JS_DestroyContext(ctx)                              { JSRuntime *rt = JS_GetRuntime(ctx); JS_FreeContext(ctx); JS_FreeRuntime(rt); }
-    #define JS_EvalSimple(ctx, str)                             JS_FreeValue(ctx, (JS_Eval)(ctx, str, strlen(str), "builtin", JS_EVAL_TYPE_GLOBAL));
-    #define JS_EvalSimplePath(ctx, str, path)                   JS_FreeValue(ctx, (JS_Eval)(ctx, str, strlen(str), path, JS_EVAL_TYPE_GLOBAL));
-    #define JS_Eval(ctx, str, path)                             (JS_Eval)(ctx, str, strlen(str), path, JS_EVAL_TYPE_GLOBAL)
+    #define JS_DestroyContext(ctx)                              { JSValue *opaque = (JSValue *)JS_GetContextOpaque(ctx); if (opaque) { JS_FreeValue(ctx, *opaque); free(opaque); } JSRuntime *rt = JS_GetRuntime(ctx); JS_FreeContext(ctx); JS_FreeRuntime(rt); }
+    #define JS_EvalSimple(ctx, str)                             JS_EvalSimplePath(ctx, str, "none")
+    #define JS_EvalSimplePath(ctx, str, path)                   { js_object_type val = (JS_Eval)(ctx, str, strlen(str), path, JS_EVAL_TYPE_GLOBAL); if (JS_IsException(val)) { js_std_dump_error(ctx); exit(-1); } JS_FreeValue(ctx, val); }
+    #define JS_Eval(ctx, str, path)                             { js_object_type val = (JS_Eval)(ctx, str, strlen(str), path, JS_EVAL_TYPE_MODULE); if (JS_IsException(val)) { js_std_dump_error(ctx); exit(-1); } JS_FreeValue(ctx, val); }
 
     #define JS_Eval_File(ctx, filename)                         duk_run_file((ctx), filename)
 
@@ -137,7 +137,7 @@
     #define JS_ObjectSetUndefined(ctx, obj, mem)                JS_SetPropertyStr((ctx), (obj), (mem), JS_UNDEFINED)
 
     #define JS_HIDDEN_SYMBOL
-    #define JS_VARARGS                                          1
+    #define JS_VARARGS                                          0
 
     #define js_object_type                                      JSValue
     #define js_size_t                                           size_t
@@ -216,7 +216,11 @@
 
     static inline JSValue _JS_NewClassObject(JS_CONTEXT ctx, const char *class_name) {
         JSValue obj = JS_NewObject(ctx);
-        JS_SetPrototype(ctx, obj, JS_GetPropertyStr(ctx, JS_GetGlobalObject(ctx), class_name));
+        JSValue global_object = JS_GetGlobalObject(ctx);
+        JSValue proto = JS_GetPropertyStr(ctx, global_object, class_name);
+        JS_SetPrototype(ctx, obj, proto);
+        JS_FreeValue(ctx, proto);
+        JS_FreeValue(ctx, global_object);
         return obj;
     }
 #endif

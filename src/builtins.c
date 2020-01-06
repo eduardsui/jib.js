@@ -91,6 +91,50 @@ js_object_type global_stash(JS_CONTEXT ctx) {
 
     return *(js_object_type *)opaque;
 }
+
+void js_print(JSContext *ctx, int argc, JSValueConst *argv) {
+    int i;
+    const char *str;
+
+    for(i = 0; i < argc; i++) {
+        if (i != 0)
+            putchar(' ');
+        str = JS_ToCString(ctx, argv[i]);
+        if (!str)
+            return;
+        fputs(str, stdout);
+        JS_FreeCString(ctx, str);
+    }
+    putchar('\n');
+} 
+
+static void js_std_dump_error1(JSContext *ctx, JSValueConst exception_val, BOOL is_throw) {
+    JSValue val;
+    const char *stack;
+    BOOL is_error;
+    
+    is_error = JS_IsError(ctx, exception_val);
+    if (is_throw && !is_error)
+        fprintf(stderr, "Throw: ");
+    js_print(ctx, 1, (JSValueConst *)&exception_val);
+    if (is_error) {
+        val = JS_GetPropertyStr(ctx, exception_val, "stack");
+        if (!JS_IsUndefined(val)) {
+            stack = JS_ToCString(ctx, val);
+            fprintf(stderr, "%s\n", stack);
+            JS_FreeCString(ctx, stack);
+        }
+        JS_FreeValue(ctx, val);
+    }
+}
+
+void js_std_dump_error(JSContext *ctx) {
+    JSValue exception_val;
+    
+    exception_val = JS_GetException(ctx);
+    js_std_dump_error1(ctx, exception_val, TRUE);
+    JS_FreeValue(ctx, exception_val);
+}
 #endif
 
 static void log_init() {
@@ -207,14 +251,19 @@ static int setInterval_callback(struct doops_loop *loop) {
     }
     duk_pop_2(js_ctx);
 #else
+    js_object_type global_object = JS_GetGlobalObject(js_ctx);
     js_object_type obj = JS_GetPropertyStr(js_ctx, global_stash(js_ctx), func_buffer);
-    js_object_type ret_value = JS_Call(js_ctx, obj, obj, 0, NULL);
+    js_object_type ret_value = JS_Call(js_ctx, obj, global_object, 0, NULL);
+    JS_FreeValue(js_ctx, global_object);
+
     if ((JS_IsBool(ret_value)) && (_JS_GetBooleanParameter(js_ctx, ret_value))) {
         JS_DeleteProperty(js_ctx, global_stash(js_ctx), JS_ValueToAtom(js_ctx, obj), 0);
+        JS_FreeValue(js_ctx, obj);
         JS_FreeValue(js_ctx, ret_value);
         return 1;
     }
     JS_FreeValue(js_ctx, ret_value);
+    JS_FreeValue(js_ctx, obj);
 #endif
     return 0;
 }
@@ -235,9 +284,12 @@ static int setTimeout_callback(struct doops_loop *loop) {
     duk_del_prop(js_ctx, -2);
     duk_pop_3(js_ctx);
 #else
+    js_object_type global_object = JS_GetGlobalObject(js_ctx);
     js_object_type obj = JS_GetPropertyStr(js_ctx, global_stash(js_ctx), func_buffer);
-    JS_FreeValue(js_ctx, JS_Call(js_ctx, obj, obj, 0, NULL));
+    JS_FreeValue(js_ctx, JS_Call(js_ctx, obj, global_object, 0, NULL));
     JS_DeleteProperty(js_ctx, global_stash(js_ctx), JS_ValueToAtom(js_ctx, obj), 0);
+    JS_FreeValue(js_ctx, obj);
+    JS_FreeValue(js_ctx, global_object);
 #endif
     return 1;
 }
@@ -258,9 +310,12 @@ static int setImmediate_callback(struct doops_loop *loop) {
     duk_del_prop(js_ctx, -2);
     duk_pop_3(js_ctx);
 #else
+    js_object_type global_object = JS_GetGlobalObject(js_ctx);
     js_object_type obj = JS_GetPropertyStr(js_ctx, global_stash(js_ctx), func_buffer);
-    JS_FreeValue(js_ctx, JS_Call(js_ctx, obj, obj, 0, NULL));
+    JS_FreeValue(js_ctx, JS_Call(js_ctx, obj, global_object, 0, NULL));
     JS_DeleteProperty(js_ctx, global_stash(js_ctx), JS_ValueToAtom(js_ctx, obj), 0);
+    JS_FreeValue(js_ctx, obj);
+    JS_FreeValue(js_ctx, global_object);
 #endif
     return 1;
 }
@@ -286,7 +341,7 @@ JS_C_FUNCTION_FORWARD(registerCallback, const char *prefix, doop_callback callba
     duk_put_prop_string(ctx, -2, func_buffer);
     duk_pop_2(js_ctx);
 #else
-    JS_SetPropertyStr(js_ctx, global_stash(js_ctx), func_buffer, argv[0]);
+    JS_SetPropertyStr(js_ctx, global_stash(ctx), func_buffer, JS_DupValue(ctx, argv[0]));
 #endif
     loop_add(main_loop, callback, (int)ms, (void *)(uintptr_t)callbackIndex);
 
@@ -313,6 +368,7 @@ JS_C_FUNCTION(clearInterval) {
 #else
     js_object_type obj = JS_GetPropertyStr(js_ctx, global_stash(js_ctx), func_buffer);
     JS_DeleteProperty(js_ctx, global_stash(js_ctx), JS_ValueToAtom(js_ctx, obj), 0);
+    JS_FreeValue(ctx, obj);
 #endif
 
 	JS_RETURN_NOTHING(ctx);
@@ -338,6 +394,7 @@ JS_C_FUNCTION(clearTimeout) {
 #else
     js_object_type obj = JS_GetPropertyStr(js_ctx, global_stash(js_ctx), func_buffer);
     JS_DeleteProperty(js_ctx, global_stash(js_ctx), JS_ValueToAtom(js_ctx, obj), 0);
+    JS_FreeValue(ctx, obj);
 #endif
 
 	JS_RETURN_NOTHING(ctx);
@@ -362,7 +419,7 @@ JS_C_FUNCTION(setImmediate) {
     duk_put_prop_string(ctx, -2, func_buffer);
     duk_pop_2(js_ctx);
 #else
-    JS_SetPropertyStr(js_ctx, global_stash(js_ctx), func_buffer, argv[0]);
+    JS_SetPropertyStr(js_ctx, global_stash(js_ctx), func_buffer, JS_DupValue(ctx, argv[0]));
 #endif
     loop_add(main_loop, setImmediate_callback, (int)0, (void *)(uintptr_t)callbackIndex);
 
@@ -429,6 +486,7 @@ JS_C_FUNCTION(clearImmediate) {
 #else
     js_object_type obj = JS_GetPropertyStr(js_ctx, global_stash(js_ctx), func_buffer);
     JS_DeleteProperty(js_ctx, global_stash(js_ctx), JS_ValueToAtom(js_ctx, obj), 0);
+    JS_FreeValue(ctx, obj);
 #endif
 
 	JS_RETURN_NOTHING(ctx);
@@ -474,7 +532,9 @@ void register_global_function(JS_CONTEXT ctx, const char *func_name, js_c_functi
     duk_push_c_function(ctx, function, nargs);
 	duk_put_global_string(ctx, func_name);
 #else
-    JS_ObjectSetFunction(ctx, JS_GetGlobalObject(ctx), func_name, function, JS_VARARGS);
+    js_object_type global_object = JS_GetGlobalObject(ctx);
+    JS_ObjectSetFunction(ctx, global_object, func_name, function, JS_VARARGS);
+    JS_FreeValue(ctx, global_object);
 #endif
 }
 
@@ -500,9 +560,9 @@ void register_object(JS_CONTEXT ctx, const char *object_name, ...) {
 
     duk_put_global_string(ctx, object_name);
 #else
-    JSValue obj = JS_NewPlainObject(ctx);
-
-    JS_ObjectSetObject(ctx, JS_GetGlobalObject(ctx), object_name, obj);
+    js_object_type obj = JS_NewPlainObject(ctx);
+    js_object_type global_object = JS_GetGlobalObject(ctx);
+    JS_ObjectSetObject(ctx, global_object, object_name, obj);
     va_start(ap, object_name);
     while (1) {
         const char *func_name = va_arg(ap, const char *);
@@ -515,6 +575,7 @@ void register_object(JS_CONTEXT ctx, const char *object_name, ...) {
 
         JS_ObjectSetFunction(ctx, obj, func_name, function, JS_VARARGS);
     }
+    JS_FreeValue(ctx, global_object);
     va_end(ap);
 #endif
 }
@@ -684,7 +745,9 @@ void gui_callback(void *window) {
         js_object_type function_obj = JS_GetPropertyStr(js_ctx, obj, "onuievent");
         if (JS_IsFunction(js_ctx, function_obj))
             JS_FreeValue(js_ctx, JS_Call(js_ctx, function_obj, obj, 0, NULL));
+        JS_FreeValue(js_ctx, function_obj);
     }
+    JS_FreeValue(js_ctx, obj);
 #endif
 }
 
@@ -724,8 +787,10 @@ static void ui_close_callback(void *event_data, void *userdata) {
         js_object_type function_obj = JS_GetPropertyStr(js_ctx, obj, "ondestroy");
         if (JS_IsFunction(js_ctx, function_obj))
             JS_FreeValue(js_ctx, JS_Call(js_ctx, function_obj, obj, 0, NULL));
+        JS_FreeValue(js_ctx, function_obj);
         JS_DeleteProperty(js_ctx, global_stash(js_ctx), JS_ValueToAtom(js_ctx, obj), 0);
     }
+    JS_FreeValue(js_ctx, obj);
 #endif
 }
 
@@ -737,7 +802,9 @@ JS_C_FUNCTION(native_ui_window_close) {
     void *window_ptr = duk_get_pointer_default(ctx, -1, NULL);
     duk_pop_2(ctx);
 #else
-    void *window_ptr = _JS_GetPointerParameter(ctx, JS_GetPropertyStr(ctx, this_val, JS_HIDDEN_SYMBOL("__native_handle")));
+    js_object_type handle = JS_GetPropertyStr(ctx, this_val, JS_HIDDEN_SYMBOL("__native_handle"));
+    void *window_ptr = _JS_GetPointerParameter(ctx, handle);
+    JS_FreeValue(ctx, handle);
 #endif
     if (window_ptr)
         ui_window_close(window_ptr);
@@ -752,7 +819,9 @@ JS_C_FUNCTION(native_ui_window_maximize) {
     void *window_ptr = duk_get_pointer_default(ctx, -1, NULL);
     duk_pop_2(ctx);
 #else
-    void *window_ptr = _JS_GetPointerParameter(ctx, JS_GetPropertyStr(ctx, this_val, JS_HIDDEN_SYMBOL("__native_handle")));
+    js_object_type handle = JS_GetPropertyStr(ctx, this_val, JS_HIDDEN_SYMBOL("__native_handle"));
+    void *window_ptr = _JS_GetPointerParameter(ctx, handle);
+    JS_FreeValue(ctx, handle);
 #endif
     if (window_ptr)
         ui_window_maximize(window_ptr);
@@ -767,7 +836,9 @@ JS_C_FUNCTION(native_ui_window_minimize) {
     void *window_ptr = duk_get_pointer_default(ctx, -1, NULL);
     duk_pop_2(ctx);
 #else
-    void *window_ptr = _JS_GetPointerParameter(ctx, JS_GetPropertyStr(ctx, this_val, JS_HIDDEN_SYMBOL("__native_handle")));
+    js_object_type handle = JS_GetPropertyStr(ctx, this_val, JS_HIDDEN_SYMBOL("__native_handle"));
+    void *window_ptr = _JS_GetPointerParameter(ctx, handle);
+    JS_FreeValue(ctx, handle);
 #endif
     if (window_ptr)
         ui_window_minimize(window_ptr);
@@ -782,7 +853,9 @@ JS_C_FUNCTION(native_ui_window_restore) {
     void *window_ptr = duk_get_pointer_default(ctx, -1, NULL);
     duk_pop_2(ctx);
 #else
-    void *window_ptr = _JS_GetPointerParameter(ctx, JS_GetPropertyStr(ctx, this_val, JS_HIDDEN_SYMBOL("__native_handle")));
+    js_object_type handle = JS_GetPropertyStr(ctx, this_val, JS_HIDDEN_SYMBOL("__native_handle"));
+    void *window_ptr = _JS_GetPointerParameter(ctx, handle);
+    JS_FreeValue(ctx, handle);
 #endif
     if (window_ptr)
         ui_window_restore(window_ptr);
@@ -797,7 +870,9 @@ JS_C_FUNCTION(native_ui_window_top) {
     void *window_ptr = duk_get_pointer_default(ctx, -1, NULL);
     duk_pop_2(ctx);
 #else
-    void *window_ptr = _JS_GetPointerParameter(ctx, JS_GetPropertyStr(ctx, this_val, JS_HIDDEN_SYMBOL("__native_handle")));
+    js_object_type handle = JS_GetPropertyStr(ctx, this_val, JS_HIDDEN_SYMBOL("__native_handle"));
+    void *window_ptr = _JS_GetPointerParameter(ctx, handle);
+    JS_FreeValue(ctx, handle);
 #endif
     if (window_ptr)
         ui_window_top(window_ptr);
@@ -819,7 +894,9 @@ JS_C_FUNCTION(native_ui_window_content) {
         duk_pop(ctx);
     }
 #else
-    void *window_ptr = _JS_GetPointerParameter(ctx, JS_GetPropertyStr(ctx, this_val, JS_HIDDEN_SYMBOL("__native_handle")));
+    js_object_type handle = JS_GetPropertyStr(ctx, this_val, JS_HIDDEN_SYMBOL("__native_handle"));
+    void *window_ptr = _JS_GetPointerParameter(ctx, handle);
+    JS_FreeValue(ctx, handle);
     if (window_ptr) {
         if (JS_ParameterCount(ctx) > 0)
             ui_window_set_content(window_ptr, JS_GetAsStringParameter(ctx, 0));
@@ -845,7 +922,9 @@ JS_C_FUNCTION(native_ui_window_js) {
         duk_pop(ctx);
     }
 #else
-    void *window_ptr = _JS_GetPointerParameter(ctx, JS_GetPropertyStr(ctx, this_val, JS_HIDDEN_SYMBOL("__native_handle")));
+    js_object_type handle = JS_GetPropertyStr(ctx, this_val, JS_HIDDEN_SYMBOL("__native_handle"));
+    void *window_ptr = _JS_GetPointerParameter(ctx, handle);
+    JS_FreeValue(ctx, handle);
     if (window_ptr) {
         if (JS_ParameterCount(ctx) > 0)
             ui_js(window_ptr, JS_GetAsStringParameter(ctx, 0));
@@ -867,7 +946,9 @@ JS_C_FUNCTION(native_ui_window_execute) {
     void *window_ptr = duk_get_pointer_default(ctx, -1, NULL);
     duk_pop_2(ctx);
 #else
-    void *window_ptr = _JS_GetPointerParameter(ctx, JS_GetPropertyStr(ctx, this_val, JS_HIDDEN_SYMBOL("__native_handle")));
+    js_object_type handle = JS_GetPropertyStr(ctx, this_val, JS_HIDDEN_SYMBOL("__native_handle"));
+    void *window_ptr = _JS_GetPointerParameter(ctx, handle);
+    JS_FreeValue(ctx, handle);
 #endif
     if (window_ptr) {
         const char *arguments[0x80];
@@ -905,7 +986,9 @@ JS_C_FUNCTION(native_ui_window_is_opened) {
     void *window_ptr = duk_get_pointer_default(ctx, -1, NULL);
     duk_pop_2(ctx);
 #else
-    void *window_ptr = _JS_GetPointerParameter(ctx, JS_GetPropertyStr(ctx, this_val, JS_HIDDEN_SYMBOL("__native_handle")));
+    js_object_type handle = JS_GetPropertyStr(ctx, this_val, JS_HIDDEN_SYMBOL("__native_handle"));
+    void *window_ptr = _JS_GetPointerParameter(ctx, handle);
+    JS_FreeValue(ctx, handle);
 #endif
     JS_RETURN_BOOLEAN(ctx, (window_ptr != 0));
 }
@@ -999,7 +1082,7 @@ JS_C_FUNCTION(native_window) {
     duk_pop(ctx);
     return 1;
 #else
-    JS_ObjectSetObject(ctx, global_stash(ctx), wnd_buffer, obj_id);
+    JS_ObjectSetObject(ctx, global_stash(ctx), wnd_buffer, JS_DupValue(ctx, obj_id));
     JS_RETURN_OBJECT(ctx, obj_id);
 #endif
 
@@ -1019,12 +1102,16 @@ void helper_notify(JS_CONTEXT ctx, const char *object, const char *event_name) {
     }
     duk_pop(ctx);
 #else
-    js_object_type obj = JS_GetPropertyStr(ctx, JS_GetGlobalObject(ctx), object);
+    js_object_type global_object = JS_GetGlobalObject(ctx);
+    js_object_type obj = JS_GetPropertyStr(ctx, global_object, object);
     if (JS_IsObject(obj)) {
         js_object_type function_obj = JS_GetPropertyStr(ctx, obj, event_name);
         if (JS_IsFunction(ctx, function_obj))
             JS_FreeValue(ctx, JS_Call(ctx, function_obj, obj, 0, NULL));
+        JS_FreeValue(ctx, function_obj);
     }
+    JS_FreeValue(ctx, obj);
+    JS_FreeValue(ctx, global_object);
 #endif
 }
 
@@ -1120,9 +1207,12 @@ static char *duk_push_string_file_raw(JS_CONTEXT ctx, const char *path, const ch
                 duk_put_prop_string(ctx, -2, "path");
             duk_pop_2(ctx);
 #else
-            js_object_type obj = JS_GetPropertyStr(ctx, JS_GetGlobalObject(ctx), "module");
+            js_object_type global_object = JS_GetGlobalObject(ctx);
+            js_object_type obj = JS_GetPropertyStr(ctx, global_object, "module");
             JS_ObjectSetString(ctx, obj, "filename", js_path);
             _push_dirname(ctx, obj, "path", js_path);
+            JS_FreeValue(ctx, obj);
+            JS_FreeValue(ctx, global_object);
 #endif
         }
     }
@@ -1360,14 +1450,20 @@ JS_C_FUNCTION(native_require) {
 
     return 1;
 #else
+    js_object_type global_object = JS_GetGlobalObject(ctx);
     js_object_type loaded_modules = JS_GetPropertyStr(ctx, global_stash(ctx), "loaded_modules");
     if (module_id) {
         js_object_type mod = JS_GetPropertyStr(ctx, loaded_modules, module_id);
-        if (!JS_IsUndefined(mod))
-            return JS_GetPropertyStr(ctx, mod, "exports");
+        if (!JS_IsUndefined(mod)) {
+            js_object_type exp = JS_GetPropertyStr(ctx, mod, "exports");
+            JS_FreeValue(ctx, mod);
+            return exp;
+        }
+        JS_FreeValue(ctx, mod);
     }
 
-    js_object_type parent_module = JS_GetPropertyStr(ctx, JS_GetGlobalObject(ctx), "module");
+    js_object_type parent_module = JS_GetPropertyStr(ctx, global_object, "module");
+    js_object_type parent_exports = JS_GetPropertyStr(ctx, parent_module, "exports");
 
     const char *filename = JS_GetStringParameter(ctx, 0);
     js_object_type module = JS_NewClassObject(ctx, "Module");
@@ -1375,19 +1471,20 @@ JS_C_FUNCTION(native_require) {
     JS_ObjectSetString(ctx, module, "id", module_id);
     JS_ObjectSetString(ctx, module, "filename", module_id);
     _push_dirname(ctx, module, "path", module_id);
-    JS_ObjectSetObject(ctx, module, "parent", parent_module);
+    JS_ObjectSetObject(ctx, module, "parent", JS_DupValue(ctx, parent_module));
 
     JS_ObjectSetBoolean(ctx, module, "loaded", 0);
     JS_SetPropertyStr(ctx, module, "children", JS_NewArray(ctx));
     js_object_type exports_obj = JS_NewPlainObject(ctx);
-    JS_ObjectSetObject(ctx, module, "exports", exports_obj);   
+    JS_ObjectSetObject(ctx, module, "exports", JS_DupValue(ctx, exports_obj));
     JS_ObjectSetFunction(ctx, module, "require", native_require, 1);
 
-    JS_ObjectSetObject(ctx, JS_GetGlobalObject(ctx), "exports", exports_obj);
+    JS_ObjectSetObject(ctx, global_object, "exports", exports_obj);
 
-    JS_ObjectSetObject(ctx, loaded_modules, module_id, module);
+    JS_ObjectSetObject(ctx, loaded_modules, module_id, JS_DupValue(ctx, module));
+    JS_FreeValue(ctx, loaded_modules);
 
-    JS_ObjectSetObject(ctx, JS_GetGlobalObject(ctx), "module", module);
+    JS_ObjectSetObject(ctx, global_object, "module", JS_DupValue(ctx, module));
     if (!builtin_module_lookup(ctx, module_id)) {
 #ifdef NO_IO
         JS_Error(ctx, "no sourcecode");
@@ -1398,12 +1495,21 @@ JS_C_FUNCTION(native_require) {
     }
     JS_ObjectSetBoolean(ctx, module, "loaded", 1);
    
-    JS_SetPropertyUint32(ctx, JS_GetPropertyStr(ctx, parent_module, "children"), _JS_GetIntParameter(ctx, JS_GetPropertyStr(ctx, parent_module, "length")), module);
+    js_object_type len = JS_GetPropertyStr(ctx, parent_module, "length");
+    js_object_type children = JS_GetPropertyStr(ctx, parent_module, "children");
+    JS_SetPropertyUint32(ctx, children, _JS_GetIntParameter(ctx, len), JS_DupValue(ctx, module));
+    JS_FreeValue(ctx, children);
+    JS_FreeValue(ctx, len);
 
-    JS_ObjectSetObject(ctx, JS_GetGlobalObject(ctx), "module", parent_module);
-    JS_ObjectSetObject(ctx, JS_GetGlobalObject(ctx), "exports", JS_GetPropertyStr(ctx, parent_module, "exports"));
+    JS_ObjectSetObject(ctx, global_object, "module", parent_module);
+    JS_ObjectSetObject(ctx, global_object, "exports", parent_exports);
 
-    return JS_GetPropertyStr(ctx, module, "exports");
+    exports_obj = JS_GetPropertyStr(ctx, module, "exports");
+
+    JS_FreeValue(ctx, module);
+    JS_FreeValue(ctx, global_object);
+
+    return exports_obj;
 #endif
 }
 
@@ -1800,9 +1906,9 @@ void duk_run_file(JS_CONTEXT ctx, const char *path) {
 	    duk_put_prop_string(ctx, -2, "module");
     duk_pop(ctx);
 #else
+    js_object_type global_object = JS_GetGlobalObject(ctx);
     js_object_type obj = JS_NewClassObject(ctx, "Module");
-    JS_ObjectSetObject(ctx, JS_GetGlobalObject(ctx), "module", obj);
-
+    JS_ObjectSetObject(ctx, global_object, "module", obj);
     JS_ObjectSetString(ctx, obj, "id", path);
     JS_ObjectSetString(ctx, obj, "filename", path);
     _push_dirname(ctx, obj, "path", path);
@@ -1810,10 +1916,10 @@ void duk_run_file(JS_CONTEXT ctx, const char *path) {
     JS_ObjectSetBoolean(ctx, obj, "loaded", 0);
     JS_SetPropertyStr(ctx, obj, "children", JS_NewArray(ctx));
     js_object_type exports_obj = JS_NewPlainObject(ctx);
-    JS_ObjectSetObject(ctx, obj, "exports", exports_obj);   
+    JS_ObjectSetObject(ctx, obj, "exports", JS_DupValue(ctx, exports_obj));
     JS_ObjectSetFunction(ctx, obj, "require", native_require, 1);
-
-    JS_ObjectSetObject(ctx, JS_GetGlobalObject(ctx), "exports", exports_obj);
+    JS_ObjectSetObject(ctx, global_object, "exports", exports_obj);
+    JS_FreeValue(ctx, global_object);
 #endif
 
     if (!builtin_module_lookup(ctx, path)) {
@@ -1949,7 +2055,9 @@ void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *
     duk_push_string(ctx, "v1.0.0");
     duk_put_prop_string(ctx, -2, "version");
 #else
-    js_object_type process = JS_GetPropertyStr(ctx, JS_GetGlobalObject(ctx), "process");
+    js_object_type global_object = JS_GetGlobalObject(ctx);
+
+    js_object_type process = JS_GetPropertyStr(ctx, global_object, "process");
     js_object_type arr = JS_NewArray(ctx);
     js_object_type arrExec = JS_NewArray(ctx);
 
@@ -1961,7 +2069,6 @@ void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *
 
     JS_SetPropertyStr(ctx, process, "argv", arr);
     JS_SetPropertyStr(ctx, process, "execArgv", arrExec);
-
     if ((argv) && (argv[0]))
         JS_ObjectSetString(ctx, process, "execPath", argv[0]);
 
@@ -1988,6 +2095,9 @@ void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *
     JS_SetPropertyStr(ctx, process, "env", arrEnv);
 
     JS_ObjectSetString(ctx, process, "version", "unix");
+
+    JS_FreeValue(ctx, process);
+    JS_FreeValue(ctx, global_object);
 #endif
 
     JS_EvalSimple(ctx, "process.constants = {SIGHUP: 1, SIGINT: 2, SIGQUIT: 3, SIGILL: 4, SIGTRAP: 5, SIGABRT: 6, SIGBUS:  7, SIGFPE: 8, SIGKILL: 9, SIGUSR1: 10, SIGSEGV: 11, SIGUSR2: 12, SIGPIPE: 13, SIGALRM: 14, SIGTERM: 15, "
@@ -2002,7 +2112,7 @@ void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *
 #ifdef WITH_DUKTAPE
     JS_EvalSimple(ctx, "global.gc = Duktape.gc; global.__destructor = Duktape.fin;");
 #else
-    JS_EvalSimple(ctx, "global.gc = std.gc; global.__destructor = function() { /* to do */ };");
+    JS_EvalSimple(ctx, "global.__destructor = function() { /* to do */ };");
 #endif
     JS_EvalSimple(ctx, JS_MODULE);
     JS_EvalSimple(ctx, JS_WINDOW);

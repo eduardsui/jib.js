@@ -587,6 +587,7 @@ static void io_get_object(JS_CONTEXT ctx, int fd, const char *method) {
         if (JS_IsFunction(ctx, function_obj))
             JS_FreeValue(ctx, JS_Call(ctx, function_obj, obj, 0, NULL));
     }
+    JS_FreeValue(ctx, obj);
 #endif
 }
 
@@ -625,7 +626,7 @@ JS_C_FUNCTION(js_poll) {
             duk_put_prop_string(ctx, -2, func_buffer);
         duk_pop_2(ctx);
 #else
-        JS_ObjectSetObject(ctx, global_stash(ctx), func_buffer, JS_GetObjectParameter(ctx, 2));
+        JS_ObjectSetObject(ctx, global_stash(ctx), func_buffer, JS_DupValue(ctx, JS_GetObjectParameter(ctx, 2)));
 #endif
     }
     JS_RETURN_NUMBER(ctx, err);
@@ -647,7 +648,9 @@ JS_C_FUNCTION(js_unpoll) {
         duk_del_prop(ctx, -2);
         duk_pop_2(ctx);
 #else
-        JS_DeleteProperty(ctx, global_stash(ctx), JS_ValueToAtom(ctx, JS_GetPropertyStr(ctx, global_stash(ctx), func_buffer)), 0);
+        js_object_type obj = JS_GetPropertyStr(ctx, global_stash(ctx), func_buffer);
+        JS_DeleteProperty(ctx, global_stash(ctx), JS_ValueToAtom(ctx, obj), 0);
+        JS_FreeValue(ctx, obj);
 #endif
     }
     JS_RETURN_NUMBER(ctx, err);
