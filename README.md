@@ -18,13 +18,19 @@ Compiling
 ----------
 
 Linux & BSD:
-`$ ./build_unix.sh`
+```
+$ ./build_unix.sh
+```
 
 Windows:
-`build_win32.bat`
+```
+build_win32.bat
+```
 
 macOS:
-`$ ./build_macOS.sh`
+```
+$ ./build_macOS.sh
+```
 
 esp32:
 ```
@@ -36,7 +42,9 @@ Examples
 ----------
 
 Run a simple web server on localhost on port 8080:
-`$ ./jib examples/server.js`
+```
+$ ./jib examples/server.js
+```
 
 Simple hello world (from node.js website):
 ```
