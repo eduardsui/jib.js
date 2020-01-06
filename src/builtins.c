@@ -127,7 +127,7 @@ void log_log(int level, const char *file, int line, const char *data) {
     }
 }
 
-int native_line_number(JS_CONTEXT ctx, duk_int_t level, char *func_name, int max_len) {
+int native_line_number(JS_CONTEXT ctx, int level, char *func_name, int max_len) {
     if (!ctx)
         ctx = js_ctx;
     if (!ctx) {
@@ -224,7 +224,7 @@ static int setImmediate_callback(struct doops_loop *loop) {
     return 1;
 }
 
-static void registerCallback(JS_CONTEXT ctx, const char *prefix, doop_callback callback) {
+JS_C_FUNCTION_FORWARD(registerCallback, const char *prefix, doop_callback callback) {
     char func_buffer[50];
     // callbackIndex must be 1-based (to correctly work with loop_remove)
     JS_ParameterFunction(ctx, 0);
@@ -245,12 +245,11 @@ static void registerCallback(JS_CONTEXT ctx, const char *prefix, doop_callback c
     loop_add(main_loop, callback, (int)ms, (void *)(uintptr_t)callbackIndex);
     duk_pop_2(js_ctx);
 
-    duk_push_number(ctx, callbackIndex);
+    JS_RETURN_NUMBER(ctx, callbackIndex);
 }
 
 JS_C_FUNCTION(setInterval) {
-    registerCallback(ctx, "interval", setInterval_callback);
-	return 1;
+    return registerCallback(JS_C_FORWARD_PARAMETERS, "interval", setInterval_callback);
 }
 
 JS_C_FUNCTION(clearInterval) {
@@ -270,8 +269,7 @@ JS_C_FUNCTION(clearInterval) {
 }
 
 JS_C_FUNCTION(setTimeout) {
-    registerCallback(ctx, "timeout", setTimeout_callback);
-	return 1;
+    return registerCallback(JS_C_FORWARD_PARAMETERS, "timeout", setTimeout_callback);
 }
 
 JS_C_FUNCTION(clearTimeout) {
@@ -392,7 +390,7 @@ JS_C_FUNCTION(native_error) {
 	JS_RETURN_NOTHING(ctx);
 }
 
-void register_global_function(JS_CONTEXT ctx, const char *func_name, js_c_function function, duk_idx_t nargs) {
+void register_global_function(JS_CONTEXT ctx, const char *func_name, js_c_function function, int nargs) {
     if (!ctx)
         ctx = js_ctx;
     if (!ctx)
@@ -489,7 +487,7 @@ static http_parser_settings settings_null = {
     ,.on_chunk_complete = 0
 };
 
-int parseHeader(JS_CONTEXT ctx, int type) {
+JS_C_FUNCTION_FORWARD(parseHeader, int type) {
     if (JS_ParameterCount(ctx) == 0)
         JS_RETURN_NOTHING(ctx);
 
@@ -538,15 +536,19 @@ int parseHeader(JS_CONTEXT ctx, int type) {
             JS_ObjectSetNumber(ctx, obj_id, "contentLength", parser.content_length);
         JS_ObjectSetNumber(ctx, obj_id, "httpVersion", (double)parser.http_major + ((double)parser.http_minor)/10);
     }
+#ifdef WITH_QUICKJS
+    return obj_id;
+#else
     return 1;
+#endif
 }
 
 JS_C_FUNCTION(parseRequest) {
-    return parseHeader(ctx, HTTP_REQUEST);
+    return parseHeader(JS_C_FORWARD_PARAMETERS, HTTP_REQUEST);
 }
 
 JS_C_FUNCTION(parseResponse) {
-    return parseHeader(ctx, HTTP_RESPONSE);
+    return parseHeader(JS_C_FORWARD_PARAMETERS, HTTP_RESPONSE);
 }
 #endif
 

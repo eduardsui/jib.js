@@ -396,13 +396,13 @@ JS_C_FUNCTION(js_recvfrom) {
     ssize_t bytes_read = recvfrom(JS_GetIntParameter(ctx, 0), (unsigned char *)buf + offset, nbytes - offset, 0, &src_addr, &addrlen);
 
     if ((bytes_read >= 0) && (JS_ParameterCount(ctx) > 4)) {
+        JS_ParameterObject(ctx, 4);
         char ip_buf[0x100];
         int port = 0;
         char *str = get_ip_str(&src_addr, ip_buf, sizeof(ip_buf), &port);
-        JS_ObjectSetString(ctx, 4, "addr", str ? str : "");
-        JS_ObjectSetNumber(ctx, 4, "port", port);
-
-        duk_pop(ctx);
+        js_object_type obj_id = JS_GetObjectParameter(ctx, 4);
+        JS_ObjectSetString(ctx, obj_id, "addr", str ? str : "");
+        JS_ObjectSetNumber(ctx, obj_id, "port", port);
     }
 
     JS_RETURN_NUMBER(ctx, bytes_read);
@@ -540,7 +540,7 @@ JS_C_FUNCTION(js_socketinfo) {
 
     peerlen = sizeof(addr);
     if (getsockname(fd, (struct sockaddr *)&addr, &peerlen))
-        return 1;
+        JS_RETURN_OBJECT(ctx, obj);
 
     ip = 0;
     if (addr.ss_family == AF_INET) {
@@ -560,7 +560,7 @@ JS_C_FUNCTION(js_socketinfo) {
     JS_ObjectSetNumber(ctx, obj, "local_port", port);
     JS_ObjectSetNumber(ctx, obj, "local_family", addr.ss_family);
 
-    return 1;
+    JS_RETURN_OBJECT(ctx, obj);
 }
 
 
@@ -736,16 +736,22 @@ JS_C_FUNCTION(js_tls_get_write_buffer) {
     const unsigned char *buffer = tls_get_write_buffer(context, &outlen);
     if ((!outlen) || (!buffer))
         JS_RETURN_NOTHING(ctx);
-
+#ifdef WITH_DUKTAPE
     char *js_buf = duk_push_fixed_buffer(ctx, outlen);
     if (!js_buf)
         JS_RETURN_NOTHING(ctx);
 
     memcpy(js_buf, buffer, outlen);
     duk_push_buffer_object(ctx, -1, 0, outlen, DUK_BUFOBJ_NODEJS_BUFFER);
-    
     tls_buffer_clear(context);
+
     return 1;
+#else
+    JSValue val = JS_NewArrayBufferCopy(ctx, (const uint8_t *)buffer, outlen);
+    tls_buffer_clear(context);
+
+    return val;
+#endif
 }
 
 JS_C_FUNCTION(js_tls_write) {

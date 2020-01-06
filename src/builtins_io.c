@@ -196,8 +196,8 @@ JS_C_FUNCTION(js_stat) {
     if (err)
         JS_RETURN_NOTHING(ctx);
     
-    stat_to_js(ctx, &st_buf);
-	return 1;
+    js_object_type obj_id = stat_to_js(ctx, &st_buf);
+	JS_RETURN_OBJECT(ctx, obj_id);
 }
 
 JS_C_FUNCTION(js_fstat) {
@@ -207,8 +207,8 @@ JS_C_FUNCTION(js_fstat) {
     if (err)
         JS_RETURN_NOTHING(ctx);
     
-    stat_to_js(ctx, &st_buf);
-	return 1;
+    js_object_type obj_id = stat_to_js(ctx, &st_buf);
+	JS_RETURN_OBJECT(ctx, obj_id);
 }
 
 JS_C_FUNCTION(js_chmod) {
@@ -251,8 +251,8 @@ JS_C_FUNCTION(js_lstat) {
     if (err)
         JS_RETURN_NOTHING(ctx);
     
-    stat_to_js(ctx, &st_buf);
-	return 1;
+    js_object_type obj_id = stat_to_js(ctx, &st_buf);
+	JS_RETURN_OBJECT(ctx, obj_id);
 }
 
 JS_C_FUNCTION(js_fchmod) {
