@@ -12,9 +12,6 @@ struct builtin_module {
 
 const static struct builtin_module builtin_modules[] = {
 #ifndef NO_BUILTIN_MODULES
-    #ifdef ESP32
-    // "_stream_duplex" not supported on ESP32
-    #else
     #ifdef NO_COMPRESSION
     {"_stream_duplex",
         "'use strict';\nmodule.exports = Duplex;\nvar util = require('util');\nvar Readab" \
@@ -29,7 +26,7 @@ const static struct builtin_module builtin_modules[] = {
         " && options.allowHalfOpen === false)\nthis.allowHalfOpen = false;\nthis.once('en" \
         "d', onend);\n}\nfunction onend() {\nif (this.allowHalfOpen || this._writableStat" \
         "e.ended)\nreturn;\nprocess.nextTick(this.end.bind(this));\n}",
-    0, 0, 0},
+    1045, 1045, 0},
     #else
     {"_stream_duplex",
         "\x78\x01\x75\x93\x4d\x4f\xc3\x30\x0c\x86\xef\xf9\x15\xe1\x42\x53\x81\x22\xee\x65" \
@@ -54,10 +51,6 @@ const static struct builtin_module builtin_modules[] = {
         "\xb8",
     389, 910, 1},
     #endif
-    #endif
-    #ifdef ESP32
-    // "_stream_passthrough" not supported on ESP32
-    #else
     #ifdef NO_COMPRESSION
     {"_stream_passthrough",
         "'use strict';\nmodule.exports = PassThrough;\nvar Transform = require('_stream_t" \
@@ -65,7 +58,7 @@ const static struct builtin_module builtin_modules[] = {
         "\nfunction PassThrough(options) {\nif (!(this instanceof PassThrough))\nreturn n" \
         "ew PassThrough(options);\nTransform.call(this, options);\n}\nPassThrough.prototy" \
         "pe._transform = function(chunk, encoding, cb) {\ncb(null, chunk);\n};",
-    0, 0, 0},
+    431, 431, 0},
     #else
     {"_stream_passthrough",
         "\x78\x01\x6d\x8f\x4d\x6e\xc4\x20\x0c\x85\xf7\x9c\xc2\x5d\x85\x48\x51\x2e\x10\xf5" \
@@ -81,10 +74,6 @@ const static struct builtin_module builtin_modules[] = {
         "\x7f\xb1\x54\x52\xaa\x63\xe3\xcd\x75\xf9\x06\x22\xef\x87\x0c",
     216, 377, 1},
     #endif
-    #endif
-    #ifdef ESP32
-    // "_stream_readable" not supported on ESP32
-    #else
     #ifdef NO_COMPRESSION
     {"_stream_readable",
         "'use strict';\nmodule.exports = Readable;\nReadable.ReadableState = ReadableStat" \
@@ -261,7 +250,7 @@ const static struct builtin_module builtin_modules[] = {
         "e.ended = true;\nprocess.nextTick(function() {\nif (!state.endEmitted && state.l" \
         "ength === 0) {\nstate.endEmitted = true;\nstream.readable = false;\nstream.emit(" \
         "'end');\n}\n});\n}\n}",
-    0, 0, 0},
+    15428, 15428, 0},
     #else
     {"_stream_readable",
         "\x78\x01\xb5\x1b\x6b\x6f\x1b\xc7\xf1\x3b\x7f\xc5\xe9\x4b\x44\xd6\x12\x2b\xa7\x45" \
@@ -435,10 +424,6 @@ const static struct builtin_module builtin_modules[] = {
         "\xac\xe0\xdf\xff\x05\x8c\x44\x98\x5f",
     3422, 13290, 1},
     #endif
-    #endif
-    #ifdef ESP32
-    // "_stream_transform" not supported on ESP32
-    #else
     #ifdef NO_COMPRESSION
     {"_stream_transform",
         "'use strict';\nmodule.exports = Transform;\nvar Duplex = require('_stream_duplex" \
@@ -473,7 +458,7 @@ const static struct builtin_module builtin_modules[] = {
         ".length)\nthrow new Error('calling transform done when ws.length != 0');\nif (ts" \
         ".transforming)\nthrow new Error('calling transform done when still transforming'" \
         ");\nreturn stream.push(null);\n}",
-    0, 0, 0},
+    2797, 2797, 0},
     #else
     {"_stream_transform",
         "\x78\x01\x95\x55\x4d\x6f\xdb\x30\x0c\xbd\xfb\x57\xa8\x97\xda\x01\x02\x63\xf7\xac" \
@@ -516,10 +501,6 @@ const static struct builtin_module builtin_modules[] = {
         "\x82\x6e\x84\x9b\xf2\x60\xbe\x6d\xf4\x41\x24\xb2\xff\x01\xa1\xda\x5a\x4f",
     769, 2424, 1},
     #endif
-    #endif
-    #ifdef ESP32
-    // "_stream_writable" not supported on ESP32
-    #else
     #ifdef NO_COMPRESSION
     {"_stream_writable",
         "'use strict';\nmodule.exports = Writable;\nWritable.WritableState = WritableStat" \
@@ -626,7 +607,7 @@ const static struct builtin_module builtin_modules[] = {
         "\n}\nreturn need;\n}\nfunction endWritable(stream, state, cb) {\nstate.ending = " \
         "true;\nfinishMaybe(stream, state);\nif (cb) {\nif (state.finished)\nprocess.next" \
         "Tick(cb);\nelse\nstream.once('finish', cb);\n}\nstate.ended = true;\n}",
-    0, 0, 0},
+    9244, 9244, 0},
     #else
     {"_stream_writable",
         "\x78\x01\xad\x19\xdb\x6e\xdb\x36\xf4\xdd\x5f\xa1\xbc\xcc\xf6\xe2\x78\xed\x30\x0c" \
@@ -735,7 +716,6 @@ const static struct builtin_module builtin_modules[] = {
         "\xfb\x7a\x0c\x94\xd8\x1b\x17\x22\xcf\x1c\x34\x66\xae\xbf\x14\xe1\x6a\xf8\xcd\xc0" \
         "\t\xe7\x3a\x2a\x6f\x37\xe8\xb8\xb8\xfb\x0f\x14\x3a\xce\x52",
     2119, 7984, 1},
-    #endif
     #endif
     #ifdef NO_COMPRESSION
     {"crypto",
@@ -925,7 +905,7 @@ const static struct builtin_module builtin_modules[] = {
         "process();return this._hash},clone:function(){var a=g.clone.call(this);a._hash=t" \
         "his._hash.clone();return a}});s.SHA256=g._createHelper(f);s.HmacSHA256=g._create" \
         "HmacHelper(f)})(Math);",
-    0, 0, 0},
+    16494, 16494, 0},
     #else
     {"crypto",
         "\x78\x01\xed\x5b\x5b\x73\xdb\xb8\x92\x7e\xd7\xaf\xf0\xa4\x76\x5c\xa4\x45\xcb\x22" \
@@ -1236,7 +1216,7 @@ const static struct builtin_module builtin_modules[] = {
         "ine || {};\nrecline.Backend = recline.Backend || {};\nrecline.Backend.CSV = CSV;" \
         "\nif (typeof module !== 'undefined' && module.exports) {\nmodule.exports = CSV;\n" \
         "}",
-    0, 0, 0},
+    7045, 7045, 0},
     #else
     {"csv",
         "\x78\x01\xad\x58\x5b\x6f\xdb\x36\x14\x7e\xd7\xaf\x60\x85\xa2\x91\x13\x57\x4e\xdf" \
@@ -1538,7 +1518,7 @@ const static struct builtin_module builtin_modules[] = {
         ".hcl = hcl;\nexports.hsl = hsl;\nexports.lab = lab;\nexports.lch = lch;\nexports" \
         ".rgb = rgb;\nObject.defineProperty(exports, '__esModule', { value: true });\n}))" \
         ";",
-    0, 0, 0},
+    17644, 17644, 0},
     #else
     {"d3-color",
         "\x78\x01\xc5\x5b\xff\x73\xdb\xc6\xb1\xff\x9d\x7f\x05\xa2\x34\x31\x28\x51\x14\0\x82" \
@@ -1969,7 +1949,7 @@ const static struct builtin_module builtin_modules[] = {
         "olateTransformSvg;\nexports.interpolateZoom = zoom;\nexports.piecewise = piecewi" \
         "se;\nexports.quantize = quantize;\nObject.defineProperty(exports, '__esModule', " \
         "{ value: true });\n}));",
-    0, 0, 0},
+    15703, 15703, 0},
     #else
     {"d3-interpolate",
         "\x78\x01\xd5\x5b\x6d\x73\xdb\x36\x12\xfe\xae\x5f\x81\x78\xae\x35\x15\x4b\xb4\xe5" \
@@ -2305,7 +2285,7 @@ const static struct builtin_module builtin_modules[] = {
         "\n}\nfunction unwrapListeners(arr) {\nvar ret = new Array(arr.length);\nfor (var" \
         " i = 0; i < ret.length; ++i) {\nret[i] = arr[i].listener || arr[i];\n}\nreturn r" \
         "et;\n}",
-    0, 0, 0},
+    10788, 10788, 0},
     #else
     {"events",
         "\x78\x01\xb5\x5a\x5b\x6f\x1b\xb7\x12\x7e\xdf\x5f\xc1\x04\x07\x95\x0c\xcb\x5b\xe7" \
@@ -19207,7 +19187,7 @@ const static struct builtin_module builtin_modules[] = {
         "ull;\nthis.emit('close');\nreturn true;\n};\nSyncWriteStream.prototype.destroySo" \
         "on = SyncWriteStream.prototype.destroy;\nglobal.__destructor(module.exports, mod" \
         "ule.exports.finalize);",
-    0, 0, 0},
+    26296, 26296, 0},
     #else
     {"fs",
         "\x78\x01\xcd\x1c\x6b\x53\xdb\x48\xf2\xbb\x7f\x85\xc2\x87\xc5\x6c\x1c\x87\x90\x2c" \
@@ -19522,7 +19502,7 @@ const static struct builtin_module builtin_modules[] = {
         "net.Server);\nutil.inherits(http.IncomingMessage, EventEmitter);\nutil.inherits(" \
         "http.IncomingMessage, Stream.Stream);\nutil.inherits(http.ServerResponse, EventE" \
         "mitter);\nutil.inherits(http.ServerResponse, Stream.Writable);",
-    0, 0, 0},
+    7459, 7459, 0},
     #else
     {"http",
         "\x78\x01\xcd\x59\xcd\x6e\xdc\x36\x10\xbe\xeb\x29\x68\x1d\x6a\t\x96\xd5\x75\x52\x14" \
@@ -19625,7 +19605,7 @@ const static struct builtin_module builtin_modules[] = {
         "ts = function inherits(ctor, superCtor) {\nif (superCtor) {\nctor.super_ = super" \
         "Ctor\nvar TempCtor = function () {}\nTempCtor.prototype = superCtor.prototype\nc" \
         "tor.prototype = new TempCtor()\nctor.prototype.constructor = ctor\n}\n}\n}",
-    0, 0, 0},
+    614, 614, 0},
     #else
     {"inherits",
         "\x78\x01\xb5\x50\xbb\x6e\xc3\x30\x0c\xdc\xf5\x15\xdc\x62\x03\x86\x3f\x20\x85\xa7" \
@@ -20808,7 +20788,7 @@ const static struct builtin_module builtin_modules[] = {
         "defined\" && self || typeof window !== \"undefined\" && window || typeof global " \
         "!== \"undefined\" && global || Function('return typeof this === \"object\" && th" \
         "is.content')() || Function('return this')()));",
-    0, 0, 0},
+    103522, 103522, 0},
     #else
     {"jspdf",
         "\x78\x01\xed\xbd\xe9\x62\x1b\x47\x92\x2e\xfa\x9f\x4f\x51\x8d\x99\x1e\x80\x16\x08" \
@@ -23006,7 +22986,7 @@ const static struct builtin_module builtin_modules[] = {
         "= Lexer_1.lex;\nmarked.InlineLexer = InlineLexer_1;\nmarked.inlineLexer = Inline" \
         "Lexer_1.output;\nmarked.Slugger = Slugger_1;\nmarked.parse = marked;\nvar marked" \
         "_1 = marked;\nreturn marked_1;\n})));",
-    0, 0, 0},
+    45012, 45012, 0},
     #else
     {"marked",
         "\x78\x01\xed\x7d\x79\x7b\xdb\x48\x8e\xf7\xff\xfe\x14\xb4\x93\x89\x0e\xeb\x88\x93" \
@@ -24939,7 +24919,7 @@ const static struct builtin_module builtin_modules[] = {
         "t type=\"time\" step=\"0.001\" />\nWEEK: 'GGGG-[W]WW',                          " \
         "   // <input type=\"week\" />\nMONTH: 'YYYY-MM'                                /" \
         "/ <input type=\"month\" />\n};\nreturn hooks;\n})));",
-    0, 0, 0},
+    119201, 119201, 0},
     #else
     {"moment",
         "\x78\x01\xed\xbd\x7d\x5b\x5c\xb7\xb2\x27\xfa\x3f\x9f\xa2\x73\x26\xd9\x34\xe6\x1d" \
@@ -26297,7 +26277,7 @@ const static struct builtin_module builtin_modules[] = {
         "unction(e,t,r,n){var i=mustache.render(e,t,r);if(!isFunction(n))return i;n(i)},m" \
         "ustache.escape=escapeHtml,mustache.Scanner=Scanner,mustache.Context=Context,must" \
         "ache.Writer=Writer,module.exports=mustache;",
-    0, 0, 0},
+    7618, 7618, 0},
     #else
     {"mustache",
         "\x78\x01\xa5\x58\x5b\x73\xe3\xb6\x15\xfe\x2b\x14\x37\x23\x93\x11\x56\x96\x77\xdb" \
@@ -26567,7 +26547,7 @@ const static struct builtin_module builtin_modules[] = {
         "Listener) {\nreturn createConnection(options, connectionListener);\n}\n}\nutil.i" \
         "nherits(net.Socket, Stream.Duplex);\nutil.inherits(net.Server, EventEmitter);\nm" \
         "odule.exports = net;",
-    0, 0, 0},
+    12047, 12047, 0},
     #else
     {"net",
         "\x78\x01\xed\x1a\x6b\x6f\x1b\x37\xf2\xbb\x7e\xc5\x5a\x1f\x1a\t\x51\x74\x8e\x9b\xfa" \
@@ -27196,7 +27176,7 @@ const static struct builtin_module builtin_modules[] = {
         "indFunction(f, self)\n{\nreturn function() { f.apply(self, arguments); };\n}\nfu" \
         "nction isFunction(func)\n{\nreturn typeof func === 'function';\n}\nreturn Papa;\n" \
         "}));",
-    0, 0, 0},
+    44262, 44262, 0},
     #else
     {"papaparse",
         "\x78\x01\xcd\x5d\x6d\x73\x1b\xb9\x91\xfe\x1c\xfe\x8a\xf1\xde\xd6\x92\xb2\x69\xca" \
@@ -27760,6 +27740,122 @@ const static struct builtin_module builtin_modules[] = {
     11292, 40242, 1},
     #endif
     #endif
+    #ifdef NO_COMPRESSION
+    {"path",
+        "var Path = {\ndelimiter: \":\",\nsep: \"/\",\nbasename: function(path, ext) {\nv" \
+        "ar base = path.substring(path.replace(/\\\\/g, \"/\").lastIndexOf('/') + 1);\nif" \
+        " ((ext) && (base.lastIndexOf(ext) != -1)) {\nbase = base.substring(0, base.lastI" \
+        "ndexOf(ext));\n}\nreturn base;\n},\ndirname: function(path) {\nreturn path.subst" \
+        "ring(0, path.replace(/\\\\/g, \"/\").lastIndexOf('/'));\n},\nextname: function(p" \
+        "ath) {\nvar idx = Path.basename(path).lastIndexOf('.');\nif (idx < 1)\nreturn \"" \
+        "\";\nreturn Path.basename(path).substring(idx);\n},\nformat: function(pathObject" \
+        ") {\nvar dir = pathObject.dir ? pathObject.dir : \"\";\nvar root = pathObject.ro" \
+        "ot ? pathObject.root : \"\";\nvar base = pathObject.base ? pathObject.base : \"\"" \
+        ";\nvar name = pathObject.name ? pathObject.name : \"\";\nvar ext = pathObject.ex" \
+        "t ? pathObject.ext : \"\";\nvar str = \"\";\nif ((!dir.length) || (!root.length)" \
+        " || (!base.length))\nstr = root;\nvar add_sep = true;\nif ((root.length) && ((ro" \
+        "ot === dir) || (!dir.length))) {\nadd_sep = false;\nif (base.length)\next = \"\"" \
+        ";\n}\nif ((add_sep) && (str.length))\nstr += Path.sep;\nstr += dir;\nif ((add_se" \
+        "p) && (str.length))\nstr += Path.sep;\nstr += base;\nif ((add_sep) && (str.lengt" \
+        "h))\nstr += Path.sep;\nstr += name;\nstr += ext;\nreturn Path.normalize(str);\n}" \
+        ",\nisAbsolute: function(path) {\nif ((!path) || (!path.length))\nreturn false;\n" \
+        "if (path[0] == \"/\")\nreturn true;\nif (path.length > 1) {\nif (path[0] + path[" \
+        "1] == \"\\\\\\\\\")\nreturn true;\nif (path[1] == \":\") {\nvar drive_letter = p" \
+        "ath[0].toUpperCase();\nif ((path[0] >= 'A') && (path[0] <= 'Z'))\nreturn true;\n" \
+        "}\n}\nreturn false;\n},\njoin: function() {\nvar path = \"\";\nfor (var i = 0; i" \
+        " < arguments.length; i++) {\npath += Path.sep;\npath += arguments[i];\n}\nreturn" \
+        " Path.normalize(path);\n},\nnormalize: function(path) {\nif ((!path) || (!path.l" \
+        "ength))\nreturn \".\";\npath = path.replace(/\\\\/g, \"/\");\nvar is_absolute = " \
+        "Path.isAbsolute(path);\nvar add_sep = false;\nif ((is_absolute) && ((process.pla" \
+        "tform !== \"win32\") || (path.length < 2) || (path[1] !== \":\")))\nadd_sep = tr" \
+        "ue;\nvar arr = path.split(\"/\");\npath = \"\";\nvar skip = false;\nfor (var i =" \
+        " arr.length - 1; i >= 0; i --) {\nvar dir = arr[i];\nif (!dir.length)\ncontinue;" \
+        "\nif (dir === \".\")\ncontinue;\nif (dir === \"..\") {\nskip = true;\ncontinue;\n" \
+        "}\nif (skip) {\nskip = false;\ncontinue;\n}\nif (path.length)\npath = dir + Path" \
+        ".sep + path;\nelse\npath = dir;\n}\nif (add_sep)\nreturn Path.sep + path;\nretur" \
+        "n path;\n},\nparse: function(path) {\npath = Path.normalize(path);\nvar root = \"" \
+        "\";\nif ((path.length > 0) && ((path[0] === \"/\") || (path[0] === \"\\\\\")))\n" \
+        "root = \"/\";\nelse\nif ((path.length > 1) && (path[0] !== \"/\") && (path[1] ==" \
+        "= \":\"))\nroot = path.substring(0, 3);\nvar ext = Path.extname(path);\nvar base" \
+        " = Path.basename(path);\nvar obj = {\nroot: root,\ndir: Path.dirname(path),\nbas" \
+        "e: base,\next: ext,\nname: base.substr(0, base.lastIndexOf(ext))\n};\nreturn obj" \
+        ";\n},\nrelative: function(from, to) {\nfrom = Path.resolve(from);\nto = Path.res" \
+        "olve(to);\nvar fromParts = from.split(Path.sep);\nvar toParts = to.split(Path.se" \
+        "p);\nvar length = Math.min(fromParts.length, toParts.length);\nvar samePartsLeng" \
+        "th = length;\nfor (var i = 0; i < length; i++) {\nif (fromParts[i] !== toParts[i" \
+        "]) {\nsamePartsLength = i;\nbreak;\n}\n}\nvar outputParts = [];\nfor (var i = sa" \
+        "mePartsLength; i < fromParts.length; i++)\noutputParts.push('..');\noutputParts " \
+        "= outputParts.concat(toParts.slice(samePartsLength));\nreturn outputParts.join('" \
+        "/');\n},\nresolve: function() {\nvar path = \"\";\nfor (var i = 0; i < arguments" \
+        ".length; i++) {\nif (path.length)\npath += Path.sep;\npath += arguments[i];\n}\n" \
+        "path = Path.normalize(path);\nif (Path.isAbsolute(path))\nreturn path;\nreturn P" \
+        "ath.normalize(process.cwd() + Path.sep + path);\n},\ntoNamespacedPath: function(" \
+        "path) {\nreturn path;\n}\n}\nif (process.platform === \"win32\") {\nPath.delimit" \
+        "er = \";\";\nPath.sep = \"\\\\\";\n}\nmodule.exports = Path;",
+    4430, 4430, 0},
+    #else
+    {"path",
+        "\x78\x01\xad\x57\xc1\x72\xdb\x36\x10\xbd\xf3\x2b\x60\x1d\x62\x6a\x24\x53\x76\x72" \
+        "\x93\xac\x74\x32\x3d\x75\xa6\x6d\x72\xe9\xa5\x76\xc6\x43\x89\x90\x03\x87\x22\x39" \
+        "\x20\xe8\x78\x9a\xf8\xdf\xfb\x76\x01\x90\0\x4d\x65\xd2\x4c\x7d\x31\xb9\xdc\x7d\xbb" \
+        "\x8b\x7d\x78\x80\x1e\x73\x2d\x3e\xe4\xe6\x93\xd8\x8a\xaf\x49\x21\x4b\x75\x54\x46" \
+        "\xea\xb5\x98\xad\x67\xcb\xa4\x95\r\x9e\x56\x78\xda\xe5\xad\xac\xf2\xa3\x5c\x8b\x43" \
+        "\x57\xed\x8d\xaa\xab\xb4\x41\xd4\x52\xc8\x27\x33\x47\xe4\x23\x60\xc8\x07\x30\x64" \
+        "\xcf\xda\x6e\xd7\x1a\xad\xaa\x7b\x76\xcb\xb4\x6c\xca\x7c\x2f\xd3\xd5\xed\xed\xea" \
+        "\x7e\x49\x90\xf3\xac\xcc\x5b\xf3\x5b\x55\xc8\xa7\xf7\x87\xf4\x7c\x75\x3e\x17\x0b" \
+        "\x71\x35\xdf\x24\xea\x20\xd2\x94\x51\x5f\xbd\x12\x29\x61\x46\x9e\xfc\xe5\x6c\x2b" \
+        "\x2e\xae\xe6\x94\xd7\xe5\x64\xb7\x21\xe7\xe5\xd2\x5a\xc6\x81\x80\x7f\x4e\xb4\x34" \
+        "\x9d\xae\xd8\x01\xaf\xcb\xa4\x50\x7a\xa2\x33\x02\x77\x9e\xa3\x86\0\xfe\xc3\x3d\x51" \
+        "\xc2\x65\x82\xd4\x27\x32\xd0\xb2\xa9\xe2\t\x1d\xd0\x0c\x32\xbf\xca\xf6\x7b\x8c\x96" \
+        "\x9d\xbb\xc5\x21\xff\x6b\x2c\x95\x2f\x6f\x36\xdb\xf8\xc7\x29\x90\xa1\x70\x04\xda" \
+        "\x7a\x0e\xb5\x3e\xe6\x66\x54\xce\xfb\xdd\x83\xdc\xf7\xb3\xc4\xa2\xb8\x51\x5a\x7b" \
+        "\x46\x86\x5f\xc6\x06\x90\x03\xc9\xc9\x5f\xd7\xb5\x89\x03\xd8\x12\x45\xb0\x65\x08" \
+        "\t\xe8\xe2\x1c\xd8\x12\x85\xb0\x65\x08\xa1\xb6\xe2\x10\xb6\x44\x21\x6c\x19\x42\xb0" \
+        "\xf6\x71\x04\x19\xa2\0\x32\x0c\xfe\x58\x2b\xf8\xd3\x1b\x13\xf1\x0c\x6d\x66\xa5\xac" \
+        "\xee\x69\x5e\xdf\xbe\x89\xf4\x8c\xba\x88\x2d\x96\x6a\xd6\x32\x4f\x2c\0\x79\x59\xc0" \
+        "\xbc\x28\xee\xb0\x8f\x60\x33\xba\x03\xe3\x18\x36\x02\x21\x9e\xb3\x45\x6c\xb7\x5b" \
+        "\x5a\x79\x87\x1b\xa4\x66\xae\x0f\x48\x87\xbc\x24\xf2\x12\x54\x98\x9c\x88\xe6\x8a" \
+        "\x7f\xb6\x79\x5c\x88\xcd\x81\xca\xe2\x32\x17\x8e\x76\xf0\xd8\x78\x03\x92\xba\x1a" \
+        "\xff\x7b\xac\xdd\x52\x3f\x19\x4c\x73\xeb\x5f\xd0\x48\x4c\xea\x8a\x28\x5b\xaa\x7f" \
+        "\x24\x81\x59\x16\xab\xf6\xdd\xae\xad\xcb\xce\x4c\x6d\x2c\x3b\x3c\xfb\xc6\x8b\xc9" \
+        "\x5b\xb6\x2f\xc2\x41\x07\xeb\x48\xdf\x6f\x2e\x3f\x62\x04\xbc\x93\xbd\xc7\x30\xb3" \
+        "\0\x40\xbc\xc5\xf6\x73\x49\x7c\xdc\x82\x29\x75\x73\x65\x11\x6e\xf1\x77\n\xc4\xfb" \
+        "\xac\x67\xfd\x66\xd3\xea\x51\xde\x95\xd2\x40\x79\x1d\x59\x01\x99\x99\xfa\xaf\xa6" \
+        "\x91\xfa\x57\xac\x6a\xea\x85\xd1\xa7\x7b\xbb\x15\xe7\xef\xa0\x99\xb4\xbc\xde\x76" \
+        "\r\xdb\xdf\xd0\x9c\x38\xed\xf3\x20\x79\xae\x5d\xac\xdd\x43\xad\xaa\x60\xd5\x7c\x21" \
+        "\x84\xe4\x08\x04\x8d\x10\x29\xcb\x13\x0c\x97\x1b\xfc\xbb\x16\xb9\xbe\xef\x8e\xb2" \
+        "\x32\xad\x5b\x07\x58\x17\x0b\x8a\xe5\xb8\x68\xa8\xde\xd2\x87\xdc\xa8\x8f\x81\xf8" \
+        "\x8e\x66\xca\x73\xe2\xc2\x7a\xdb\x4f\xcf\x74\x96\xa1\x7a\xd7\xc8\x29\x9d\xb6\x3b" \
+        "\x53\xb5\x77\xb9\x63\x90\x17\xe0\x81\x53\xbe\xa6\x78\x0b\x07\x84\x49\x83\x70\xb7" \
+        "\x87\x1b\x5d\xef\x65\xdb\x66\xc8\x67\x48\x63\x71\x4e\x61\x31\xbf\xa8\xea\xcd\x6b" \
+        "\xcc\x9a\x4a\x0e\x49\x74\x2d\x5e\x0f\x46\x22\x05\x7b\x83\x15\xe8\x65\x2c\x1a\x5c" \
+        "\x85\xf6\xe4\xc8\xda\xa6\x54\x26\xb5\x9d\x04\x33\x63\xfd\xfa\xac\x82\x42\xa3\x29" \
+        "\x02\xc0\xe7\xbe\x10\x57\x34\x52\xb0\x88\x47\x7b\x71\x11\xeb\x3e\x3c\x79\x5e\xd4" \
+        "\x67\x28\x43\xc9\xbe\xae\x8c\xaa\x3c\x9b\xd9\x99\x8a\xce\xc0\xf5\x53\x9f\xf0\r\xd8" \
+        "\xae\x2c\xdb\xcd\xe0\x6a\x65\x8a\x3e\x06\x4e\xae\xf6\xb1\x57\x38\x6d\xdf\x35\xa5" \
+        "\x59\xf4\xb4\x73\x9b\x70\x93\x48\0\x04\x2e\x1e\xc1\x8b\x52\xc4\xc2\x30\x2e\x38\xf0" \
+        "\x99\x8d\x4d\xae\xdb\x29\x26\x3a\xe8\x69\x16\x07\xc7\x61\x7f\x8c\xc4\xe2\x71\xe9" \
+        "\xf9\xd2\x6b\x8e\x15\x9d\x81\r\xde\x48\x2a\x42\xd4\x76\x70\x2b\xe0\x71\x6f\x13\xa0" \
+        "\x50\xa4\x50\x0c\x98\x4c\x84\xd9\x1b\x59\x76\x1c\xc3\x3c\xe2\xcb\xab\xcd\x1b\xd7" \
+        "\x81\x3d\x4a\xb8\x43\x77\x7d\t\xfb\x73\x67\xf7\xc4\x7d\xc3\x7e\xaf\x77\x0f\x7c\xa1" \
+        "\xa4\x34\x6b\x5e\r\xbe\x67\xad\x6d\x84\xbb\x71\xd9\0\x7b\xb7\x5c\x33\x24\x5f\x95" \
+        "\xd6\x94\x1b\x4a\xc0\x37\xa6\xe0\x62\x77\xfa\x56\x97\x3c\xf7\xa3\x43\x62\x9e\x9c" \
+        "\x96\xd8\x83\x50\xd5\x60\x78\x07\x5d\x1f\x97\xc2\xd4\x34\x40\x7a\xf6\xf5\x6b\x89" \
+        "\x4d\xfc\x28\xf9\x3b\xca\x37\xf5\xf8\x03\x42\x6c\x57\xe4\xf1\x21\xd7\xa6\x25\x92" \
+        "\xe2\xd9\xed\x43\x4f\x23\xe7\x65\x6a\xef\x63\xea\x69\x0f\x37\xb3\xad\xf8\x83\xec" \
+        "\x47\x65\x6b\xe3\x28\x37\x4f\xaa\x33\x7c\x77\x81\x2d\xd6\x84\xcd\xbf\x7b\x04\x27" \
+        "\xc4\x93\x72\x3d\x12\x69\xe2\x4c\x9f\x07\xdb\x9b\x29\xe2\xd2\xe0\x95\x37\xe0\x0b" \
+        "\x7c\xb5\x49\x76\x5a\xe6\x9f\xed\x39\xc2\xa3\xed\x4c\xd3\x19\xdf\xe2\r\x54\x22\xca" \
+        "\x3d\x82\xb0\x95\x8c\xdb\xb3\x35\x25\x01\x54\xd6\x74\xed\x27\x5c\x72\xf9\x96\x1b" \
+        "\xa7\x08\xbd\xa0\t\xfb\xdc\x60\x22\xf6\xb5\x2d\x15\x84\x7d\x94\x92\x2e\xdd\x9e\r" \
+        "\x41\x28\x1d\x79\x7c\x27\x77\xfc\xe0\xd9\xfe\x8f\x67\xe0\xb4\x44\xfd\xd0\xa1\xf8" \
+        "\x5d\x39\x21\xdc\xc9\xb3\xa9\x97\xb1\x48\xbb\xc6\x20\xee\x48\xda\x7f\x29\xd0\xe1" \
+        "\x0b\xa9\xb4\x8b\x61\xea\x3f\xb1\x84\x6d\x83\x53\xb2\x20\x87\xef\xff\x14\xb2\x54" \
+        "\xe0\x76\xc7\xe7\x1d\xeb\x8b\x3f\xef\xbe\x26\x76\xb3\xfb\xdf\x94\xb4\xa8\x1b\xac" \
+        "\x6a\x5f\x82\xd5\x37\x82\x3b\xd6\x45\x57\x4a\x08\x4d\x53\xdb\x99\x93\xcf\xe6\x5f" \
+        "\xc5\x7e\xae\xc6",
+    1180, 3739, 1},
+    #endif
     #ifndef ESP32
     #ifdef NO_COMPRESSION
     {"purify",
@@ -28126,7 +28222,7 @@ const static struct builtin_module builtin_modules[] = {
         "oks[entryPoint]) {\nhooks[entryPoint] = [];\n}\n};\n\nDOMPurify.removeAllHooks =" \
         " function () {\nhooks = {};\n};\nreturn DOMPurify;\n}\nvar purify = createDOMPur" \
         "ify();\nreturn purify;\n})));",
-    0, 0, 0},
+    32264, 32264, 0},
     #else
     {"purify",
         "\x78\x01\xb5\x7d\x7d\x7f\xdb\x36\xb2\xee\xff\xfe\x14\x4c\xba\x67\x2d\xb7\x92\x9c" \
@@ -28773,7 +28869,7 @@ const static struct builtin_module builtin_modules[] = {
         "String.unescape(kstr, true);\nv = QueryString.unescape(vstr, true);\n}\nif (!has" \
         "OwnProperty(obj, k)) {\nobj[k] = v;\n} else if (util.isArray(obj[k])) {\nobj[k]." \
         "push(v);\n} else {\nobj[k] = [obj[k], v];\n}\n}\nreturn obj;\n};",
-    0, 0, 0},
+    4165, 4165, 0},
     #else
     {"querystring",
         "\x78\x01\xad\x57\x4d\x6f\xdb\x46\x10\xbd\xf3\x57\x6c\x0e\x31\xa9\x4a\xa1\xa5\x1e" \
@@ -28854,7 +28950,7 @@ const static struct builtin_module builtin_modules[] = {
         " (key === null || value === null) continue;\npairs.push(key +'='+ value);\n}\n}\n" \
         "return pairs.length ? prefix + pairs.join('&') : '';\n}\nmodule.exports.stringif" \
         "y = querystringify;\nmodule.exports.parse = querystring;",
-    0, 0, 0},
+    1309, 1309, 0},
     #else
     {"querystringify",
         "\x78\x01\x8d\x54\xc1\x6e\xdb\x30\x0c\xbd\xfb\x2b\xb8\x4b\x6c\x27\x45\x82\xed\xb8" \
@@ -28901,7 +28997,7 @@ const static struct builtin_module builtin_modules[] = {
         "ocol) {\ncase 'http':\ncase 'ws':\nreturn port !== 80;\ncase 'https':\ncase 'wss" \
         "':\nreturn port !== 443;\ncase 'ftp':\nreturn port !== 21;\ncase 'gopher':\nretu" \
         "rn port !== 70;\ncase 'file':\nreturn false;\n}\nreturn port !== 0;\n};",
-    0, 0, 0},
+    433, 433, 0},
     #else
     {"requires-port",
         "\x78\x01\x6d\x91\x41\x4f\x83\x40\x10\x85\xef\xfb\x2b\xc6\x78\x80\xa2\x42\xd5\x26" \
@@ -28924,25 +29020,6 @@ const static struct builtin_module builtin_modules[] = {
         "\xf7\xcf\x60\xf5\x5d\xfc\x07\x29\x88\xe2\x92",
     357, 676, 1},
     #endif
-    #ifdef ESP32
-    {"stream",
-        "'use strict';\nvar EE = require('events').EventEmitter;\nmodule.exports = Stream" \
-        ";\nfunction __unsupportedStream() {\n}\nutil.inherits(__unsupportedStream, EE);\n" \
-        "Stream.Readable = __unsupportedStream;\nStream.Writable = __unsupportedStream;\n" \
-        "Stream.Duplex = __unsupportedStream;\nStream.Transform = __unsupportedStream;\nS" \
-        "tream.PassThrough = __unsupportedStream;\nStream.Stream = Stream;\nfunction Stre" \
-        "am() {\nEE.call(this);\n}\nStream.prototype.pipe = function(dest, options) {\nfu" \
-        "nction onerror(er) {\ncleanup();\nif (EE.listenerCount(this, 'error') === 0)\nth" \
-        "row er;\n}\nsource.on('error', onerror);\ndest.on('error', onerror);\nfunction c" \
-        "leanup() {\nsource.removeListener('data', ondata);\ndest.removeListener('drain'," \
-        " ondrain);\nsource.removeListener('end', onend);\nsource.removeListener('close'," \
-        " onclose);\nsource.removeListener('error', onerror);\ndest.removeListener('error" \
-        "', onerror);\nsource.removeListener('end', cleanup);\nsource.removeListener('clo" \
-        "se', cleanup);\ndest.removeListener('close', cleanup);\n}\nsource.on('end', clea" \
-        "nup);\nsource.on('close', cleanup);\ndest.on('close', cleanup);\nreturn dest;\n}" \
-        ";\nutil.inherits(Stream, EE);",
-    0, 0, 0},
-    #else
     #ifdef NO_COMPRESSION
     {"stream",
         "'use strict';\nmodule.exports = Stream;\nvar EE = require('events').EventEmitter" \
@@ -28968,7 +29045,7 @@ const static struct builtin_module builtin_modules[] = {
         "tener('end', cleanup);\nsource.removeListener('close', cleanup);\ndest.removeLis" \
         "tener('close', cleanup);\n}\nsource.on('end', cleanup);\nsource.on('close', clea" \
         "nup);\ndest.on('close', cleanup);\ndest.emit('pipe', source);\nreturn dest;\n};",
-    0, 0, 0},
+    2043, 2043, 0},
     #else
     {"stream",
         "\x78\x01\x95\x55\xcb\x6e\xdb\x30\x10\xbc\xfb\x2b\xe8\x4b\x24\x01\x86\xd2\xbb\xe1" \
@@ -29003,7 +29080,6 @@ const static struct builtin_module builtin_modules[] = {
         "\xfc\xf7\xc9\x33\x4a\x06\x62\x51\t\xa1\x98\x76\x0e\x2e\x9a\x6f\x9f\0\xe0\x66\x61" \
         "\x32",
     609, 1770, 1},
-    #endif
     #endif
     #ifdef NO_COMPRESSION
     {"string_decoder",
@@ -29047,7 +29123,7 @@ const static struct builtin_module builtin_modules[] = {
         "r) {\nthis.charReceived = buffer.length % 2;\nthis.charLength = this.charReceive" \
         "d ? 2 : 0;\n}\nfunction base64DetectIncompleteChar(buffer) {\nthis.charReceived " \
         "= buffer.length % 3;\nthis.charLength = this.charReceived ? 3 : 0;\n}",
-    0, 0, 0},
+    3547, 3547, 0},
     #else
     {"string_decoder",
         "\x78\x01\x95\x56\xdb\x4e\xdb\x40\x10\x7d\xcf\x57\x6c\x1f\x8a\x1d\x91\x98\x84\xd0" \
@@ -29420,7 +29496,7 @@ const static struct builtin_module builtin_modules[] = {
         "e();\nif (level !== \"AA\" && level !== \"AAA\") {\nlevel = \"AA\";\n}\nif (size" \
         " !== \"small\" && size !== \"large\") {\nsize = \"small\";\n}\nreturn {\"level\"" \
         ":level, \"size\":size};\n}\n})(Math);",
-    0, 0, 0},
+    28366, 28366, 0},
     #else
     {"tinycolor",
         "\x78\x01\xd5\x5c\x7b\x77\xdb\xc6\xb1\xff\x9f\x9f\x02\x66\xae\x6b\x2a\xa2\x28\xbe" \
@@ -29869,7 +29945,7 @@ const static struct builtin_module builtin_modules[] = {
         ") {\nObject.defineProperty(module.exports, method, {\nenumerable: false,\nvalue:" \
         " function() {\nthrow new Error(method + ' is not supported in userland');\n}\n})" \
         ";\n});",
-    0, 0, 0},
+    9983, 9983, 0},
     #else
     {"types",
         "\x78\x01\xa5\x59\x4d\x6f\xdb\x38\x10\xbd\xeb\x57\x70\x2f\xb5\x8d\x35\x84\xcd\xee" \
@@ -30039,7 +30115,7 @@ const static struct builtin_module builtin_modules[] = {
         "/body></html>\";\n},\nwindow: function(content, title) {\nvar window = app.windo" \
         "w(ui.html(content), title);\nwindow.setContent = function(content) {\nwindow.set" \
         "Html(ui.html(content));\n};\nreturn window;\n}\n}",
-    0, 0, 0},
+    7264, 7264, 0},
     #else
     {"ui",
         "\x78\x01\xc5\x59\x5f\x73\xe3\xb6\x11\x7f\xf7\xa7\x60\x9d\xde\xc4\x9e\x50\x0c\x25" \
@@ -30234,7 +30310,7 @@ const static struct builtin_module builtin_modules[] = {
         "rl.hash) result += url.hash;\nreturn result;\n}\nUrl.prototype = { set: set, toS" \
         "tring: toString };\nUrl.extractProtocol = extractProtocol;\nUrl.location = lolca" \
         "tion;\nUrl.trimLeft = trimLeft;\nUrl.qs = qs;\nmodule.exports = Url;",
-    0, 0, 0},
+    7908, 7908, 0},
     #else
     {"url",
         "\x78\x01\xcd\x5a\x6d\x73\xdc\x36\x0e\xfe\xae\x5f\x41\xa7\x9d\x4a\x9b\x7d\xb3\x9d" \
@@ -30418,39 +30494,6 @@ const static struct builtin_module builtin_modules[] = {
         "\x33\x3a\x24\x52\x6a\xa0\x46\xf4\x1e\xfc\x17\x0f\x6f\x24\xf3",
     3618, 10202, 1},
     #endif
-    #ifdef ESP32
-    {"util",
-        "'use strict';\nvar isArray = module.exports.isArray = Array.isArray;\nfunction i" \
-        "sBoolean(arg) {\nreturn typeof arg === 'boolean';\n}\nmodule.exports.isBoolean =" \
-        " isBoolean;\nfunction isNull(arg) {\nreturn arg === null;\n}\nmodule.exports.isN" \
-        "ull = isNull;\nfunction isNullOrUndefined(arg) {\nreturn arg == null;\n}\nmodule" \
-        ".exports.isNullOrUndefined = isNullOrUndefined;\nfunction isNumber(arg) {\nretur" \
-        "n typeof arg === 'number';\n}\nmodule.exports.isNumber = isNumber;\nfunction isS" \
-        "tring(arg) {\nreturn typeof arg === 'string';\n}\nmodule.exports.isString = isSt" \
-        "ring;\nfunction isSymbol(arg) {\nreturn typeof arg === 'symbol';\n}\nmodule.expo" \
-        "rts.isSymbol = isSymbol;\nfunction isUndefined(arg) {\nreturn arg === void 0;\n}" \
-        "\nmodule.exports.isUndefined = isUndefined;\nfunction isRegExp(re) {\nreturn isO" \
-        "bject(re) && objectToString(re) === '[object RegExp]';\n}\nmodule.exports.isRegE" \
-        "xp = isRegExp;\nfunction isObject(arg) {\nreturn typeof arg === 'object' && arg " \
-        "!== null;\n}\nmodule.exports.isObject = isObject;\nfunction isDate(d) {\nreturn " \
-        "isObject(d) && objectToString(d) === '[object Date]';\n}\nmodule.exports.isDate " \
-        "= isDate;\nfunction isError(e) {\nreturn isObject(e) &&\n(objectToString(e) === " \
-        "'[object Error]' || e instanceof Error);\n}\nmodule.exports.isError = isError;\n" \
-        "function isFunction(arg) {\nreturn typeof arg === 'function';\n}\nmodule.exports" \
-        ".isFunction = isFunction;\nfunction isPrimitive(arg) {\nreturn arg === null ||\n" \
-        "typeof arg === 'boolean' ||\ntypeof arg === 'number' ||\ntypeof arg === 'string'" \
-        " ||\ntypeof arg === 'symbol' ||  // ES6 symbol\ntypeof arg === 'undefined';\n}\n" \
-        "module.exports.isPrimitive = isPrimitive;\nfunction isBuffer(arg) {\nreturn arg " \
-        "instanceof Buffer;\n}\nmodule.exports.isBuffer = isBuffer;\nmodule.exports.inher" \
-        "its = function(ctor, superCtor) {\nctor.super_ = superCtor;\nctor.prototype = Ob" \
-        "ject.create(superCtor.prototype, {\nconstructor: {\nvalue: ctor,\nenumerable: fa" \
-        "lse,\nwritable: true,\nconfigurable: true\n}\n});\n};\nmodule.exports._extend = " \
-        "function(origin, add) {\nif (!add || !isObject(add)) return origin;\nvar keys = " \
-        "Object.keys(add);\nvar i = keys.length;\nwhile (i--) {\norigin[keys[i]] = add[ke" \
-        "ys[i]];\n}\nreturn origin;\n};\nfunction hasOwnProperty(obj, prop) {\nreturn Obj" \
-        "ect.prototype.hasOwnProperty.call(obj, prop);\n}",
-    0, 0, 0},
-    #else
     #ifdef NO_COMPRESSION
     {"util",
         "'use strict';\nvar formatRegExp = /%[sdj%]/g;\nmodule.exports.format = function(" \
@@ -30638,7 +30681,7 @@ const static struct builtin_module builtin_modules[] = {
         "ar message = syscall + ' ' + errname;\nif (original)\nmessage += ' ' + original;" \
         "\nvar e = new Error(message);\ne.code = errname;\ne.errno = errname;\ne.syscall " \
         "= syscall;\nreturn e;\n};",
-    0, 0, 0},
+    16415, 16415, 0},
     #else
     {"util",
         "\x78\x01\xc5\x5b\x7b\x73\xdb\xc6\x11\xff\x9f\x9f\xe2\xe4\x89\x03\xd2\xa2\x28\xc9" \
@@ -30858,7 +30901,6 @@ const static struct builtin_module builtin_modules[] = {
         "\xb0\x33\x4b\x3e\xf3\x73\x31\xe9\x0c\x5e\x74\xfd\x37\xa2\x46\x47\x96\x03\x44\x9a" \
         "\x35\x41\x56\x08\x27\x8e\x5b\xe0\xd1\x04\x3b\xfc\x1f\x99\x3e\xb6\x8e",
     4375, 15028, 1},
-    #endif
     #endif
     #ifndef ESP32
     #ifdef NO_COMPRESSION
@@ -31636,7 +31678,7 @@ const static struct builtin_module builtin_modules[] = {
         "unescape: unescape,\nstripLow: stripLow,\nwhitelist: whitelist,\nblacklist: blac" \
         "klist$1,\nisWhitelisted: isWhitelisted,\nnormalizeEmail: normalizeEmail,\ntoStri" \
         "ng: toString,\nisSlug: isSlug\n};\nreturn validator;\n})));",
-    0, 0, 0},
+    68855, 68855, 0},
     #else
     {"validator",
         "\x78\x01\xe5\xbd\x6b\x7b\x63\xc9\x71\x1f\xfe\x9e\x9f\xe2\x0c\xb5\x2b\x02\x43\0\xc4" \
