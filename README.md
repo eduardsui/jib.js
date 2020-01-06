@@ -29,7 +29,6 @@ macOS:
 esp32:
 ```
 $ cd esp32
-$ idf.py menuconfig
 $ idf.py build
 ```
 
