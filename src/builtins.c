@@ -1282,7 +1282,11 @@ void duk_eval_file(JS_CONTEXT ctx, const char *path, const char *directory) {
 #else
     char *buf = duk_push_string_file_raw(ctx, path, directory);
     if (buf) {
-        JS_EvalSimplePath(ctx, buf, path);
+        if (directory) {
+            JS_Eval(ctx, buf, path);
+        } else {
+            JS_EvalSimplePath(ctx, buf, path);
+        }
         js_free(ctx, buf);
     } else {
         JS_Error(ctx, "no sourcecode");

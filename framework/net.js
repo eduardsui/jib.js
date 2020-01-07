@@ -103,9 +103,11 @@ var net = {
 			if (writable) {
 				read_write = 1;
 				obj.write = function() {
+                    if (self.destroyed)
+                        return;
 					self._drain = true;
 					self.emit("drain");
-					if ((!this._buffer) || (!this._buffer.length))
+					if ((!self._buffer) || (!self._buffer.length))
 						_net_.pollPauseWrite(self._socket);
 					self.flush();
 				};
@@ -154,7 +156,6 @@ var net = {
 		}
 
 		this.setReadTimeout = function(timeout) {
-			var self = this;
 			this._readTimeout = timeout;
 			if (this._lastReadInterval)
 			 	clearInterval(this._lastReadInterval);
@@ -230,13 +231,13 @@ var net = {
 					server.connections --;
 					server = undefined;
 				}
-				this.destroyed = true;
 				if (this._lastReadInterval) {
 					clearInterval(this._lastReadInterval);
 					this._lastReadInterval = undefined;
 				}
 				for (var k in this)
 					delete this[k];
+                this.destroyed = true;
 			}
 			this.removeAllListeners();
 		}
