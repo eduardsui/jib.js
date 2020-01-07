@@ -4,7 +4,12 @@
     void on_error(void *udata, const char *msg) {
         char func_name[50];
         log_log(5, func_name, native_line_number(NULL, -1, func_name, sizeof(func_name)), duk_safe_to_stacktrace(js(), -2));
-        exit(0);
+        exit(-1);
+    }
+#else
+    void on_error(const char *filename, const char *msg) {
+        log_log(5, filename, 0, msg);
+        exit(-1);
     }
 #endif
 

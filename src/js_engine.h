@@ -92,20 +92,27 @@
     #include "quickjs/quickjs.h"
 
     #define JS_CONTEXT                                          JSContext *
-    #define JS_CreateContext(on_error)                          JS_NewContext(JS_NewRuntime())
+    
+    extern void *js_error_callback;
+    static inline JS_CONTEXT JS_CreateContext(void *on_error) {
+        JSRuntime *rt = JS_NewRuntime();
+        js_error_callback = on_error;
+        return JS_NewContext(rt);
+    }
+
     #define JS_DestroyContext(ctx)                              { JSValue *opaque = (JSValue *)JS_GetContextOpaque(ctx); if (opaque) { JS_FreeValue(ctx, *opaque); free(opaque); } JSRuntime *rt = JS_GetRuntime(ctx); JS_FreeContext(ctx); JS_FreeRuntime(rt); }
     #define JS_EvalSimple(ctx, str)                             JS_EvalSimplePath(ctx, str, "none")
-    #define JS_EvalSimplePath(ctx, str, path)                   { js_object_type val = (JS_Eval)(ctx, str, strlen(str), path, JS_EVAL_TYPE_GLOBAL); if (JS_IsException(val)) { js_std_dump_error(ctx); exit(-1); } JS_FreeValue(ctx, val); }
-    #define JS_Eval(ctx, str, path)                             { js_object_type val = (JS_Eval)(ctx, str, strlen(str), path, JS_EVAL_TYPE_MODULE); if (JS_IsException(val)) { js_std_dump_error(ctx); exit(-1); } JS_FreeValue(ctx, val); }
+    #define JS_EvalSimplePath(ctx, str, path)                   { js_object_type val = (JS_Eval)(ctx, str, strlen(str), path, JS_EVAL_TYPE_GLOBAL); if (JS_IsException(val)) { js_std_dump_error(ctx); } JS_FreeValueCheckException(ctx, val); }
+    #define JS_Eval(ctx, str, path)                             { js_object_type val = (JS_Eval)(ctx, str, strlen(str), path, JS_EVAL_TYPE_MODULE); if (JS_IsException(val)) { js_std_dump_error(ctx); } JS_FreeValueCheckException(ctx, val); }
 
     #define JS_Eval_File(ctx, filename)                         duk_run_file((ctx), filename)
 
-    #define JS_ParameterNumber(ctx, index)                      if (!JS_IsNumber(argv[(index)])) JS_ThrowTypeError(ctx, "Number expected in parameter %i", (int)index)
-    #define JS_ParameterBoolean(ctx, index)                     if (!JS_IsBool(argv[(index)])) JS_ThrowTypeError(ctx, "Boolean value expected in parameter %i", (int)index)
-    #define JS_ParameterString(ctx, index)                      if (!JS_IsString(argv[(index)])) JS_ThrowTypeError(ctx, "String expected in parameter %i", (int)index)
-    #define JS_ParameterFunction(ctx, index)                    if (!JS_IsFunction((ctx), argv[(index)])) JS_ThrowTypeError(ctx, "Function expected in parameter %i", (int)index)
-    #define JS_ParameterObject(ctx, index)                      if (!JS_IsObject(argv[(index)])) JS_ThrowTypeError(ctx, "Object expected in parameter %i", (int)index)
-    #define JS_ParameterPointer(ctx, index)                     if (!JS_IsInteger(argv[(index)])) JS_ThrowTypeError(ctx, "Handle expected in parameter %i", (int)index)
+    #define JS_ParameterNumber(ctx, index)                      if (!JS_IsNumber(argv[(index)])) { JS_ThrowTypeError(ctx, "Number expected in parameter %i", (int)index); return JS_EXCEPTION; }
+    #define JS_ParameterBoolean(ctx, index)                     if (!JS_IsBool(argv[(index)])) { JS_ThrowTypeError(ctx, "Boolean value expected in parameter %i", (int)index); return JS_EXCEPTION; }
+    #define JS_ParameterString(ctx, index)                      if (!JS_IsString(argv[(index)])) { JS_ThrowTypeError(ctx, "String expected in parameter %i", (int)index); return JS_EXCEPTION; }
+    #define JS_ParameterFunction(ctx, index)                    if (!JS_IsFunction((ctx), argv[(index)])) { JS_ThrowTypeError(ctx, "Function expected in parameter %i", (int)index); return JS_EXCEPTION; }
+    #define JS_ParameterObject(ctx, index)                      if (!JS_IsObject(argv[(index)])) { JS_ThrowTypeError(ctx, "Object expected in parameter %i", (int)index); return JS_EXCEPTION; }
+    #define JS_ParameterPointer(ctx, index)                     if (!JS_IsInteger(argv[(index)])) { JS_ThrowTypeError(ctx, "Handle expected in parameter %i", (int)index); return JS_EXCEPTION; }
     #define JS_ParameterCount(ctx)                              argc
 
     #define JS_FreeString(ctx, str)                             JS_FreeCString(ctx, str)
@@ -143,7 +150,7 @@
     #define js_size_t                                           size_t
     #define js_uint_t                                           unsigned int
 
-    #define JS_Error(ctx, text)                                 JS_ThrowTypeError(ctx, "%s", text)
+    #define JS_Error(ctx, text)                                 { js_object_type exc = JS_ThrowTypeError(ctx, "%s", text); js_std_dump_error(ctx); JS_FreeValue(ctx, exc); }
 
     #define js_c_function                                       JSCFunction *
     #define JS_C_FUNCTION(name)                                 static JSValue name(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv)
@@ -169,7 +176,7 @@
     #define JS_NewPlainObject(ctx)                              JS_NewObject((ctx))
 
     static inline int _JS_GetIntParameter(JS_CONTEXT ctx, JSValueConst v) {
-        uint32_t val = 0;
+        int32_t val = 0;
         if (JS_ToInt32(ctx, &val, v))
             JS_ThrowTypeError(ctx, "Number expected");
         return val;
@@ -213,12 +220,23 @@
         memcpy(mem_buf, mem, len_mem);
         JS_SetPropertyStr(ctx, obj, mem_buf, JS_NewStringLen(ctx, val, len_val));
     }
+    
+    void js_std_dump_error(JSContext *ctx);
+    static inline void JS_FreeValueCheckException(JS_CONTEXT ctx, JSValue val) {
+        if (JS_IsException(val))
+            js_std_dump_error(ctx);
+        JS_FreeValue(ctx, val);
+    }
 
     static inline JSValue _JS_NewClassObject(JS_CONTEXT ctx, const char *class_name) {
         JSValue obj = JS_NewObject(ctx);
         JSValue global_object = JS_GetGlobalObject(ctx);
         JSValue proto = JS_GetPropertyStr(ctx, global_object, class_name);
-        JS_SetPrototype(ctx, obj, proto);
+        JSValue prototype = JS_GetPropertyStr(ctx, proto, "prototype");
+        JS_SetPrototype(ctx, obj, prototype);
+        if (JS_IsFunction(ctx, proto))
+            JS_FreeValueCheckException(ctx, JS_Call(ctx, proto, obj, 0, NULL));
+        JS_FreeValue(ctx, prototype);
         JS_FreeValue(ctx, proto);
         JS_FreeValue(ctx, global_object);
         return obj;

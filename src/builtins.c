@@ -3,6 +3,7 @@
 #include "modules.h"
 
 #include <unistd.h>
+#include <stdarg.h>
 #ifndef _WIN32
     #include <sys/types.h>
     #ifndef ESP32
@@ -80,6 +81,8 @@ static struct {
 
 
 #ifndef WITH_DUKTAPE
+void *js_error_callback = NULL;
+
 js_object_type global_stash(JS_CONTEXT ctx) {
     void *opaque = JS_GetContextOpaque(ctx);
     if (!opaque) {
@@ -92,47 +95,44 @@ js_object_type global_stash(JS_CONTEXT ctx) {
     return *(js_object_type *)opaque;
 }
 
-void js_print(JSContext *ctx, int argc, JSValueConst *argv) {
-    int i;
-    const char *str;
-
-    for(i = 0; i < argc; i++) {
-        if (i != 0)
-            putchar(' ');
-        str = JS_ToCString(ctx, argv[i]);
-        if (!str)
-            return;
-        fputs(str, stdout);
-        JS_FreeCString(ctx, str);
-    }
-    putchar('\n');
-} 
-
-static void js_std_dump_error1(JSContext *ctx, JSValueConst exception_val, BOOL is_throw) {
+static void js_std_dump_error1(JSContext *ctx, JSValueConst exception_val) {
     JSValue val;
-    const char *stack;
-    BOOL is_error;
-    
-    is_error = JS_IsError(ctx, exception_val);
-    if (is_throw && !is_error)
-        fprintf(stderr, "Throw: ");
-    js_print(ctx, 1, (JSValueConst *)&exception_val);
-    if (is_error) {
-        val = JS_GetPropertyStr(ctx, exception_val, "stack");
-        if (!JS_IsUndefined(val)) {
-            stack = JS_ToCString(ctx, val);
-            fprintf(stderr, "%s\n", stack);
-            JS_FreeCString(ctx, stack);
-        }
-        JS_FreeValue(ctx, val);
+    const char *stack = NULL;
+    char buf[1024];
+
+    const char *str = JS_ToCString(ctx, exception_val);
+    val = JS_GetPropertyStr(ctx, exception_val, "stack");
+    if (!JS_IsUndefined(val))
+        stack = JS_ToCString(ctx, val);
+
+    if (stack) {
+        snprintf(buf, sizeof(buf), "%s\n%s", str, stack);
+        JS_FreeCString(ctx, stack);
+    } else {
+        snprintf(buf, sizeof(buf), "%s", str);
     }
+    js_object_type global_object = JS_GetGlobalObject(ctx);
+    js_object_type obj = JS_GetPropertyStr(ctx, global_object, "module");
+    js_object_type filename = JS_GetPropertyStr(ctx, obj, "filename");
+    const char *fname = JS_ToCString(ctx, filename);
+    if (js_error_callback)
+        ((void (*)(const char *fname, const char *msg))js_error_callback)(fname ? fname : "(eval)", buf);
+    else
+        log_log(5, fname ? fname : "(eval)", 0, buf);
+    if (fname)
+        JS_FreeCString(ctx, fname);
+    JS_FreeValue(ctx, filename);
+    JS_FreeValue(ctx, obj);
+    JS_FreeValue(ctx, global_object);
+    JS_FreeCString(ctx, str);
+    JS_FreeValue(ctx, val);
 }
 
 void js_std_dump_error(JSContext *ctx) {
     JSValue exception_val;
     
     exception_val = JS_GetException(ctx);
-    js_std_dump_error1(ctx, exception_val, TRUE);
+    js_std_dump_error1(ctx, exception_val);
     JS_FreeValue(ctx, exception_val);
 }
 #endif
@@ -262,7 +262,7 @@ static int setInterval_callback(struct doops_loop *loop) {
         JS_FreeValue(js_ctx, ret_value);
         return 1;
     }
-    JS_FreeValue(js_ctx, ret_value);
+    JS_FreeValueCheckException(js_ctx, ret_value);
     JS_FreeValue(js_ctx, obj);
 #endif
     return 0;
@@ -286,7 +286,7 @@ static int setTimeout_callback(struct doops_loop *loop) {
 #else
     js_object_type global_object = JS_GetGlobalObject(js_ctx);
     js_object_type obj = JS_GetPropertyStr(js_ctx, global_stash(js_ctx), func_buffer);
-    JS_FreeValue(js_ctx, JS_Call(js_ctx, obj, global_object, 0, NULL));
+    JS_FreeValueCheckException(js_ctx, JS_Call(js_ctx, obj, global_object, 0, NULL));
     JS_DeleteProperty(js_ctx, global_stash(js_ctx), JS_ValueToAtom(js_ctx, obj), 0);
     JS_FreeValue(js_ctx, obj);
     JS_FreeValue(js_ctx, global_object);
@@ -312,7 +312,7 @@ static int setImmediate_callback(struct doops_loop *loop) {
 #else
     js_object_type global_object = JS_GetGlobalObject(js_ctx);
     js_object_type obj = JS_GetPropertyStr(js_ctx, global_stash(js_ctx), func_buffer);
-    JS_FreeValue(js_ctx, JS_Call(js_ctx, obj, global_object, 0, NULL));
+    JS_FreeValueCheckException(js_ctx, JS_Call(js_ctx, obj, global_object, 0, NULL));
     JS_DeleteProperty(js_ctx, global_stash(js_ctx), JS_ValueToAtom(js_ctx, obj), 0);
     JS_FreeValue(js_ctx, obj);
     JS_FreeValue(js_ctx, global_object);
@@ -505,7 +505,16 @@ JS_C_FUNCTION_FORWARD(native_print, int level) {
     if (JS_ParameterCount(ctx) > 0)
         text = JS_GetAsStringParameter(ctx, 0);
 
-    log_log(level, "(none)", 0, text);
+    js_object_type global_object = JS_GetGlobalObject(ctx);
+    js_object_type obj = JS_GetPropertyStr(ctx, global_object, "module");
+    js_object_type filename = JS_GetPropertyStr(ctx, obj, "filename");
+    const char *fname = JS_ToCString(ctx, filename);
+    log_log(level, fname ? fname : "(eval)", 0, text);
+    if (fname)
+        JS_FreeCString(ctx, fname);
+    JS_FreeValue(ctx, filename);
+    JS_FreeValue(ctx, obj);
+    JS_FreeValue(ctx, global_object);
 #endif
 
     JS_RETURN_NOTHING(ctx);
@@ -744,7 +753,7 @@ void gui_callback(void *window) {
     if (JS_IsObject(obj)) {
         js_object_type function_obj = JS_GetPropertyStr(js_ctx, obj, "onuievent");
         if (JS_IsFunction(js_ctx, function_obj))
-            JS_FreeValue(js_ctx, JS_Call(js_ctx, function_obj, obj, 0, NULL));
+            JS_FreeValueCheckException(js_ctx, JS_Call(js_ctx, function_obj, obj, 0, NULL));
         JS_FreeValue(js_ctx, function_obj);
     }
     JS_FreeValue(js_ctx, obj);
@@ -786,7 +795,7 @@ static void ui_close_callback(void *event_data, void *userdata) {
         JS_ObjectSetPointer(js_ctx, obj, JS_HIDDEN_SYMBOL("__native_handle"), NULL);
         js_object_type function_obj = JS_GetPropertyStr(js_ctx, obj, "ondestroy");
         if (JS_IsFunction(js_ctx, function_obj))
-            JS_FreeValue(js_ctx, JS_Call(js_ctx, function_obj, obj, 0, NULL));
+            JS_FreeValueCheckException(js_ctx, JS_Call(js_ctx, function_obj, obj, 0, NULL));
         JS_FreeValue(js_ctx, function_obj);
         JS_DeleteProperty(js_ctx, global_stash(js_ctx), JS_ValueToAtom(js_ctx, obj), 0);
     }
@@ -1107,7 +1116,7 @@ void helper_notify(JS_CONTEXT ctx, const char *object, const char *event_name) {
     if (JS_IsObject(obj)) {
         js_object_type function_obj = JS_GetPropertyStr(ctx, obj, event_name);
         if (JS_IsFunction(ctx, function_obj))
-            JS_FreeValue(ctx, JS_Call(ctx, function_obj, obj, 0, NULL));
+            JS_FreeValueCheckException(ctx, JS_Call(ctx, function_obj, obj, 0, NULL));
         JS_FreeValue(ctx, function_obj);
     }
     JS_FreeValue(ctx, obj);
@@ -1275,6 +1284,8 @@ void duk_eval_file(JS_CONTEXT ctx, const char *path, const char *directory) {
     if (buf) {
         JS_EvalSimplePath(ctx, buf, path);
         js_free(ctx, buf);
+    } else {
+        JS_Error(ctx, "no sourcecode");
     }
 #endif
 }
@@ -2111,12 +2122,13 @@ void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *
     JS_EvalSimple(ctx, JS_GLOBAL);
 #ifdef WITH_DUKTAPE
     JS_EvalSimple(ctx, "global.gc = Duktape.gc; global.__destructor = Duktape.fin;");
+    JS_EvalSimple(ctx, JS_PROMISE);
 #else
     JS_EvalSimple(ctx, "global.__destructor = function() { /* to do */ };");
+    JS_EvalSimple(ctx, JS_TEXT_ENCODER_DECODER)
 #endif
     JS_EvalSimple(ctx, JS_MODULE);
     JS_EvalSimple(ctx, JS_WINDOW);
-    JS_EvalSimple(ctx, JS_PROMISE);
     JS_EvalSimple(ctx, JS_CONSOLE);
 #ifndef NO_IO
     JS_EvalSimple(ctx, JS_STATS);

@@ -585,7 +585,7 @@ static void io_get_object(JS_CONTEXT ctx, int fd, const char *method) {
     if (JS_IsObject(obj)) {
         js_object_type function_obj = JS_GetPropertyStr(ctx, obj, method);
         if (JS_IsFunction(ctx, function_obj))
-            JS_FreeValue(ctx, JS_Call(ctx, function_obj, obj, 0, NULL));
+            JS_FreeValueCheckException(ctx, JS_Call(ctx, function_obj, obj, 0, NULL));
     }
     JS_FreeValue(ctx, obj);
 #endif
