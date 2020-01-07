@@ -103,8 +103,8 @@ var net = {
 			if (writable) {
 				read_write = 1;
 				obj.write = function() {
-                    if (self.destroyed)
-                        return;
+					if (self.destroyed)
+						return;
 					self._drain = true;
 					self.emit("drain");
 					if ((!self._buffer) || (!self._buffer.length))
@@ -237,7 +237,7 @@ var net = {
 				}
 				for (var k in this)
 					delete this[k];
-                this.destroyed = true;
+				this.destroyed = true;
 			}
 			this.removeAllListeners();
 		}
