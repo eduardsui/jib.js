@@ -507,7 +507,7 @@ JS_C_FUNCTION_FORWARD(native_print, int level) {
 	duk_join(ctx, duk_get_top(ctx) - 1);
     log_log(level, func_name, line_number, duk_safe_to_string(ctx, -1));
 #else
-    const char *text = "";
+    const char *text = NULL;
     if (JS_ParameterCount(ctx) > 0)
         text = JS_GetAsStringParameter(ctx, 0);
 
@@ -515,7 +515,8 @@ JS_C_FUNCTION_FORWARD(native_print, int level) {
     js_object_type obj = JS_GetPropertyStr(ctx, global_object, "module");
     js_object_type filename = JS_GetPropertyStr(ctx, obj, "filename");
     const char *fname = JS_ToCString(ctx, filename);
-    log_log(level, fname ? fname : "(eval)", 0, text);
+    log_log(level, fname ? fname : "(eval)", 0, text ? text : "");
+    JS_FreeString(ctx, text);
     if (fname)
         JS_FreeCString(ctx, fname);
     JS_FreeValue(ctx, filename);
@@ -722,6 +723,7 @@ JS_C_FUNCTION_FORWARD(parseHeader, int type) {
             JS_ObjectSetNumber(ctx, obj_id, "contentLength", parser.content_length);
         JS_ObjectSetNumber(ctx, obj_id, "httpVersion", (double)parser.http_major + ((double)parser.http_minor)/10);
     }
+    JS_FreeString(ctx, header);
 #ifdef WITH_DUKTAPE
     return 1;
 #else
@@ -803,10 +805,10 @@ static void ui_close_callback(void *event_data, void *userdata) {
         if (JS_IsFunction(js_ctx, function_obj))
             JS_FreeValueCheckException(js_ctx, JS_Call(js_ctx, function_obj, obj, 0, NULL));
         JS_FreeValue(js_ctx, function_obj);
-        JSAtom prop = JS_NewAtom(js_ctx, "ondestroy");
-        JS_DeleteProperty(js_ctx, global_stash(js_ctx), prop, 0);
-        JS_FreeAtom(js_ctx, prop);
     }
+    JSAtom prop = JS_NewAtom(js_ctx, wnd_buffer);
+    JS_DeleteProperty(js_ctx, global_stash(js_ctx), prop, 0);
+    JS_FreeAtom(js_ctx, prop);
     JS_FreeValue(js_ctx, obj);
 #endif
 }
@@ -915,9 +917,11 @@ JS_C_FUNCTION(native_ui_window_content) {
     void *window_ptr = _JS_GetPointerParameter(ctx, handle);
     JS_FreeValue(ctx, handle);
     if (window_ptr) {
-        if (JS_ParameterCount(ctx) > 0)
-            ui_window_set_content(window_ptr, JS_GetAsStringParameter(ctx, 0));
-        else
+        if (JS_ParameterCount(ctx) > 0) {
+            const char *text = JS_GetAsStringParameter(ctx, 0);
+            ui_window_set_content(window_ptr, text);
+            JS_FreeString(ctx, text);
+        } else
             ui_window_set_content(window_ptr, "");
     }
 #endif
@@ -943,8 +947,11 @@ JS_C_FUNCTION(native_ui_window_js) {
     void *window_ptr = _JS_GetPointerParameter(ctx, handle);
     JS_FreeValue(ctx, handle);
     if (window_ptr) {
-        if (JS_ParameterCount(ctx) > 0)
-            ui_js(window_ptr, JS_GetAsStringParameter(ctx, 0));
+        if (JS_ParameterCount(ctx) > 0) {
+            const char *text = JS_GetAsStringParameter(ctx, 0);
+            ui_js(window_ptr, text);
+            JS_FreeString(ctx, text);
+        }
     }
 #endif
 
@@ -979,7 +986,11 @@ JS_C_FUNCTION(native_ui_window_execute) {
             arguments[i] = 0;
         }
 
-        char *val = ui_call(window_ptr, JS_GetAsStringParameter(ctx, 0), arguments);
+        const char *text = JS_GetAsStringParameter(ctx, 0);
+        char *val = ui_call(window_ptr, text, arguments);
+        JS_FreeString(ctx, text);
+        for (i = 1; i < parameters; i ++)
+            JS_FreeString(ctx, arguments[i - 1]);
         if (val) {
 #ifdef WITH_DUKTAPE
             duk_push_string(ctx, val);
@@ -1020,11 +1031,12 @@ JS_C_FUNCTION(native_alert) {
     const char *text = duk_safe_to_string(ctx, -1);
     log_log(2, func_name, line_number, text);
 #else
-    const char *text = "";
+    const char *text = NULL;
     if (JS_ParameterCount(ctx) > 0)
         text = JS_GetAsStringParameter(ctx, 0);
 #endif
-    ui_message("", text, 1);
+    ui_message("", text ? text : NULL, 1);
+    JS_FreeString(ctx, text);
     JS_RETURN_NOTHING(ctx);
 }
 #endif
@@ -1032,7 +1044,9 @@ JS_C_FUNCTION(native_alert) {
 JS_C_FUNCTION(native_chdir) {
     JS_ParameterString(ctx, 0);
 #ifndef NO_IO
-    int err = chdir(JS_GetStringParameter(ctx, 0));
+    const char *dir = JS_GetStringParameter(ctx, 0);
+    int err = chdir(dir);
+    JS_FreeString(ctx, dir);
     JS_RETURN_NUMBER(ctx, err);
 #else
     JS_RETURN_NOTHING(ctx);
@@ -1052,8 +1066,8 @@ JS_C_FUNCTION(native_cwd) {
 
 JS_C_FUNCTION(native_window) {
 #ifndef NO_UI
-    const char *title = "";
-    const char *body = "";
+    const char *title = NULL;
+    const char *body = NULL;
     if (JS_ParameterCount(ctx) >= 2) {
         JS_ParameterString(ctx, 0);
         JS_ParameterString(ctx, 1);
@@ -1070,7 +1084,9 @@ JS_C_FUNCTION(native_window) {
         ui_initialized = 1;
     }
 
-    void *window_ptr = ui_window(title, body);
+    void *window_ptr = ui_window(title ? title : "", body ? body : "");
+    JS_FreeString(ctx, title);
+    JS_FreeString(ctx, body);
     if ((ui_window_count() == 1) && (main_loop)) {
         loop_add(main_loop, ui_callback, 10, NULL);
         ui_set_event(UI_EVENT_WINDOW_CLOSE, ui_close_callback, NULL);
@@ -1355,8 +1371,7 @@ JS_C_FUNCTION(native_require) {
         duk_get_prop_string(ctx, -1, module_id);
         if (!duk_is_undefined(ctx, -1)) {
             duk_get_prop_string(ctx, -1, "exports");
-            // duk_dup(ctx, -1);
-            // duk_pop(js_ctx);
+            JS_FreeString(ctx, module_id);
             return 1;
         }
         duk_pop_3(js_ctx);
@@ -1378,7 +1393,7 @@ JS_C_FUNCTION(native_require) {
         duk_pop(ctx);
     duk_pop(ctx);
 
-    const char *filename = duk_safe_to_string(ctx, 0);
+    const char *filename = module_id;
 
     duk_get_global_string(ctx, "Module");
     duk_new(ctx, 0);
@@ -1470,7 +1485,7 @@ JS_C_FUNCTION(native_require) {
     duk_pop(ctx);
 
     // JS_EvalSimple(ctx, "module.loaded = true; if (module.parent) module.parent.children.push(module); module = module.parent;");
-
+    JS_FreeString(ctx, module_id);
     return 1;
 #else
     js_object_type global_object = JS_GetGlobalObject(ctx);
@@ -1480,6 +1495,7 @@ JS_C_FUNCTION(native_require) {
         if (!JS_IsUndefined(mod)) {
             js_object_type exp = JS_GetPropertyStr(ctx, mod, "exports");
             JS_FreeValue(ctx, mod);
+            JS_FreeString(ctx, module_id);
             return exp;
         }
         JS_FreeValue(ctx, mod);
@@ -1488,7 +1504,7 @@ JS_C_FUNCTION(native_require) {
     js_object_type parent_module = JS_GetPropertyStr(ctx, global_object, "module");
     js_object_type parent_exports = JS_GetPropertyStr(ctx, parent_module, "exports");
 
-    const char *filename = JS_GetStringParameter(ctx, 0);
+    const char *filename = module_id;
     js_object_type module = JS_NewClassObject(ctx, "Module");
     
     JS_ObjectSetString(ctx, module, "id", module_id);
@@ -1532,6 +1548,7 @@ JS_C_FUNCTION(native_require) {
     JS_FreeValue(ctx, module);
     JS_FreeValue(ctx, global_object);
 
+    JS_FreeString(ctx, module_id);
     return exports_obj;
 #endif
 }

@@ -240,12 +240,16 @@ JS_C_FUNCTION(js_esp_wifi_scan_start) {
     if (JS_ParameterCount(ctx) > 0) {
         JS_ParameterString(ctx, 0);
         ssid = JS_GetStringParameter(ctx, 0);
-        if ((ssid) && (!ssid[0]))
+        if ((ssid) && (!ssid[0])) {
+            JS_FreeString(ctx, ssid);
             ssid = NULL;
+        }
     }
     scan_config.ssid = (uint8_t *) ssid;
 
     esp_err_t err = esp_wifi_scan_start(&scan_config, 0);
+    if (ssid)
+        JS_FreeString(ctx, ssid);
     JS_RETURN_NUMBER(ctx, err);
 }
 
@@ -336,17 +340,23 @@ JS_C_FUNCTION(js_esp_wifi_set_ip_info) {
 
     if (JS_ParameterCount(ctx) > 1) {
         JS_ParameterString(ctx, 1);
-        ip_info.ip.addr = ipaddr_addr(JS_GetStringParameter(ctx, 1));
+        const char *ip = JS_GetStringParameter(ctx, 1);
+        ip_info.ip.addr = ipaddr_addr(ip);
+        JS_FreeString(ctx, ip);
     }
 
     if (JS_ParameterCount(ctx) > 2) {
         JS_ParameterString(ctx, 2);
-        ip_info.ip.addr = ipaddr_addr(JS_GetStringParameter(ctx, 2));
+        const char *ip = JS_GetStringParameter(ctx, 2);
+        ip_info.ip.addr = ipaddr_addr(ip);
+        JS_FreeString(ctx, ip);
     }
 
     if (JS_ParameterCount(ctx) > 3) {
         JS_ParameterString(ctx, 3);
-        ip_info.ip.addr = ipaddr_addr(JS_GetStringParameter(ctx, 3));
+        const char *ip = JS_GetStringParameter(ctx, 3);
+        ip_info.ip.addr = ipaddr_addr(ip);
+        JS_FreeString(ctx, ip);
     }
 
     esp_err_t err = tcpip_adapter_set_ip_info(JS_GetIntParameter(ctx, 0), &ip_info);

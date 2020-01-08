@@ -91,8 +91,9 @@ JS_C_FUNCTION(js_open) {
         JS_ParameterNumber(ctx, 2);
         mode = JS_GetIntParameter(ctx, 2);
     }
-    int fd = open(JS_GetStringParameter(ctx, 0), JS_GetIntParameter(ctx, 1) | O_BINARY, mode);
-
+    const char *s0 = JS_GetStringParameter(ctx, 0);
+    int fd = open(s0, JS_GetIntParameter(ctx, 1) | O_BINARY, mode);
+    JS_FreeString(ctx, s0);
     JS_RETURN_NUMBER(ctx, fd);
 }
 
@@ -126,44 +127,58 @@ JS_C_FUNCTION(js_truncate) {
     JS_ParameterString(ctx, 0);
     JS_ParameterNumber(ctx, 1);
 
-    int err = truncate(JS_GetStringParameter(ctx, 0), (off_t)JS_GetNumberParameter(ctx, 1));
+    const char *s0 = JS_GetStringParameter(ctx, 0);
+    int err = truncate(s0, (off_t)JS_GetNumberParameter(ctx, 1));
+    JS_FreeString(ctx, s0);
     JS_RETURN_NUMBER(ctx, err);
 }
 
 JS_C_FUNCTION(js_mkdir) {
     JS_ParameterString(ctx, 0);
     JS_ParameterNumber(ctx, 1);
+    const char *s0 = JS_GetStringParameter(ctx, 0);
 #ifdef _WIN32
-    int err = mkdir(JS_GetStringParameter(ctx, 0));
+    int err = mkdir(s0);
 #else
-    int err = mkdir(JS_GetStringParameter(ctx, 0), JS_GetIntParameter(ctx, 1));
+    int err = mkdir(s0, JS_GetIntParameter(ctx, 1));
 #endif
+    JS_FreeString(ctx, s0);
     JS_RETURN_NUMBER(ctx, err);
 }
 
 JS_C_FUNCTION(js_rename) {
     JS_ParameterString(ctx, 0);
     JS_ParameterString(ctx, 1);
-    int err = rename(JS_GetStringParameter(ctx, 0), JS_GetStringParameter(ctx, 1));
+    const char *s0 = JS_GetStringParameter(ctx, 0);
+    const char *s1 = JS_GetStringParameter(ctx, 1);
+    int err = rename(s0, s1);
+    JS_FreeString(ctx, s0);
+    JS_FreeString(ctx, s1);
     JS_RETURN_NUMBER(ctx, err);
 }
 
 JS_C_FUNCTION(js_rmdir) {
     JS_ParameterString(ctx, 0);
-    int err = rmdir(JS_GetStringParameter(ctx, 0));
+    const char *s0 = JS_GetStringParameter(ctx, 0);
+    int err = rmdir(s0);
+    JS_FreeString(ctx, s0);
     JS_RETURN_NUMBER(ctx, err);
 }
 
 JS_C_FUNCTION(js_unlink) {
     JS_ParameterString(ctx, 0);
-    int err = unlink(JS_GetStringParameter(ctx, 0));
+    const char *s0 = JS_GetStringParameter(ctx, 0);
+    int err = unlink(s0);
+    JS_FreeString(ctx, s0);
     JS_RETURN_NUMBER(ctx, err);
 }
 
 JS_C_FUNCTION(js_access) {
     JS_ParameterString(ctx, 0);
     JS_ParameterNumber(ctx, 1);
-    int err = access(JS_GetStringParameter(ctx, 0), JS_GetIntParameter(ctx, 1));
+    const char *s0 = JS_GetStringParameter(ctx, 0);
+    int err = access(s0, JS_GetIntParameter(ctx, 1));
+    JS_FreeString(ctx, s0);
     JS_RETURN_NUMBER(ctx, err);
 }
 
@@ -192,7 +207,9 @@ static js_object_type stat_to_js(JS_CONTEXT ctx, struct stat *st_buf) {
 JS_C_FUNCTION(js_stat) {
     JS_ParameterString(ctx, 0);
     struct stat st_buf;
-    int err = stat(JS_GetStringParameter(ctx, 0), &st_buf);
+    const char *s0 = JS_GetStringParameter(ctx, 0);
+    int err = stat(s0, &st_buf);
+    JS_FreeString(ctx, s0);
     if (err)
         JS_RETURN_NOTHING(ctx);
     
@@ -214,7 +231,9 @@ JS_C_FUNCTION(js_fstat) {
 JS_C_FUNCTION(js_chmod) {
     JS_ParameterString(ctx, 0);
     JS_ParameterNumber(ctx, 1);
-    int err = chmod(JS_GetStringParameter(ctx, 0), JS_GetIntParameter(ctx, 1));
+    const char *s0 = JS_GetStringParameter(ctx, 0);
+    int err = chmod(s0, JS_GetIntParameter(ctx, 1));
+    JS_FreeString(ctx, s0);
     JS_RETURN_NUMBER(ctx, err);
 }
 
@@ -223,14 +242,18 @@ JS_C_FUNCTION(js_chown) {
     JS_ParameterString(ctx, 0);
     JS_ParameterNumber(ctx, 1);
     JS_ParameterNumber(ctx, 2);
-    int err = chown(JS_GetStringParameter(ctx, 0), (uid_t)JS_GetIntParameter(ctx, 1), (gid_t)JS_GetIntParameter(ctx, 2));
+    const char *s0 = JS_GetStringParameter(ctx, 0);
+    int err = chown(s0, (uid_t)JS_GetIntParameter(ctx, 1), (gid_t)JS_GetIntParameter(ctx, 2));
+    JS_FreeString(ctx, s0);
     JS_RETURN_NUMBER(ctx, err);
 }
 
 JS_C_FUNCTION(js_link) {
     JS_ParameterString(ctx, 0);
     JS_ParameterString(ctx, 1);
-    int err = link(JS_GetStringParameter(ctx, 0), JS_GetStringParameter(ctx, 1));
+    const char *s0 = JS_GetStringParameter(ctx, 0);
+    int err = link(s0, JS_GetStringParameter(ctx, 1));
+    JS_FreeString(ctx, s0);
     JS_RETURN_NUMBER(ctx, err);
 }
 #endif
@@ -247,7 +270,9 @@ JS_C_FUNCTION(js_ftruncate) {
 JS_C_FUNCTION(js_lstat) {
     JS_ParameterString(ctx, 0);
     struct stat st_buf;
-    int err = lstat(JS_GetStringParameter(ctx, 0), &st_buf);
+    const char *s0 = JS_GetStringParameter(ctx, 0);
+    int err = lstat(s0, &st_buf);
+    JS_FreeString(ctx, s0);
     if (err)
         JS_RETURN_NOTHING(ctx);
     
@@ -265,7 +290,9 @@ JS_C_FUNCTION(js_fchmod) {
 JS_C_FUNCTION(js_lchmod) {
     JS_ParameterString(ctx, 0);
     JS_ParameterNumber(ctx, 1);
-    int err = lchmod(JS_GetStringParameter(ctx, 0), JS_GetIntParameter(ctx, 1));
+    const char *s0 = JS_GetStringParameter(ctx, 0);
+    int err = lchmod(s0, JS_GetIntParameter(ctx, 1));
+    JS_FreeString(ctx, s0);
     JS_RETURN_NUMBER(ctx, err);
 }
 
@@ -281,14 +308,20 @@ JS_C_FUNCTION(js_lchown) {
     JS_ParameterString(ctx, 0);
     JS_ParameterNumber(ctx, 1);
     JS_ParameterNumber(ctx, 2);
-    int err = lchown(JS_GetStringParameter(ctx, 0), (uid_t)JS_GetIntParameter(ctx, 1), (gid_t)JS_GetIntParameter(ctx, 2));
+    const char *s0 = JS_GetStringParameter(ctx, 0);
+    int err = lchown(s0, (uid_t)JS_GetIntParameter(ctx, 1), (gid_t)JS_GetIntParameter(ctx, 2));
+    JS_FreeString(ctx, s0);
     JS_RETURN_NUMBER(ctx, err);
 }
 
 JS_C_FUNCTION(js_symlink) {
     JS_ParameterString(ctx, 0);
     JS_ParameterString(ctx, 1);
-    int err = symlink(JS_GetStringParameter(ctx, 0), JS_GetStringParameter(ctx, 1));
+    const char *s0 = JS_GetStringParameter(ctx, 0);
+    const char *s1 = JS_GetStringParameter(ctx, 1);
+    int err = symlink(s0, s1);
+    JS_FreeString(ctx, s0);
+    JS_FreeString(ctx, s1);
     JS_RETURN_NUMBER(ctx, err);
 }
 #endif
@@ -297,7 +330,9 @@ JS_C_FUNCTION(js_realpath) {
     char resolved_path[PATH_MAX];
 
     JS_ParameterString(ctx, 0);
-    char *str = realpath(JS_GetStringParameter(ctx, 0), resolved_path);
+    const char *s0 = JS_GetStringParameter(ctx, 0);
+    char *str = realpath(s0, resolved_path);
+    JS_FreeString(ctx, s0);
     if (str)
         JS_RETURN_STRING(ctx, str);
     JS_RETURN_UNDEFINED(ctx);
@@ -305,7 +340,9 @@ JS_C_FUNCTION(js_realpath) {
 
 JS_C_FUNCTION(js_opendir) {
     JS_ParameterString(ctx, 0);
-    DIR *dir = opendir(JS_GetStringParameter(ctx, 0));
+    const char *s0 = JS_GetStringParameter(ctx, 0);
+    DIR *dir = opendir(s0);
+    JS_FreeString(ctx, s0);
     if (dir)
         JS_RETURN_POINTER(ctx, dir);
     JS_RETURN_UNDEFINED(ctx);

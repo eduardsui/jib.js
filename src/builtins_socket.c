@@ -140,8 +140,11 @@ JS_C_FUNCTION(js_connect) {
     snprintf(port_str, sizeof(port_str), "%u", JS_GetIntParameter(ctx, 2));
 
     const char *hostname = JS_GetStringParameter(ctx, 1);
-    if (getaddrinfo(hostname, port_str, &hints, &result) != 0)
+    if (getaddrinfo(hostname, port_str, &hints, &result) != 0) {
+        JS_FreeString(ctx, hostname);
         JS_RETURN_NUMBER(ctx, -1);
+    }
+    JS_FreeString(ctx, hostname);
 
     for (res = result; res != NULL; res = res->ai_next) {
         err = connect(JS_GetIntParameter(ctx, 0), res->ai_addr, res->ai_addrlen);
@@ -198,6 +201,7 @@ JS_C_FUNCTION(js_bind) {
         err = bind((int)sock, (struct sockaddr *)&sin, sizeof(sin));
     }
 
+    JS_FreeString(ctx, iface);
     JS_RETURN_NUMBER(ctx, err);
 }
 
@@ -483,8 +487,11 @@ JS_C_FUNCTION(js_sendto) {
     hints.ai_socktype = SOCK_DGRAM;
 
     const char *hostname = JS_GetStringParameter(ctx, 1);
-    if (getaddrinfo(hostname, port_str, &hints, &result) != 0)
+    if (getaddrinfo(hostname, port_str, &hints, &result) != 0) {
+        JS_FreeString(ctx, hostname);
         JS_RETURN_NUMBER(ctx, -1);
+    }
+    JS_FreeString(ctx, hostname);
 
     int err = -1;
     for (res = result; res != NULL; res = res->ai_next) {
@@ -682,12 +689,14 @@ JS_C_FUNCTION(js_tls_create) {
             js_size_t pem_size = 0;
             const char *pem_buffer = JS_GetStringParameterLen(ctx, 1, &pem_size);
             tls_load_certificates(context, (const unsigned char *)pem_buffer, pem_size);
+            JS_FreeString(ctx, pem_buffer);
         }
         if (n > 2) {
             JS_ParameterString(ctx, 2);
             js_size_t pem_size = 0;
             const char *pem_buffer = JS_GetStringParameterLen(ctx, 2, &pem_size);
             tls_load_private_key(context, (const unsigned char *)pem_buffer, pem_size);
+            JS_FreeString(ctx, pem_buffer);
         }
     } else {
         if (n > 1) {
@@ -695,6 +704,7 @@ JS_C_FUNCTION(js_tls_create) {
             js_size_t pem_size = 0;
             const char *pem_buffer = JS_GetStringParameterLen(ctx, 1, &pem_size);
             tls_load_root_certificates(context, (const unsigned char *)pem_buffer, pem_size);
+            JS_FreeString(ctx, pem_buffer);
         }
     }
     JS_RETURN_POINTER(ctx, context);
@@ -896,7 +906,9 @@ JS_C_FUNCTION(js_tls_sni_set) {
     if (!context)
         JS_RETURN_NOTHING(ctx);
 
-    int err = tls_sni_set(context, JS_GetStringParameter(ctx, 1));
+    const char *sni = JS_GetStringParameter(ctx, 1);
+    int err = tls_sni_set(context, sni);
+    JS_FreeString(ctx, sni);
     JS_RETURN_NUMBER(ctx, err);
 }
 
@@ -907,7 +919,9 @@ JS_C_FUNCTION(js_tls_add_alpn) {
     if (!context)
         JS_RETURN_NOTHING(ctx);
 
-    int err = tls_add_alpn(context, JS_GetStringParameter(ctx, 1));
+    const char *alpn = JS_GetStringParameter(ctx, 1);
+    int err = tls_add_alpn(context, alpn);
+    JS_FreeString(ctx, alpn);
     JS_RETURN_NUMBER(ctx, err);
 }
 
