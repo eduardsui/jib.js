@@ -411,7 +411,6 @@ JS_C_FUNCTION(js_recvfrom) {
 JS_C_FUNCTION(js_send) {
     void *buf;
     js_size_t sz;
-
     JS_ParameterNumber(ctx, 0);
     buf = JS_GetBufferParameter(ctx, 1, &sz);
 
@@ -639,7 +638,6 @@ JS_C_FUNCTION(js_unpoll) {
     int fd = JS_GetIntParameter(ctx, 0);
 
     int err = loop_remove_io(js_loop(), fd);
-
     if (!err) {
         snprintf(func_buffer, sizeof(func_buffer), "io%u", fd);
 #ifdef WITH_DUKTAPE
@@ -648,9 +646,9 @@ JS_C_FUNCTION(js_unpoll) {
         duk_del_prop(ctx, -2);
         duk_pop_2(ctx);
 #else
-        js_object_type obj = JS_GetPropertyStr(ctx, global_stash(ctx), func_buffer);
-        JS_DeleteProperty(ctx, global_stash(ctx), JS_ValueToAtom(ctx, obj), 0);
-        JS_FreeValue(ctx, obj);
+        JSAtom prop = JS_NewAtom(ctx, func_buffer);
+        JS_DeleteProperty(ctx, global_stash(ctx), prop, 0);
+        JS_FreeAtom(ctx, prop);
 #endif
     }
     JS_RETURN_NUMBER(ctx, err);

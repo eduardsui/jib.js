@@ -223,6 +223,7 @@ var net = {
 		this.close = function() {
 			if ((this._socket !== undefined) && (this._socket >= 0)) {
 				this.emit("close");
+console.log("close");
 				_net_.unpoll(this._socket);
 				_net_.close(this._socket);
 				this._socket = undefined;

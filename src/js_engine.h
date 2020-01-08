@@ -125,7 +125,7 @@
     #define JS_GetAsStringParameter(ctx, index)                 JS_GetStringParameter(ctx, index)
     #define JS_GetAsStringParameterLen(ctx, index, len)         JS_GetStringParameterLen(ctx, index, len)
     #define JS_GetPointerParameter(ctx, index)                  _JS_GetPointerParameter((ctx), argv[(index)])
-    #define JS_GetBufferParameter(ctx, index, sz)               JS_GetArrayBuffer((ctx), (sz), argv[(index)])
+    #define JS_GetBufferParameter(ctx, index, sz)               _JS_GetArrayBuffer((ctx), (sz), argv[(index)])
     #define JS_GetObjectParameter(ctx, index)                   argv[(index)]
     
     #define JS_ObjectSetNumber(ctx, obj, mem, val)              JS_SetPropertyStr((ctx), (obj), (mem), JS_NewInt32((ctx), (val)))
@@ -207,6 +207,16 @@
             JS_ThrowTypeError(ctx, "Handle expected");
 #endif
         return (void *)(uintptr_t)val;
+    }
+
+    static inline void *_JS_GetArrayBuffer(JS_CONTEXT ctx, size_t *sz, JSValueConst v) {
+        void *buf = JS_GetArrayBuffer(ctx, sz, v);
+        if (!buf) {
+            js_object_type obj = JS_GetTypedArrayBuffer(ctx, v, NULL, NULL, NULL);
+            buf = JS_GetArrayBuffer(ctx, sz, obj);
+            JS_FreeValue(ctx, obj);
+        }
+        return buf;
     }
 
     static inline void _JS_ObjectSetStringLenLen(JS_CONTEXT ctx, JSValue obj, const char *mem, int len_mem, const char *val, int len_val) {

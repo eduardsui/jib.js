@@ -257,7 +257,9 @@ static int setInterval_callback(struct doops_loop *loop) {
     JS_FreeValue(js_ctx, global_object);
 
     if ((JS_IsBool(ret_value)) && (_JS_GetBooleanParameter(js_ctx, ret_value))) {
-        JS_DeleteProperty(js_ctx, global_stash(js_ctx), JS_ValueToAtom(js_ctx, obj), 0);
+        JSAtom prop = JS_NewAtom(js_ctx, func_buffer);
+        JS_DeleteProperty(js_ctx, global_stash(js_ctx), prop, 0);
+        JS_FreeAtom(js_ctx, prop);
         JS_FreeValue(js_ctx, obj);
         JS_FreeValue(js_ctx, ret_value);
         return 1;
@@ -287,7 +289,9 @@ static int setTimeout_callback(struct doops_loop *loop) {
     js_object_type global_object = JS_GetGlobalObject(js_ctx);
     js_object_type obj = JS_GetPropertyStr(js_ctx, global_stash(js_ctx), func_buffer);
     JS_FreeValueCheckException(js_ctx, JS_Call(js_ctx, obj, global_object, 0, NULL));
-    JS_DeleteProperty(js_ctx, global_stash(js_ctx), JS_ValueToAtom(js_ctx, obj), 0);
+    JSAtom prop = JS_NewAtom(js_ctx, func_buffer);
+    JS_DeleteProperty(js_ctx, global_stash(js_ctx), prop, 0);
+    JS_FreeAtom(js_ctx, prop);
     JS_FreeValue(js_ctx, obj);
     JS_FreeValue(js_ctx, global_object);
 #endif
@@ -313,7 +317,9 @@ static int setImmediate_callback(struct doops_loop *loop) {
     js_object_type global_object = JS_GetGlobalObject(js_ctx);
     js_object_type obj = JS_GetPropertyStr(js_ctx, global_stash(js_ctx), func_buffer);
     JS_FreeValueCheckException(js_ctx, JS_Call(js_ctx, obj, global_object, 0, NULL));
-    JS_DeleteProperty(js_ctx, global_stash(js_ctx), JS_ValueToAtom(js_ctx, obj), 0);
+    JSAtom prop = JS_NewAtom(js_ctx, func_buffer);
+    JS_DeleteProperty(js_ctx, global_stash(js_ctx), prop, 0);
+    JS_FreeAtom(js_ctx, prop);
     JS_FreeValue(js_ctx, obj);
     JS_FreeValue(js_ctx, global_object);
 #endif
@@ -366,9 +372,9 @@ JS_C_FUNCTION(clearInterval) {
     duk_del_prop_string(js_ctx, -1, func_buffer);
     duk_pop(js_ctx);
 #else
-    js_object_type obj = JS_GetPropertyStr(js_ctx, global_stash(js_ctx), func_buffer);
-    JS_DeleteProperty(js_ctx, global_stash(js_ctx), JS_ValueToAtom(js_ctx, obj), 0);
-    JS_FreeValue(ctx, obj);
+    JSAtom prop = JS_NewAtom(js_ctx, func_buffer);
+    JS_DeleteProperty(js_ctx, global_stash(js_ctx), prop, 0);
+    JS_FreeAtom(js_ctx, prop);
 #endif
 
 	JS_RETURN_NOTHING(ctx);
@@ -392,9 +398,9 @@ JS_C_FUNCTION(clearTimeout) {
     duk_del_prop_string(js_ctx, -1, func_buffer);
     duk_pop(js_ctx);
 #else
-    js_object_type obj = JS_GetPropertyStr(js_ctx, global_stash(js_ctx), func_buffer);
-    JS_DeleteProperty(js_ctx, global_stash(js_ctx), JS_ValueToAtom(js_ctx, obj), 0);
-    JS_FreeValue(ctx, obj);
+    JSAtom prop = JS_NewAtom(js_ctx, func_buffer);
+    JS_DeleteProperty(js_ctx, global_stash(js_ctx), prop, 0);
+    JS_FreeAtom(js_ctx, prop);
 #endif
 
 	JS_RETURN_NOTHING(ctx);
@@ -484,9 +490,9 @@ JS_C_FUNCTION(clearImmediate) {
     duk_del_prop_string(js_ctx, -1, func_buffer);
     duk_pop(js_ctx);
 #else
-    js_object_type obj = JS_GetPropertyStr(js_ctx, global_stash(js_ctx), func_buffer);
-    JS_DeleteProperty(js_ctx, global_stash(js_ctx), JS_ValueToAtom(js_ctx, obj), 0);
-    JS_FreeValue(ctx, obj);
+    JSAtom prop = JS_NewAtom(js_ctx, func_buffer);
+    JS_DeleteProperty(js_ctx, global_stash(js_ctx), prop, 0);
+    JS_FreeAtom(js_ctx, prop);
 #endif
 
 	JS_RETURN_NOTHING(ctx);
@@ -797,7 +803,9 @@ static void ui_close_callback(void *event_data, void *userdata) {
         if (JS_IsFunction(js_ctx, function_obj))
             JS_FreeValueCheckException(js_ctx, JS_Call(js_ctx, function_obj, obj, 0, NULL));
         JS_FreeValue(js_ctx, function_obj);
-        JS_DeleteProperty(js_ctx, global_stash(js_ctx), JS_ValueToAtom(js_ctx, obj), 0);
+        JSAtom prop = JS_NewAtom(js_ctx, "ondestroy");
+        JS_DeleteProperty(js_ctx, global_stash(js_ctx), prop, 0);
+        JS_FreeAtom(js_ctx, prop);
     }
     JS_FreeValue(js_ctx, obj);
 #endif
@@ -1946,6 +1954,13 @@ void duk_run_file(JS_CONTEXT ctx, const char *path) {
     }
 }
 
+#ifdef WITH_QUICKJS
+JS_C_FUNCTION(native_gc) {
+    JS_RunGC(JS_GetRuntime(ctx));
+    JS_RETURN_NOTHING(ctx);
+}
+#endif
+
 JS_CONTEXT js() {
     return js_ctx;
 }
@@ -2128,6 +2143,7 @@ void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *
     JS_EvalSimple(ctx, "global.gc = Duktape.gc; global.__destructor = Duktape.fin;");
     JS_EvalSimple(ctx, JS_PROMISE);
 #else
+    register_global_function(ctx, "gc", native_gc, 1);
     JS_EvalSimple(ctx, "global.__destructor = function() { /* to do */ };");
     JS_EvalSimple(ctx, JS_TEXT_ENCODER_DECODER)
 #endif
