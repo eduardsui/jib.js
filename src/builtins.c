@@ -1674,8 +1674,8 @@ JS_C_FUNCTION(js_signal) {
     JS_ParameterNumber(ctx, 0);
 #ifdef _WIN32
     int signal_num = JS_GetIntParameter(ctx, 0);
-    // just SIG_TERM supported
-    if (signal_num == 15) {
+    // just SIG_INT supported
+    if (signal_num == 2) {
         SetConsoleCtrlHandler((PHANDLER_ROUTINE)sig_handler, TRUE);
         JS_RETURN_NUMBER(ctx, 0);
     }

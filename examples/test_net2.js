@@ -14,7 +14,7 @@ client.on('end', function() {
 });
 
 
-process.on('SIGTERM', function(sig) {
+process.on('SIGINT', function(sig) {
 	console.log("CTRL-C");
 	app.quit();
 });
