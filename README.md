@@ -14,6 +14,8 @@ It may store all .js modules inside the library/executable (see `src/modules.h`)
 
 It currently supports: `fs`, `net`, `http`, `url`, `querystringify`, `events` and Promises.
 
+jib.js uses duktape(default) or quickjs as interpreter.
+
 Compiling
 ----------
 
