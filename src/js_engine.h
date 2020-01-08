@@ -228,6 +228,7 @@
             return;
 
         memcpy(mem_buf, mem, len_mem);
+        mem_buf[len_mem] = 0;
         JS_SetPropertyStr(ctx, obj, mem_buf, JS_NewStringLen(ctx, val, len_val));
     }
     
