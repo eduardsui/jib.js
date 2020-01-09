@@ -507,21 +507,86 @@ JS_C_FUNCTION_FORWARD(native_print, int level) {
 	duk_join(ctx, duk_get_top(ctx) - 1);
     log_log(level, func_name, line_number, duk_safe_to_string(ctx, -1));
 #else
-    const char *text = NULL;
-    if (JS_ParameterCount(ctx) > 0)
-        text = JS_GetAsStringParameter(ctx, 0);
+    JS_FreeValue(ctx, JS_ThrowTypeError(ctx, "callstack"));
 
-    js_object_type global_object = JS_GetGlobalObject(ctx);
-    js_object_type obj = JS_GetPropertyStr(ctx, global_object, "module");
-    js_object_type filename = JS_GetPropertyStr(ctx, obj, "filename");
-    const char *fname = JS_ToCString(ctx, filename);
-    log_log(level, fname ? fname : "(eval)", 0, text ? text : "");
-    JS_FreeString(ctx, text);
-    if (fname)
-        JS_FreeCString(ctx, fname);
-    JS_FreeValue(ctx, filename);
-    JS_FreeValue(ctx, obj);
-    JS_FreeValue(ctx, global_object);
+    JSValue exception_val = JS_GetException(ctx);
+    JSValue val = JS_GetPropertyStr(ctx, exception_val, "stack");
+    int line_number = 1;
+    char filename_buf[0x100];
+    filename_buf[0] = 0;
+    if (!JS_IsUndefined(val)) {
+        const char *call_stack = JS_ToCString(ctx, val);
+        if (call_stack) {
+            const char *line = strchr(call_stack, '\n');
+            if (line) {
+                const char *filename = strchr(line, '(');
+                if (filename) {
+                    filename ++;
+                    const char *line_ptr = strchr(filename, ':');
+                    if (line_ptr) {
+                        int size = (uintptr_t)line_ptr - (uintptr_t)filename;
+                        line_number = atoi(++ line_ptr);
+                        if (size >= sizeof(filename_buf))
+                            size = sizeof(filename_buf) - 1;
+                        memcpy(filename_buf, filename, size);
+                        filename_buf[size] = 0;
+                    } else {
+                        line_ptr = strchr(filename, ')');
+                        if (line_ptr) {
+                            int size = (uintptr_t)line_ptr - (uintptr_t)filename;
+                            if (size >= sizeof(filename_buf))
+                                size = sizeof(filename_buf) - 1;
+                            memcpy(filename_buf, filename, size);
+                            filename_buf[size] = 0;
+                        }
+                    }
+                }
+            }
+        }
+        JS_FreeString(ctx, call_stack);
+    }
+    JS_FreeValue(ctx, exception_val);
+
+    JS_ResetUncatchableError(ctx);
+
+    const char *text = NULL;
+    char *buffer = NULL;
+    if (JS_ParameterCount(ctx) == 1) {
+        text = JS_GetAsStringParameter(ctx, 0);
+    } else
+    if (JS_ParameterCount(ctx) > 1) {
+        int count = JS_ParameterCount(ctx);
+        int i;
+        int size = 0;
+        for (i = 0; i < count; i++) {
+            const char *str = JS_GetAsStringParameter(ctx, i);
+            int len = strlen(str);
+            if (size) {
+                buffer[size] = ' ';
+                size ++;
+            }
+            buffer = (char *)realloc(buffer, size + len + 1);
+            memcpy(buffer + size, str, len);
+            buffer[size + len] = 0;
+            size += len;
+            JS_FreeString(ctx, str);
+        }
+        text = buffer;
+    }
+    // js_object_type global_object = JS_GetGlobalObject(ctx);
+    // js_object_type obj = JS_GetPropertyStr(ctx, global_object, "module");
+    // js_object_type filename = JS_GetPropertyStr(ctx, obj, "filename");
+    // const char *fname = JS_ToCString(ctx, filename);
+    log_log(level, filename_buf, line_number, text ? text : "");
+    if (buffer) {
+        free(buffer);
+    } else
+        JS_FreeString(ctx, text);
+    // if (fname)
+    //     JS_FreeCString(ctx, fname);
+    // JS_FreeValue(ctx, filename);
+    // JS_FreeValue(ctx, obj);
+    // JS_FreeValue(ctx, global_object);
 #endif
 
     JS_RETURN_NOTHING(ctx);

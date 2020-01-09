@@ -6,7 +6,7 @@ require("purify");
 require("d3-color");
 var d3 = require("d3-interpolate");
 var faker = require("faker");
-require("crypto");
+var CryptoJS = require("crypto");
 var Papa = require("papaparse");
 require("csv");
 require("jspdf");

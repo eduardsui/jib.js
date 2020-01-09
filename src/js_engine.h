@@ -143,7 +143,7 @@
     #define JS_ObjectSetNull(ctx, obj, mem)                     JS_SetPropertyStr((ctx), (obj), (mem), JS_NULL)
     #define JS_ObjectSetUndefined(ctx, obj, mem)                JS_SetPropertyStr((ctx), (obj), (mem), JS_UNDEFINED)
 
-    #define JS_HIDDEN_SYMBOL
+    #define JS_HIDDEN_SYMBOL(str)                               ("\xFF" str)
     #define JS_VARARGS                                          0
 
     #define js_object_type                                      JSValue
