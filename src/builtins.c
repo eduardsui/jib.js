@@ -81,7 +81,66 @@ static struct {
 
 
 #ifndef WITH_DUKTAPE
+static JSClassID js_finalizer_class_id;
 void *js_error_callback = NULL;
+
+static JSValue js_finalizer_ctor(JSContext *ctx, JSValueConst new_target, int argc, JSValueConst *argv) {
+    if (argc != 2) {
+        JS_Error(ctx, "2 parameters expected");
+    }
+    JSValue proto = JS_GetPropertyStr(ctx, new_target, "prototype");
+    JSValue obj = JS_NewObjectProtoClass(ctx, proto, js_finalizer_class_id);
+    if (argc == 2) {
+        JSValueConst *argv2 = (JSValueConst *)js_malloc(ctx, sizeof(JSValueConst) * 2);
+        argv2[0] = JS_DupValueRT(JS_GetRuntime(ctx), argv[0]);
+        argv2[1] = JS_DupValueRT(JS_GetRuntime(ctx), argv[1]);
+        JS_SetOpaque(obj, argv2);
+    }
+    JS_FreeValue(ctx, proto);
+    return obj;
+}
+
+static void js_finalizer_finalizer(JSRuntime *rt, JSValue val) {
+    JSValueConst *argv2 = (JSValueConst *)JS_GetOpaque(val, js_finalizer_class_id);
+    if (argv2) {
+        JS_FreeValueCheckException(js_ctx, JS_Call(js_ctx, argv2[1], argv2[0], 1, argv2));
+        JS_FreeValueRT(rt, argv2[0]);
+        JS_FreeValueRT(rt, argv2[1]);
+        js_free(js_ctx, argv2);
+    }
+}
+
+static void js_finalizer_gc_mark(JSRuntime *rt, JSValueConst val, JS_MarkFunc *mark_func) {
+    JSValueConst *argv2 = (JSValueConst *)JS_GetOpaque(val, js_finalizer_class_id);
+    if (argv2) {
+        JS_MarkValue(rt, argv2[0], mark_func);
+        JS_MarkValue(rt, argv2[1], mark_func);
+    }
+}
+                            
+static JSClassDef js_finalizer_class = {
+    "__finalizerContainer",
+    .finalizer = js_finalizer_finalizer,
+    .gc_mark = js_finalizer_gc_mark,
+}; 
+
+static int js_finalizer_init(JSContext *ctx) {
+    JSValue finalizer_proto, finalizer_class;
+
+    JS_NewClassID(&js_finalizer_class_id);
+    JS_NewClass(JS_GetRuntime(ctx), js_finalizer_class_id, &js_finalizer_class);
+
+    finalizer_proto = JS_NewObject(ctx);
+    JS_SetClassProto(ctx, js_finalizer_class_id, finalizer_proto);
+
+    finalizer_class = JS_NewCFunction2(ctx, js_finalizer_ctor, "__finalizerContainer", 2, JS_CFUNC_constructor, 0);
+    JS_SetConstructor(ctx, finalizer_class, finalizer_proto);
+    
+    js_object_type global_object = JS_GetGlobalObject(ctx);
+    JS_SetPropertyStr(ctx, global_object, "__finalizerContainer", finalizer_class);
+    JS_FreeValue(ctx, global_object);
+    return 0;
+}
 
 js_object_type global_stash(JS_CONTEXT ctx) {
     void *opaque = JS_GetContextOpaque(ctx);
@@ -438,7 +497,7 @@ JS_C_FUNCTION(randomBytes) {
     if (len <= 0)
         JS_RETURN_UNDEFINED(ctx);
 
-    unsigned char *key = (unsigned char *)malloc(len);
+    unsigned char *key = (unsigned char *)js_malloc(ctx, len);
     if (!key)
         JS_RETURN_UNDEFINED(ctx);
 
@@ -457,7 +516,7 @@ JS_C_FUNCTION(randomBytes) {
             JS_RETURN_BUFFER_FREE_VAL(ctx, key, len);
         }
         CryptReleaseContext(hProvider, 0);
-        free(key);
+        js_free(ctx, key);
     }
 #else
 #ifdef ESP32
@@ -2227,7 +2286,8 @@ void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *
     JS_EvalSimple(ctx, JS_PROMISE);
 #else
     register_global_function(ctx, "gc", native_gc, 1);
-    JS_EvalSimple(ctx, "global.__destructor = function() { /* to do */ };");
+    js_finalizer_init(ctx);
+    JS_EvalSimple(ctx, "global.__destructor = function(self, fin) { /* self['\\xFF__destructor'] = new __finalizerContainer(self, fin); */ };");
     // emulate node.js Buffer
     JS_EvalSimple(ctx, "class Buffer extends Uint8Array{constructor(i){super(i);}}");
     JS_EvalSimple(ctx, JS_TEXT_ENCODER_DECODER)
