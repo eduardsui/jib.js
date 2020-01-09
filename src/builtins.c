@@ -522,8 +522,9 @@ JS_C_FUNCTION_FORWARD(native_print, int level) {
                 const char *filename = strchr(line, '(');
                 if (filename) {
                     filename ++;
+                    const char *next_line = strchr(filename, '\n');
                     const char *line_ptr = strchr(filename, ':');
-                    if (line_ptr) {
+                    if ((line_ptr) && (line_ptr < next_line)) {
                         int size = (uintptr_t)line_ptr - (uintptr_t)filename;
                         line_number = atoi(++ line_ptr);
                         if (size >= sizeof(filename_buf))
@@ -2227,6 +2228,8 @@ void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *
 #else
     register_global_function(ctx, "gc", native_gc, 1);
     JS_EvalSimple(ctx, "global.__destructor = function() { /* to do */ };");
+    // emulate node.js Buffer
+    JS_EvalSimple(ctx, "class Buffer extends Uint8Array{constructor(i){super(i);}}");
     JS_EvalSimple(ctx, JS_TEXT_ENCODER_DECODER)
 #endif
     JS_EvalSimple(ctx, JS_MODULE);
