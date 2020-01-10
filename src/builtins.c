@@ -2286,12 +2286,12 @@ void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *
 #endif
     JS_EvalSimple(ctx, JS_GLOBAL);
 #ifdef WITH_DUKTAPE
-    JS_EvalSimple(ctx, "global.gc = Duktape.gc; global.__destructor = Duktape.fin;");
+    JS_EvalSimple(ctx, "global.gc = Duktape.gc; global.__destructor = Duktape.fin; global.finalize = global.__destructor;");
     JS_EvalSimple(ctx, JS_PROMISE);
 #else
     register_global_function(ctx, "gc", native_gc, 1);
     js_finalizer_init(ctx);
-    JS_EvalSimple(ctx, "global.__destructor = function(self, fin) { self['\\xFF__destructor'] = new __finalizerContainer(self, fin); };");
+    JS_EvalSimple(ctx, "global.__destructor = function(self, fin) { self['\\xFF__destructor'] = new __finalizerContainer(self, fin); }; global.finalize = global.__destructor;");
     // emulate node.js Buffer
     JS_EvalSimple(ctx, "class Buffer extends Uint8Array{constructor(i){super(i);}}");
     JS_EvalSimple(ctx, JS_TEXT_ENCODER_DECODER)
