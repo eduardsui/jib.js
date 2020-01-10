@@ -100,7 +100,7 @@
         return JS_NewContext(rt);
     }
 
-    #define JS_DestroyContext(ctx)                              { JSValue *opaque = (JSValue *)JS_GetContextOpaque(ctx); if (opaque) { JS_FreeValue(ctx, *opaque); free(opaque); } JSRuntime *rt = JS_GetRuntime(ctx); JS_FreeContext(ctx); JS_FreeRuntime(rt); }
+    #define JS_DestroyContext(ctx)                              { JSValue *opaque = (JSValue *)JS_GetContextOpaque(ctx); if (opaque) { JS_FreeValue(ctx, *opaque); js_free(ctx, opaque); JS_SetContextOpaque(ctx, NULL); } JSRuntime *rt = JS_GetRuntime(ctx); JS_FreeContext(ctx); JS_FreeRuntime(rt); }
     #define JS_EvalSimple(ctx, str)                             JS_EvalSimplePath(ctx, str, "none")
     #define JS_EvalSimplePath(ctx, str, path)                   { js_object_type val = (JS_Eval)(ctx, str, strlen(str), path, JS_EVAL_TYPE_GLOBAL); if (JS_IsException(val)) { js_std_dump_error(ctx); } JS_FreeValueCheckException(ctx, val); }
     #define JS_Eval(ctx, str, path)                             { js_object_type val = (JS_Eval)(ctx, str, strlen(str), path, JS_EVAL_TYPE_MODULE); if (JS_IsException(val)) { js_std_dump_error(ctx); } JS_FreeValueCheckException(ctx, val); }

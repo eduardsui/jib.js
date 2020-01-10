@@ -91,7 +91,8 @@ static JSValue js_finalizer_ctor(JSContext *ctx, JSValueConst new_target, int ar
     JSValue proto = JS_GetPropertyStr(ctx, new_target, "prototype");
     JSValue obj = JS_NewObjectProtoClass(ctx, proto, js_finalizer_class_id);
     if (argc == 2) {
-        JSValueConst *argv2 = (JSValueConst *)js_malloc(ctx, sizeof(JSValueConst) * 2);
+        // use malloc to avoid gc free
+        JSValueConst *argv2 = (JSValueConst *)malloc(sizeof(JSValueConst) * 2);
         argv2[0] = JS_DupValueRT(JS_GetRuntime(ctx), argv[0]);
         argv2[1] = JS_DupValueRT(JS_GetRuntime(ctx), argv[1]);
         JS_SetOpaque(obj, argv2);
@@ -103,10 +104,13 @@ static JSValue js_finalizer_ctor(JSContext *ctx, JSValueConst new_target, int ar
 static void js_finalizer_finalizer(JSRuntime *rt, JSValue val) {
     JSValueConst *argv2 = (JSValueConst *)JS_GetOpaque(val, js_finalizer_class_id);
     if (argv2) {
-        JS_FreeValueCheckException(js_ctx, JS_Call(js_ctx, argv2[1], argv2[0], 1, argv2));
-        JS_FreeValueRT(rt, argv2[0]);
-        JS_FreeValueRT(rt, argv2[1]);
-        js_free(js_ctx, argv2);
+        // check if finalizer is called by deleting context
+        if (JS_GetContextOpaque(js_ctx)) {
+            JS_FreeValueCheckException(js_ctx, JS_Call(js_ctx, argv2[1], argv2[0], 1, argv2));
+            JS_FreeValueRT(rt, argv2[0]);
+            JS_FreeValueRT(rt, argv2[1]);
+        }
+        free(argv2);
     }
 }
 
@@ -145,7 +149,7 @@ static int js_finalizer_init(JSContext *ctx) {
 js_object_type global_stash(JS_CONTEXT ctx) {
     void *opaque = JS_GetContextOpaque(ctx);
     if (!opaque) {
-        js_object_type *obj = (js_object_type *)malloc(sizeof(js_object_type));
+        js_object_type *obj = (js_object_type *)js_malloc(ctx, sizeof(js_object_type));
         *obj = JS_NewPlainObject(ctx);
         JS_SetContextOpaque(ctx, obj);
         opaque = obj;
@@ -2287,7 +2291,7 @@ void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *
 #else
     register_global_function(ctx, "gc", native_gc, 1);
     js_finalizer_init(ctx);
-    JS_EvalSimple(ctx, "global.__destructor = function(self, fin) { /* self['\\xFF__destructor'] = new __finalizerContainer(self, fin); */ };");
+    JS_EvalSimple(ctx, "global.__destructor = function(self, fin) { self['\\xFF__destructor'] = new __finalizerContainer(self, fin); };");
     // emulate node.js Buffer
     JS_EvalSimple(ctx, "class Buffer extends Uint8Array{constructor(i){super(i);}}");
     JS_EvalSimple(ctx, JS_TEXT_ENCODER_DECODER)
