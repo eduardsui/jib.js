@@ -1,8 +1,8 @@
 /*
  * QuickJS Javascript Engine
  *
- * Copyright (c) 2017-2019 Fabrice Bellard
- * Copyright (c) 2017-2019 Charlie Gordon
+ * Copyright (c) 2017-2020 Fabrice Bellard
+ * Copyright (c) 2017-2020 Charlie Gordon
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,8 +25,6 @@
 #ifndef QUICKJS_H
 #define QUICKJS_H
 
-#define CONFIG_VERSION  "2019-12-21"
-
 #include <stdio.h>
 #include <stdint.h>
 
@@ -34,6 +32,7 @@
 extern "C" {
 #endif
 
+#define CONFIG_VERSION  "2020-01-05"
 #if defined(__GNUC__) || defined(__clang__)
 #define js_likely(x)          __builtin_expect(!!(x), 1)
 #define js_unlikely(x)        __builtin_expect(!!(x), 0)
@@ -68,7 +67,8 @@ typedef uint32_t JSAtom;
 
 enum {
     /* all tags with a reference count are negative */
-    JS_TAG_FIRST       = -10, /* first negative tag */
+    JS_TAG_FIRST       = -11, /* first negative tag */
+    JS_TAG_BIG_DECIMAL = -11,
     JS_TAG_BIG_INT     = -10,
     JS_TAG_BIG_FLOAT   = -9,
     JS_TAG_SYMBOL      = -8,
@@ -123,6 +123,11 @@ static inline JSValue __JS_NewFloat64(JSContext *ctx, double d)
     return JS_MKVAL(JS_TAG_FLOAT64, (int)d);
 }
 
+static inline JS_BOOL JS_VALUE_IS_NAN(JSValue v)
+{
+    return 0;
+}
+    
 #elif defined(JS_NAN_BOXING)
 
 typedef uint64_t JSValue;
@@ -181,6 +186,13 @@ static inline int JS_VALUE_GET_NORM_TAG(JSValue v)
         return tag;
 }
 
+static inline JS_BOOL JS_VALUE_IS_NAN(JSValue v)
+{
+    uint32_t tag;
+    tag = JS_VALUE_GET_TAG(v);
+    return tag == (JS_NAN >> 32);
+}
+    
 #else /* !JS_NAN_BOXING */
 
 typedef union JSValueUnion {
@@ -217,6 +229,18 @@ static inline JSValue __JS_NewFloat64(JSContext *ctx, double d)
     v.tag = JS_TAG_FLOAT64;
     v.u.float64 = d;
     return v;
+}
+
+static inline JS_BOOL JS_VALUE_IS_NAN(JSValue v)
+{
+    union {
+        double d;
+        uint64_t u64;
+    } u;
+    if (v.tag != JS_TAG_FLOAT64)
+        return 0;
+    u.d = v.u.float64;
+    return (u.u64 & 0x7fffffffffffffff) > 0x7ff0000000000000;
 }
 
 #endif /* !JS_NAN_BOXING */
@@ -340,6 +364,12 @@ void JS_AddIntrinsicProxy(JSContext *ctx);
 void JS_AddIntrinsicMapSet(JSContext *ctx);
 void JS_AddIntrinsicTypedArrays(JSContext *ctx);
 void JS_AddIntrinsicPromise(JSContext *ctx);
+void JS_AddIntrinsicBigInt(JSContext *ctx);
+void JS_AddIntrinsicBigFloat(JSContext *ctx);
+void JS_AddIntrinsicBigDecimal(JSContext *ctx);
+/* enable "use bigint", "use math" and operator overloading */
+void JS_EnableBignumExt(JSContext *ctx, JS_BOOL enable);
+
 JSValue js_string_codePointRange(JSContext *ctx, JSValueConst this_val,
                                  int argc, JSValueConst *argv);
 
@@ -514,6 +544,12 @@ static inline JS_BOOL JS_IsBigFloat(JSValueConst v)
 {
     int tag = JS_VALUE_GET_TAG(v);
     return tag == JS_TAG_BIG_FLOAT;
+}
+
+static inline JS_BOOL JS_IsBigDecimal(JSValueConst v)
+{
+    int tag = JS_VALUE_GET_TAG(v);
+    return tag == JS_TAG_BIG_DECIMAL;
 }
 
 static inline JS_BOOL JS_IsBool(JSValueConst v)
