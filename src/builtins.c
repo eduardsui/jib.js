@@ -110,6 +110,7 @@ static void js_finalizer_finalizer(JSRuntime *rt, JSValue val) {
             JS_FreeValueRT(rt, argv2[0]);
             JS_FreeValueRT(rt, argv2[1]);
         }
+        JS_SetOpaque(val, NULL);
         free(argv2);
     }
 }
