@@ -502,7 +502,7 @@ JS_C_FUNCTION(randomBytes) {
     if (len <= 0)
         JS_RETURN_UNDEFINED(ctx);
 
-    unsigned char *key = (unsigned char *)malloc(ctx, len);
+    unsigned char *key = (unsigned char *)malloc(len);
     if (!key)
         JS_RETURN_UNDEFINED(ctx);
 
