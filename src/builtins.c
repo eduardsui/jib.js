@@ -1626,6 +1626,8 @@ JS_C_FUNCTION(native_require) {
             js_object_type exp = JS_GetPropertyStr(ctx, mod, "exports");
             JS_FreeValue(ctx, mod);
             JS_FreeString(ctx, module_id);
+            JS_FreeValue(ctx, loaded_modules);
+            JS_FreeValue(ctx, global_object);
             return exp;
         }
         JS_FreeValue(ctx, mod);
