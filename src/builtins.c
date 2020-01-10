@@ -2292,7 +2292,8 @@ void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *
 #else
     register_global_function(ctx, "gc", native_gc, 1);
     js_finalizer_init(ctx);
-    JS_EvalSimple(ctx, "global.__destructor = function(self, fin) { self['\\xFF__destructor'] = new __finalizerContainer(self, fin); }; global.finalize = global.__destructor;");
+    // finalizer broken on quickjs (cannot call js function from finalizer)
+    JS_EvalSimple(ctx, "global.__destructor = function(self, fin) { /* self['\\xFF__destructor'] = new __finalizerContainer(self, fin); */ }; global.finalize = global.__destructor;");
     // emulate node.js Buffer
     JS_EvalSimple(ctx, "class Buffer extends Uint8Array{constructor(i){super(i);}}");
     JS_EvalSimple(ctx, JS_TEXT_ENCODER_DECODER)
