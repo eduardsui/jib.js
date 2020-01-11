@@ -125,6 +125,7 @@ JS_C_FUNCTION(js_lora_send_packet) {
 
 JS_C_FUNCTION(js_lora_receive_packet) {
     // max 256 bytes packet (222 actually)
+#ifdef WITH_DUKTAPE
     unsigned char *buf = (unsigned char *)duk_push_fixed_buffer(ctx, 0x100);
     if (!buf)
         JS_RETURN_NOTHING(ctx);
@@ -135,6 +136,12 @@ JS_C_FUNCTION(js_lora_receive_packet) {
         return 1;
     }
     duk_pop(ctx);
+#else
+    unsigned char buf[0x100];
+    int err = lora_receive_packet(buf, sizeof(buf));
+    if (err > 0)
+        return JS_NewArrayBufferCopy(ctx, (const uint8_t *)buf, err);
+#endif
 
     JS_RETURN_NOTHING(ctx);
 }

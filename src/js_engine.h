@@ -10,6 +10,7 @@
 
     #define JS_CONTEXT                                          duk_context *
     #define JS_CreateContext(on_error)                          duk_create_heap(NULL, NULL, NULL, NULL, (on_error))
+    #define JS_CreateContext2(js_alloc, js_realloc, js_free, js_opaque, on_error)   duk_create_heap((js_alloc), (js_realloc), (js_free), (js_opaque), (on_error))
     #define JS_DestroyContext(ctx)                              duk_destroy_heap((ctx))
     #define JS_EvalSimple(ctx, str)                             duk_eval_string_noresult(ctx, str)
     #define JS_Eval(ctx, str, path)                             {                                                               \
@@ -100,6 +101,17 @@
         return JS_NewContext(rt);
     }
 
+    static inline JS_CONTEXT JS_CreateContext2(void *js_malloc, void *js_realloc, void *js_free, void *opaque, void *on_error) {
+        JSMallocFunctions mf;
+        mf.js_malloc = js_malloc;
+        mf.js_free = js_free;
+        mf.js_realloc = js_realloc;
+        mf.js_malloc_usable_size = NULL;
+        JSRuntime *rt = JS_NewRuntime2(&mf, opaque);
+        js_error_callback = on_error;
+        return JS_NewContext(rt);
+    }
+
     #define JS_DestroyContext(ctx)                              { JSValue *opaque = (JSValue *)JS_GetContextOpaque(ctx); if (opaque) { JS_FreeValue(ctx, *opaque); js_free(ctx, opaque); JS_SetContextOpaque(ctx, NULL); } JSRuntime *rt = JS_GetRuntime(ctx); JS_FreeContext(ctx); JS_FreeRuntime(rt); }
     #define JS_EvalSimple(ctx, str)                             JS_EvalSimplePath(ctx, str, "none")
     #define JS_EvalSimplePath(ctx, str, path)                   { js_object_type val = (JS_Eval)(ctx, str, strlen(str), path, JS_EVAL_TYPE_GLOBAL); if (JS_IsException(val)) { js_std_dump_error(ctx); } JS_FreeValueCheckException(ctx, val); }
@@ -133,7 +145,7 @@
     #define JS_ObjectSetStringLen(ctx, obj, mem, val, len)      JS_SetPropertyStr((ctx), (obj), (mem), JS_NewStringLen((ctx), (val), (len)))
     #define JS_ObjectSetStringLenLen(ctx, obj, mem, lm, val, lv) _JS_ObjectSetStringLenLen((ctx), (obj), (mem), (lm), (val), (lv))
 #ifdef ESP32
-    #define JS_ObjectSetPointer(ctx, obj, mem, val)             JS_SetPropertyStr((ctx), (obj), (mem), JS_NewUint32((ctx), (uint32_t)(val)))
+    #define JS_ObjectSetPointer(ctx, obj, mem, val)             JS_SetPropertyStr((ctx), (obj), (mem), JS_NewInt32((ctx), (int32_t)(val)))
 #else
     #define JS_ObjectSetPointer(ctx, obj, mem, val)             JS_SetPropertyStr((ctx), (obj), (mem), JS_NewBigUint64((ctx), (uint64_t)(val)))
 #endif
@@ -161,7 +173,7 @@
     #define JS_RETURN_BOOLEAN(ctx, val)                         return ((val) ? JS_TRUE : JS_FALSE)
     #define JS_RETURN_STRING(ctx, val)                          return JS_NewString((ctx), (val))
 #ifdef ESP32
-    #define JS_RETURN_POINTER(ctx, val)                         return JS_NewUint32((ctx), (uintptr_t)(val))
+    #define JS_RETURN_POINTER(ctx, val)                         return JS_NewInt32((ctx), (intptr_t)(val))
 #else
     #define JS_RETURN_POINTER(ctx, val)                         return JS_NewBigUint64((ctx), (uintptr_t)(val))
 #endif
@@ -198,7 +210,7 @@
 
     static inline void *_JS_GetPointerParameter(JS_CONTEXT ctx, JSValueConst v) {
 #ifdef ESP32
-        uint32 val = 0;
+        uint32_t val = 0;
         if (JS_ToUint32(ctx, &val, v))
             JS_ThrowTypeError(ctx, "Handle expected");
 #else

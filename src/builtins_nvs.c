@@ -80,7 +80,7 @@ JS_C_FUNCTION(js_nvs_set_u8) {
     JS_ParameterPointer(ctx, 0);
     JS_ParameterString(ctx, 1);
     JS_ParameterNumber(ctx, 2);
-    const char *key = JS_ParameterString(ctx, 1);
+    const char *key = JS_GetStringParameter(ctx, 1);
     esp_err_t ret = nvs_set_u8((nvs_handle)JS_GetPointerParameter(ctx, 0), key, (unsigned char)JS_GetIntParameter(ctx, 2));
     JS_FreeString(ctx, key);
     JS_RETURN_NUMBER(ctx, ret);
@@ -90,7 +90,7 @@ JS_C_FUNCTION(js_nvs_set_i16) {
     JS_ParameterPointer(ctx, 0);
     JS_ParameterString(ctx, 1);
     JS_ParameterNumber(ctx, 2);
-    const char *key = JS_ParameterString(ctx, 1);
+    const char *key = JS_GetStringParameter(ctx, 1);
     esp_err_t ret = nvs_set_i16((nvs_handle)JS_GetPointerParameter(ctx, 0), key, (short)JS_GetIntParameter(ctx, 2));
     JS_FreeString(ctx, key);
     JS_RETURN_NUMBER(ctx, ret);
@@ -100,7 +100,7 @@ JS_C_FUNCTION(js_nvs_set_u16) {
     JS_ParameterPointer(ctx, 0);
     JS_ParameterString(ctx, 1);
     JS_ParameterNumber(ctx, 2);
-    const char *key = JS_ParameterString(ctx, 1);
+    const char *key = JS_GetStringParameter(ctx, 1);
     esp_err_t ret = nvs_set_u16((nvs_handle)JS_GetPointerParameter(ctx, 0), key, (unsigned short)JS_GetIntParameter(ctx, 2));
     JS_FreeString(ctx, key);
     JS_RETURN_NUMBER(ctx, ret);
@@ -110,7 +110,7 @@ JS_C_FUNCTION(js_nvs_set_i32) {
     JS_ParameterPointer(ctx, 0);
     JS_ParameterString(ctx, 1);
     JS_ParameterNumber(ctx, 2);
-    const char *key = JS_ParameterString(ctx, 1);
+    const char *key = JS_GetStringParameter(ctx, 1);
     esp_err_t ret = nvs_set_i32((nvs_handle)JS_GetPointerParameter(ctx, 0), key, (int)JS_GetIntParameter(ctx, 2));
     JS_FreeString(ctx, key);
     JS_RETURN_NUMBER(ctx, ret);
@@ -120,7 +120,7 @@ JS_C_FUNCTION(js_nvs_set_u32) {
     JS_ParameterPointer(ctx, 0);
     JS_ParameterString(ctx, 1);
     JS_ParameterNumber(ctx, 2);
-    const char *key = JS_ParameterString(ctx, 1);
+    const char *key = JS_GetStringParameter(ctx, 1);
     esp_err_t ret = nvs_set_u32((nvs_handle)JS_GetPointerParameter(ctx, 0), key, (unsigned int)JS_GetNumberParameter(ctx, 2));
     JS_FreeString(ctx, key);
     JS_RETURN_NUMBER(ctx, ret);
@@ -130,7 +130,7 @@ JS_C_FUNCTION(js_nvs_set_i64) {
     JS_ParameterPointer(ctx, 0);
     JS_ParameterString(ctx, 1);
     JS_ParameterNumber(ctx, 2);
-    const char *key = JS_ParameterString(ctx, 1);
+    const char *key = JS_GetStringParameter(ctx, 1);
     esp_err_t ret = nvs_set_i64((nvs_handle)JS_GetPointerParameter(ctx, 0), key, (int64_t)JS_GetNumberParameter(ctx, 2));
     JS_FreeString(ctx, key);
     JS_RETURN_NUMBER(ctx, ret);
@@ -140,7 +140,7 @@ JS_C_FUNCTION(js_nvs_set_u64) {
     JS_ParameterPointer(ctx, 0);
     JS_ParameterString(ctx, 1);
     JS_ParameterNumber(ctx, 2);
-    const char *key = JS_ParameterString(ctx, 1);
+    const char *key = JS_GetStringParameter(ctx, 1);
     esp_err_t ret = nvs_set_u64((nvs_handle)JS_GetPointerParameter(ctx, 0), key, (uint64_t)JS_GetNumberParameter(ctx, 2));
     JS_FreeString(ctx, key);
     JS_RETURN_NUMBER(ctx, ret);
@@ -150,8 +150,8 @@ JS_C_FUNCTION(js_nvs_set_str) {
     JS_ParameterPointer(ctx, 0);
     JS_ParameterString(ctx, 1);
     JS_ParameterString(ctx, 2);
-    const char *key = JS_ParameterString(ctx, 1);
-    const char *str = JS_ParameterString(ctx, 2);
+    const char *key = JS_GetStringParameter(ctx, 1);
+    const char *str = JS_GetStringParameter(ctx, 2);
     esp_err_t ret = nvs_set_str((nvs_handle)JS_GetPointerParameter(ctx, 0), key, str);
     JS_FreeString(ctx, key);
     JS_FreeString(ctx, str);
@@ -161,7 +161,7 @@ JS_C_FUNCTION(js_nvs_set_str) {
 JS_C_FUNCTION(js_nvs_erase_key) {
     JS_ParameterPointer(ctx, 0);
     JS_ParameterString(ctx, 1);
-    const char *key = JS_ParameterString(ctx, 1);
+    const char *key = JS_GetStringParameter(ctx, 1);
     esp_err_t ret = nvs_erase_key((nvs_handle)JS_GetPointerParameter(ctx, 0), key);
     JS_FreeString(ctx, key);
     JS_RETURN_NUMBER(ctx, ret);

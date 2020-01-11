@@ -123,6 +123,7 @@ JS_C_FUNCTION(js_wifi_set_config) {
     ensure_wifi();
     
     esp_err_t err;
+#ifdef WITH_DUKTAPE
     duk_get_prop_string(ctx, 1, "ap");
     if ((JS_GetIntParameter(ctx, 0) == ESP_IF_WIFI_AP) || ((duk_is_boolean(ctx, -1)) && (duk_get_boolean(ctx, -1)))) {
         wifi_config_t wifi_config = {
@@ -199,6 +200,109 @@ JS_C_FUNCTION(js_wifi_set_config) {
 
         err = esp_wifi_set_config(JS_GetIntParameter(ctx, 0), &wifi_config);
     }
+#else
+    JSValueConst ap = JS_GetPropertyStr(ctx, argv[1], "ap");
+    if ((JS_GetIntParameter(ctx, 0) == ESP_IF_WIFI_AP) || ((JS_IsBool(ap)) && (_JS_GetBooleanParameter(ctx, ap)))) {
+        wifi_config_t wifi_config = {
+            .ap = {
+                .ssid = "hello",
+                .ssid_len = strlen("hello"),
+                .password = "helloworld",
+                .max_connection = 4,
+                .authmode = WIFI_AUTH_WPA_WPA2_PSK,
+            },
+        };
+        JSValueConst val = JS_GetPropertyStr(ctx, argv[1], "ssid");
+        if (JS_IsString(val)) {
+            const char *str = JS_ToCString(ctx, val);
+            strncpy((char *)wifi_config.ap.ssid, str, 32);
+            wifi_config.ap.ssid_len = strlen((char *)wifi_config.ap.ssid);
+            JS_FreeString(ctx, str);
+        }
+        JS_FreeValue(ctx, val);
+
+        val = JS_GetPropertyStr(ctx, argv[1], "password");
+        if (JS_IsString(val)) {
+            const char *str = JS_ToCString(ctx, val);
+            strncpy((char *)wifi_config.ap.password, str, 64);
+            JS_FreeString(ctx, str);
+        }
+        JS_FreeValue(ctx, val);
+
+        val = JS_GetPropertyStr(ctx, argv[1], "authmode");
+        if (JS_IsNumber(val))
+            wifi_config.ap.authmode = (wifi_auth_mode_t)_JS_GetIntParameter(ctx, val);
+        JS_FreeValue(ctx, val);
+
+        val = JS_GetPropertyStr(ctx, argv[1], "max_connection");
+        if (JS_IsNumber(val))
+            wifi_config.ap.max_connection = _JS_GetIntParameter(ctx, val);
+        JS_FreeValue(ctx, val);
+
+        val = JS_GetPropertyStr(ctx, argv[1], "beacon_interval");
+        if (JS_IsNumber(val))
+            wifi_config.ap.beacon_interval = _JS_GetIntParameter(ctx, val);
+        JS_FreeValue(ctx, val);
+
+        val = JS_GetPropertyStr(ctx, argv[1], "channel");
+        if (JS_IsNumber(val))
+            wifi_config.ap.channel = _JS_GetIntParameter(ctx, val);
+        JS_FreeValue(ctx, val);
+
+        err = esp_wifi_set_config(JS_GetIntParameter(ctx, 0), &wifi_config);
+    } else {
+        wifi_config_t wifi_config = {
+            .sta = {
+                .ssid = "",
+                .password = "",
+                .scan_method = WIFI_FAST_SCAN,
+                .sort_method = WIFI_CONNECT_AP_BY_SIGNAL,
+                .threshold.rssi = -127,
+                .threshold.authmode = WIFI_AUTH_OPEN,
+            },
+        };
+
+        JSValueConst val = JS_GetPropertyStr(ctx, argv[1], "ssid");
+        if (JS_IsString(val)) {
+            const char *str = JS_ToCString(ctx, val);
+            strncpy((char *)wifi_config.ap.ssid, str, 32);
+            wifi_config.ap.ssid_len = strlen((char *)wifi_config.ap.ssid);
+            JS_FreeString(ctx, str);
+        }
+        JS_FreeValue(ctx, val);
+
+        val = JS_GetPropertyStr(ctx, argv[1], "password");
+        if (JS_IsString(val)) {
+            const char *str = JS_ToCString(ctx, val);
+            strncpy((char *)wifi_config.ap.password, str, 64);
+            JS_FreeString(ctx, str);
+        }
+        JS_FreeValue(ctx, val);
+
+        val = JS_GetPropertyStr(ctx, argv[1], "scan_method");
+        if (JS_IsNumber(val))
+            wifi_config.sta.scan_method = _JS_GetIntParameter(ctx, val);
+        JS_FreeValue(ctx, val);
+
+        val = JS_GetPropertyStr(ctx, argv[1], "sort_method");
+        if (JS_IsNumber(val))
+            wifi_config.sta.sort_method = _JS_GetIntParameter(ctx, val);
+        JS_FreeValue(ctx, val);
+
+        val = JS_GetPropertyStr(ctx, argv[1], "threshold_rssi");
+        if (JS_IsNumber(val))
+            wifi_config.sta.threshold.rssi = _JS_GetIntParameter(ctx, val);
+        JS_FreeValue(ctx, val);
+
+        val = JS_GetPropertyStr(ctx, argv[1], "threshold_authmode");
+        if (JS_IsNumber(val))
+            wifi_config.sta.threshold.authmode = _JS_GetIntParameter(ctx, val);
+        JS_FreeValue(ctx, val);
+
+        err = esp_wifi_set_config(JS_GetIntParameter(ctx, 0), &wifi_config);
+    }
+    JS_FreeValue(ctx, ap);
+#endif
     
     JS_RETURN_NUMBER(ctx, err);
 }
@@ -268,6 +372,7 @@ JS_C_FUNCTION(js_esp_wifi_stations) {
     if (ap_list_buffer == NULL)
         JS_RETURN_NOTHING(ctx);
 
+#ifdef WITH_DUKTAPE
     duk_idx_t arr_idx = duk_push_array(ctx);
     if (esp_wifi_scan_get_ap_records(&sta_number,(wifi_ap_record_t *)ap_list_buffer) == ESP_OK) {
         for (i = 0; i < sta_number; i++) {
@@ -278,6 +383,16 @@ JS_C_FUNCTION(js_esp_wifi_stations) {
     free(ap_list_buffer);
 
     return 1;
+#else
+    js_object_type arr = JS_NewArray(ctx);
+    if (esp_wifi_scan_get_ap_records(&sta_number,(wifi_ap_record_t *)ap_list_buffer) == ESP_OK) {
+        for (i = 0; i < sta_number; i++)
+            JS_SetPropertyUint32(ctx, arr, (unsigned int)i, JS_NewString(ctx, (const char *)ap_list_buffer[i].ssid));
+    }
+    free(ap_list_buffer);
+
+    return arr;
+#endif
 } 
 
 JS_C_FUNCTION(js_esp_wifi_get_ip) {
