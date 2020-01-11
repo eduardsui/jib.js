@@ -611,6 +611,7 @@ JS_C_FUNCTION_FORWARD(native_print, int level) {
         JS_FreeString(ctx, call_stack);
     }
     JS_FreeValue(ctx, exception_val);
+    JS_FreeValue(ctx, val);
 
     JS_ResetUncatchableError(ctx);
 
@@ -645,8 +646,9 @@ JS_C_FUNCTION_FORWARD(native_print, int level) {
     log_log(level, filename_buf, line_number, text ? text : "");
     if (buffer) {
         free(buffer);
-    } else
+    } else {
         JS_FreeString(ctx, text);
+    }
     // if (fname)
     //     JS_FreeCString(ctx, fname);
     // JS_FreeValue(ctx, filename);
@@ -1660,8 +1662,11 @@ JS_C_FUNCTION(native_require) {
 #ifdef NO_IO
         JS_Error(ctx, "no sourcecode");
 #else
-        const char *path = JS_ToCString(ctx, JS_GetPropertyStr(ctx, parent_module, "path"));
+        js_object_type path_obj = JS_GetPropertyStr(ctx, parent_module, "path");
+        const char *path = JS_ToCString(ctx, path_obj);
         duk_eval_file(ctx, filename, path ? path : "");
+        JS_FreeString(ctx, path);
+        JS_FreeValue(ctx, path_obj);
 #endif
     }
     JS_ObjectSetBoolean(ctx, module, "loaded", 1);
@@ -2114,6 +2119,18 @@ JS_CONTEXT js() {
     return js_ctx;
 }
 
+#define DEBUG
+#ifdef DEBUG
+JS_C_FUNCTION(js_global_stash) {
+#ifdef WITH_DUKTAPE
+    duk_push_global_stash(ctx);
+    return 1;
+#else
+    JS_RETURN_OBJECT(ctx, JS_DupValue(ctx, global_stash(ctx)));
+#endif
+}
+#endif
+
 struct doops_loop *js_loop() {
     return main_loop;
 }
@@ -2170,6 +2187,9 @@ void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *
     register_esp32_functions(loop, ctx);
 #endif
     register_global_function(ctx, "require", native_require, 1);
+#ifdef DEBUG
+    register_object(ctx, "debug", "globalStash", js_global_stash, (void *)NULL);
+#endif
     register_object(ctx, "console", "log", native_log, "warn", native_warning, "error", native_error, (void *)NULL);
     register_object(ctx, "app", "quit", native_quit, "exit", native_exit, "window", native_window, (void *)NULL);
 #ifdef WITH_DUKTAPE
