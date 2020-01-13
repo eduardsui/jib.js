@@ -94,7 +94,10 @@ var net = {
 						self.bytesRead += nbytes;
 						if (nbytes != 8192)
 							buf = buf.subarray(0, nbytes);
-						self.emit("data", buf);
+						if (self._readableState.decoder)
+							self.emit("data", self._readableState.decoder.write(buf));
+						else
+							self.emit("data", buf);
 					} else {
 						self.close();
 					}

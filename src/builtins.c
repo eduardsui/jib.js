@@ -2304,6 +2304,12 @@ void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *
                                             "process.on = function(sig, handler) { if (typeof sig == 'string') sig = process.constants[sig]; if (process.mapSignal(sig)) return; if (!process._sig_handler) process._sig_handler = [ ]; process._sig_handler[sig] = handler; };"
                                             "process.signal = process.on;"
     );
+#ifndef NO_SOCKET
+    JS_EvalSimple(ctx, "process._stdstreams=[];"
+                       "Object.defineProperty(process,'stdin',{ get : function () {if (!process._stdstreams[0]) { var net=require('net');process._stdstreams[0]=new net.Socket({fd:0,readable:true,writable:false});}return process._stdstreams[0];}});"
+                       "Object.defineProperty(process,'stdout',{ get : function () {if (!process._stdstreams[1]) { var net=require('net');process._stdstreams[1]=new net.Socket({fd:1,readable:false,writable:true});process._stdstreams[1]._drain=true;}return process._stdstreams[1];}});"
+                       "Object.defineProperty(process,'stderr',{ get : function () {if (!process._stdstreams[2]) { var net=require('net');process._stdstreams[2]=new net.Socket({fd:2,readable:false,writable:true});process._stdstreams[2]._drain=true;}return process._stdstreams[2];}});");
+#endif
 #ifdef WITH_DUKTAPE
     duk_pop_2(ctx);
 #endif
@@ -2317,7 +2323,7 @@ void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *
     // finalizer broken on quickjs (cannot call js function from finalizer)
     JS_EvalSimple(ctx, "global.__destructor = function(self, fin) { /* self['\\xFF__destructor'] = new __finalizerContainer(self, fin); */ }; global.finalize = global.__destructor;");
     // emulate node.js Buffer
-    JS_EvalSimple(ctx, "class Buffer extends Uint8Array{constructor(i){super(i);}}");
+    JS_EvalSimple(ctx, "class Buffer extends Uint8Array{constructor(i){super(i);}static isEncoding(encoding){return true;}}");
     JS_EvalSimple(ctx, JS_TEXT_ENCODER_DECODER)
 #endif
     JS_EvalSimple(ctx, JS_MODULE);

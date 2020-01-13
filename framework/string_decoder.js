@@ -95,10 +95,10 @@ StringDecoder.prototype.write = function(buffer) {
     }
 
     // remove bytes belonging to the current character from the buffer
-    buffer = buffer.slice(available, buffer.length);
+    buffer = buffer.subarray(available, buffer.length);
 
     // get the character that was split
-    charStr = this.charBuffer.slice(0, this.charLength).toString(this.encoding);
+    charStr = new TextDecoder(this.encoding).decode(this.charBuffer.subarray(0, this.charLength));
 
     // CESU-8: lead surrogate (D800-DBFF) is also the incomplete character
     var charCode = charStr.charCodeAt(charStr.length - 1);
@@ -125,8 +125,7 @@ StringDecoder.prototype.write = function(buffer) {
     buffer.copy(this.charBuffer, 0, buffer.length - this.charReceived, end);
     end -= this.charReceived;
   }
-
-  charStr += buffer.toString(this.encoding, 0, end);
+  charStr += new TextDecoder(this.encoding).decode(buffer.subarray(0, end).buffer);
 
   var end = charStr.length - 1;
   var charCode = charStr.charCodeAt(end);
@@ -139,7 +138,6 @@ StringDecoder.prototype.write = function(buffer) {
     buffer.copy(this.charBuffer, 0, 0, size);
     return charStr.substring(0, end);
   }
-
   // or just emit the charStr
   return charStr;
 };
@@ -189,14 +187,14 @@ StringDecoder.prototype.end = function(buffer) {
     var cr = this.charReceived;
     var buf = this.charBuffer;
     var enc = this.encoding;
-    res += buf.slice(0, cr).toString(enc);
+    res += new TextDecoder(enc).decode(buf.subarray(0, cr).buffer);
   }
 
   return res;
 };
 
 function passThroughWrite(buffer) {
-  return buffer.toString(this.encoding);
+  return new TextDecoder(this.encoding).decode(buffer);
 }
 
 function utf16DetectIncompleteChar(buffer) {

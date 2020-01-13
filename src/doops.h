@@ -8,7 +8,9 @@
 #include <string.h>
 
 #ifdef _WIN32
-    #define WITH_SELECT
+    #ifndef WITH_POLL
+        #define WITH_SELECT
+    #endif
     #define DOOPS_SPINLOCK_TYPE LONG
 #else
     #define DOOPS_SPINLOCK_TYPE int
@@ -35,6 +37,9 @@
 #ifdef WITH_KQUEUE
     #include <sys/types.h>
     #include <sys/event.h>
+#endif
+#ifdef WITH_POLL
+    #include <poll.h>
 #endif
 
 #define DOOPS_MAX_SLEEP     500
@@ -234,11 +239,16 @@ struct doops_loop {
     int max_fd;
     void **udata;
 #else
+#ifdef WITH_POLL
+    struct pollfd *fds;
+    int max_fd;
+#else
     int max_fd;
     // fallback to select
     fd_set inlist;
     fd_set outlist;
     fd_set exceptlist;
+#endif
     void **udata;
 #endif
     DOOPS_SPINLOCK_TYPE lock;
@@ -247,6 +257,7 @@ struct doops_loop {
     void *event_data;
     struct doops_event *in_event;
     unsigned char reset_in_event;
+    unsigned char io_wait;
 };
 
 static void _private_loop_init_io(struct doops_loop *loop) {
@@ -261,12 +272,18 @@ static void _private_loop_init_io(struct doops_loop *loop) {
     if (loop->poll_fd <= 0)
         loop->poll_fd = kqueue();
 #else
+#ifdef WITH_POLL
+    if (!loop->max_fd) {
+        loop->fds = NULL;
+    }
+#else
     if (!loop->max_fd) {
         FD_ZERO(&loop->inlist);
         FD_ZERO(&loop->outlist);
         FD_ZERO(&loop->exceptlist);
         loop->max_fd = 1;
     }
+#endif
 #endif
 #endif
 }
@@ -301,8 +318,10 @@ static void doops_unlock(volatile DOOPS_SPINLOCK_TYPE *ptr) {
 }
 
 static void loop_init(struct doops_loop *loop) {
-    if (loop)
+    if (loop) {
         memset(loop, 0, sizeof(struct doops_loop));
+        loop->io_wait = 1;
+    }
 }
 
 static struct doops_loop *loop_new() {
@@ -425,6 +444,20 @@ static int loop_add_io_data(struct doops_loop *loop, int fd, int mode, void *use
     doops_unlock(&loop->lock);
     return kevent(loop->poll_fd, events, num_events, NULL, 0, NULL);
 #else
+#ifdef WITH_POLL
+    loop->fds = (struct pollfd *)DOOPS_REALLOC(loop->fds, sizeof(struct pollfd) * (loop->max_fd + 1));
+    loop->fds[loop->max_fd].fd = fd;
+    loop->fds[loop->max_fd].events = POLLIN | POLLPRI | POLLERR | POLLHUP | POLLNVAL;
+    if (mode)
+        loop->fds[loop->max_fd].events |= POLLOUT;
+
+    if ((userdata) || (loop->udata)) {
+        loop->udata = (void **)DOOPS_REALLOC(loop->udata, sizeof(void *) * (loop->max_fd + 1));
+        if (loop->udata)
+            loop->udata[loop->max_fd] = userdata;
+    }
+    loop->max_fd ++;
+#else
     FD_SET(fd, &loop->inlist);
     FD_SET(fd, &loop->exceptlist);
     if (mode)
@@ -432,12 +465,12 @@ static int loop_add_io_data(struct doops_loop *loop, int fd, int mode, void *use
 
     if (fd >= loop->max_fd)
         loop->max_fd = fd + 1;
-
     if ((userdata) || (loop->udata)) {
         loop->udata = (void **)DOOPS_REALLOC(loop->udata, sizeof(void *) * loop->max_fd);
         if (loop->udata)
             loop->udata[fd] = userdata;
     }
+#endif
 #endif
 #endif
     loop->io_objects ++;
@@ -460,8 +493,20 @@ static int loop_pause_write_io(struct doops_loop *loop, int fd) {
     // EV_SET(&event, fd, EVFILT_WRITE, EV_ADD | EV_DISABLE, 0, 0, 0);
     // return kevent(loop->poll_fd, &event, 1, NULL, 0, NULL);
 #else
+#ifdef WITH_POLL
+    int i;
+    if (loop->fds) {
+        for (i = 0; i < loop->max_fd; i ++) {
+            if (loop->fds[i].fd == fd) {
+                loop->fds[i].events &= ~POLLOUT;
+                break;
+            }
+        }
+    }
+#else
 #ifdef WITH_SELECT
     FD_CLR(fd, &loop->outlist);
+#endif
 #endif
 #endif
     return 0;
@@ -478,8 +523,20 @@ static int loop_resume_write_io(struct doops_loop *loop, int fd) {
     // EV_SET(&event, fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0);
     // return kevent(loop->poll_fd, &event, 1, NULL, 0, NULL);
 #else
+#ifdef WITH_POLL
+    int i;
+    if (loop->fds) {
+        for (i = 0; i < loop->max_fd; i ++) {
+            if (loop->fds[i].fd == fd) {
+                loop->fds[i].events |= POLLOUT;
+                break;
+            }
+        }
+    }
+#else
 #ifdef WITH_SELECT
     FD_SET(fd, &loop->outlist);
+#endif
 #endif
 #endif
     return 0;
@@ -511,11 +568,30 @@ static int loop_remove_io(struct doops_loop *loop, int fd) {
     EV_SET(&event, fd, EVFILT_WRITE, EV_DELETE, 0, 0, 0);
     kevent(loop->poll_fd, &event, 1, NULL, 0, NULL);
 #else
+#ifdef WITH_POLL
+    if ((loop->max_fd) && (loop->fds)) {
+        int i;
+        int found = 0;
+        for (i = 0; i < loop->max_fd; i ++) {
+            if (loop->fds[i].fd == fd)
+                found = 1;
+
+            if ((found) && (i < loop->max_fd - 1)) {
+                loop->fds[i] = loop->fds[i + 1];
+                if (loop->udata)
+                    loop->udata[i] = loop->udata[i + 1];
+            }
+        }
+        if (found)
+            loop->max_fd --;
+    }
+#else
     FD_CLR(fd, &loop->inlist);
     FD_CLR(fd, &loop->exceptlist);
     FD_CLR(fd, &loop->outlist);
     if (fd == loop->max_fd - 1)
         loop->max_fd --;
+#endif
 #endif
 #endif
     loop->io_objects --;
@@ -775,7 +851,7 @@ static void _private_sleep(struct doops_loop *loop, int sleep_val) {
         int i;
         for (i = 0; i < nfds; i ++) {
             if (LOOP_IS_WRITABLE(loop)) {
-                if (events[i].events & EPOLLOUT) {
+                if ((events[i].events & EPOLLOUT) {
                     loop->event_fd = events[i].data.fd;
                     loop->event_data = loop->udata ? loop->udata[events[i].data.fd] : NULL;
 #ifdef WITH_BLOCKS
@@ -787,7 +863,7 @@ static void _private_sleep(struct doops_loop *loop, int sleep_val) {
                 }
             }
             if (LOOP_IS_READABLE(loop)) {
-                if (events[i].events ^ EPOLLOUT) {
+                if (events[i].events & ~EPOLLOUT) {
                     loop->event_fd = events[i].data.fd;
                     loop->event_data = loop->udata ? loop->udata[events[i].data.fd] : NULL;
 #ifdef WITH_BLOCKS
@@ -840,6 +916,40 @@ static void _private_sleep(struct doops_loop *loop, int sleep_val) {
     } else
 #else
     if ((loop->max_fd) && ((LOOP_IS_READABLE(loop)) || (LOOP_IS_WRITABLE(loop)))) {
+#ifdef WITH_POLL
+        int err = poll(loop->fds, loop->max_fd, sleep_val);
+        if (err >= 0) {
+            if (!err)
+                return;
+            int i;
+            for (i = 0; i < loop->max_fd; i ++) {
+                if (LOOP_IS_READABLE(loop)) {
+                    if (loop->fds[i].revents & ~POLLOUT) {
+                        loop->event_fd = loop->fds[i].fd;
+                        loop->event_data = loop->udata ? loop->udata[i] : NULL;
+#ifdef WITH_BLOCKS
+                        if (loop->io_read_block)
+                            loop->io_read_block(loop, loop->fds[i].fd);
+                        else
+#endif
+                        loop->io_read(loop, loop->fds[i].fd);
+                    }
+                }
+                if (LOOP_IS_WRITABLE(loop)) {
+                    if (loop->fds[i].revents & POLLOUT) {
+                        loop->event_fd = loop->fds[i].fd;
+                        loop->event_data = loop->udata ? loop->udata[i] : NULL;
+#ifdef WITH_BLOCKS
+                        if (loop->io_write_block)
+                            loop->io_write_block(loop, loop->fds[i].fd);
+                        else
+#endif
+                        loop->io_write(loop, loop->fds[i].fd);
+                    }
+                }
+            }
+        }
+#else
         struct timeval tout;
         tout.tv_sec = 0;
         tout.tv_usec = 0;
@@ -887,6 +997,7 @@ static void _private_sleep(struct doops_loop *loop, int sleep_val) {
                 }
             }
         }
+#endif
     } else
 #endif
 #endif
@@ -898,12 +1009,17 @@ static void _private_sleep(struct doops_loop *loop, int sleep_val) {
 #endif
 }
 
+static void loop_io_wait(struct doops_loop *loop, unsigned char wait) {
+    if (loop)
+        loop->io_wait = wait;
+}
+
 static void loop_run(struct doops_loop *loop) {
     if (!loop)
         return;
 
     int sleep_val;
-    while (((loop->events) || (loop->io_objects)) && (!loop->quit)) {
+    while (((loop->events) || ((loop->io_wait) && (loop->io_objects))) && (!loop->quit)) {
         loop->event_fd = -1;
         int loops = _private_loop_iterate(loop, &sleep_val);
         loop->event_data = NULL;
@@ -923,9 +1039,20 @@ static void loop_deinit(struct doops_loop *loop) {
             loop->poll_fd = -1;
         }
 #else
+#ifdef WITH_POLL
+        DOOPS_FREE(loop->fds);
+        DOOPS_FREE(loop->udata);
+        loop->fds = NULL;
+        loop->udata = NULL;
+        loop->max_fd = 0;
+#else
         FD_ZERO(&loop->inlist);
         FD_ZERO(&loop->outlist);
         FD_ZERO(&loop->exceptlist);
+        DOOPS_FREE(loop->udata);
+        loop->udata = NULL;
+        loop->max_fd = 0;
+#endif
 #endif
         _private_loop_remove_events(loop);
 #ifdef WITH_BLOCKS

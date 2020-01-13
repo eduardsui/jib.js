@@ -77,6 +77,33 @@ static unsigned char io_set = 0;
 
 #include "doops.h"
 
+#ifdef _WIN32
+#define FD_IsConsoleHandle(h) (((intptr_t) (h) & 3) == 3)
+
+static int handleIsSocket(HANDLE h) {
+    WSANETWORKEVENTS ev;
+
+    if (FD_IsConsoleHandle(h))
+        return 0;
+
+    ev.lNetworkEvents = 0xDEADBEEFl;
+    WSAEnumNetworkEvents((SOCKET) h, NULL, &ev);
+    return ev.lNetworkEvents != 0xDEADBEEFl;
+}
+
+static int isSocket(int fd) {
+    return handleIsSocket((HANDLE)((uintptr_t)fd));
+}
+
+#else
+
+static int isSocket(int fd) {
+    struct stat statbuf;
+    fstat(fd, &statbuf);
+    return S_ISSOCK(statbuf.st_mode);
+}
+#endif
+
 char *get_ip_str(const struct sockaddr *sa, char *s, size_t maxlen, int *port) {
     switch (sa->sa_family) {
         case AF_INET:
@@ -208,7 +235,12 @@ JS_C_FUNCTION(js_bind) {
 JS_C_FUNCTION(js_closesocket) {
     JS_ParameterNumber(ctx, 0);
 #ifdef _WIN32
-    int err = closesocket(JS_GetIntParameter(ctx, 0));
+    int fd = JS_GetIntParameter(ctx, 0);
+    int err;
+    if (isSocket(fd))
+        err = closesocket(fd);
+    else
+        err = close(fd);
 #else
     int err = close(JS_GetIntParameter(ctx, 0));
 #endif
@@ -367,7 +399,12 @@ JS_C_FUNCTION(js_recv) {
     if (sz < (offset + nbytes))
         nbytes = sz - offset;
     
-    ssize_t bytes_read = recv(JS_GetIntParameter(ctx, 0), (unsigned char *)buf + offset, nbytes, 0);
+    ssize_t bytes_read;
+    int fd = JS_GetIntParameter(ctx, 0);
+    if (isSocket(fd))
+        bytes_read = recv(fd, (unsigned char *)buf + offset, nbytes, 0);
+    else
+        bytes_read = read(fd, (unsigned char *)buf + offset, nbytes);
     JS_RETURN_NUMBER(ctx, bytes_read);
 }
 
@@ -440,7 +477,12 @@ JS_C_FUNCTION(js_send) {
     if (offset + nbytes >= sz)
         nbytes = sz - offset;
 
-    ssize_t bytes_written = send(JS_GetIntParameter(ctx, 0), (unsigned char *)buf + offset, nbytes, 0);
+    ssize_t bytes_written;
+    int fd = JS_GetIntParameter(ctx, 0);
+    if (isSocket(fd))
+        bytes_written = send(fd, (unsigned char *)buf + offset, nbytes, 0);
+    else
+        bytes_written = write(fd, (unsigned char *)buf + offset, nbytes);
     JS_RETURN_NUMBER(ctx, bytes_written);
 }
 
