@@ -33695,6 +33695,9 @@ const static struct builtin_module builtin_modules[] = {
         "var data_buffer = '';\n"
         "process.stdin.on('data', function(data) {\n"
 	        "try {\n"
+#ifdef ESP32
+                "process.stdout.write(data);\n"
+#endif
 		        "data_buffer += data;\n"
 		        "var trim_buf = data_buffer.trim();\n"
 		        "if ((trim_buf.length) && ((data.trim().length === 0) || (trim_buf[trim_buf.length - 1] == ';'))) {\n"

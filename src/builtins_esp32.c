@@ -1,11 +1,11 @@
 #include "builtins.h"
 #include "builtins_esp32.h"
 
-#include "esp_sleep.h"
-#include "esp_system.h"
-
-#include "soc/rtc_wdt.h"
-
+#include <esp_sleep.h>
+#include <esp_system.h>
+#include <esp_vfs_dev.h>
+#include <driver/uart.h>
+#include <soc/rtc_wdt.h>
 #include "misc/esp32/lora.h"
 
 JS_C_FUNCTION(js_lora_set_pins) {
@@ -265,6 +265,20 @@ JS_C_FUNCTION(js_esp_wdt) {
     JS_RETURN_NOTHING(ctx);
 }
 
+JS_C_FUNCTION(js_uart_driver_install) {
+    JS_ParameterNumber(ctx, 0);
+    JS_ParameterNumber(ctx, 1);
+    JS_ParameterNumber(ctx, 2);
+    esp_err_t err = uart_driver_install(JS_GetIntParameter(ctx, 0), JS_GetIntParameter(ctx, 1), JS_GetIntParameter(ctx, 2), 0, NULL, 0);
+    JS_RETURN_NUMBER(ctx, err);
+}
+
+JS_C_FUNCTION(js_esp_vfs_dev_uart_use_driver) {
+    JS_ParameterNumber(ctx, 0);
+    esp_vfs_dev_uart_use_driver(JS_GetIntParameter(ctx, 0));
+    JS_RETURN_NOTHING(ctx);
+}
+
 void register_esp32_functions(void *main_loop, void *js_ctx) {
     JS_CONTEXT ctx = (JS_CONTEXT )js_ctx;
 
@@ -314,6 +328,9 @@ void register_esp32_functions(void *main_loop, void *js_ctx) {
         "freeMinimumHeapSize", js_esp_get_minimum_free_heap_size,
         "random", js_esp_random,
         "enableWatchdog", js_esp_wdt,
+        "random", js_esp_random,
+        "uartDriverInstall", js_uart_driver_install,
+        "devUartUseDriver", js_esp_vfs_dev_uart_use_driver,
         NULL, NULL
     );
 }

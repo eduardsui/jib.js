@@ -104,7 +104,10 @@ var net = {
 				};
 			}
 			if (writable) {
-				read_write = 1;
+				if (readable)
+					read_write = 1;
+				else
+					read_write = 2;
 				obj.write = function() {
 					if (self.destroyed)
 						return;

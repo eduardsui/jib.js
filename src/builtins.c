@@ -2305,6 +2305,9 @@ void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *
                                             "process.signal = process.on;"
     );
 #ifndef NO_SOCKET
+#ifdef ESP32
+    JS_EvalSimple(ctx, "esp.uartDriverInstall(0, 1024, 1024);esp.devUartUseDriver(0);");
+#endif
     JS_EvalSimple(ctx, "process._stdstreams=[];"
                        "Object.defineProperty(process,'stdin',{ get : function () {if (!process._stdstreams[0]) { var net=require('net');process._stdstreams[0]=new net.Socket({fd:0,readable:true,writable:false});}return process._stdstreams[0];}});"
                        "Object.defineProperty(process,'stdout',{ get : function () {if (!process._stdstreams[1]) { var net=require('net');process._stdstreams[1]=new net.Socket({fd:1,readable:false,writable:true});process._stdstreams[1]._drain=true;}return process._stdstreams[1];}});"
