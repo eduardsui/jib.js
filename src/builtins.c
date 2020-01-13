@@ -2119,7 +2119,6 @@ JS_CONTEXT js() {
     return js_ctx;
 }
 
-#define DEBUG
 #ifdef DEBUG
 JS_C_FUNCTION(js_global_stash) {
 #ifdef WITH_DUKTAPE
