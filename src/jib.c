@@ -14,8 +14,6 @@
 #endif
 
 int main(int argc, char *argv[], char *envp[]) {
-    char buf[1024];
-
     struct doops_loop *main_loop = loop_new();
     loop_io_wait(main_loop, 0);
 
@@ -25,12 +23,7 @@ int main(int argc, char *argv[], char *envp[]) {
     if (argc > 1) {
         JS_Eval_File(ctx, argv[1]);
     } else {
-        fprintf(stdout, "jib.js v0.1\n\n");
-
-        while (fgets(buf, sizeof(buf), stdin) != NULL) {
-            if (buf[0])
-                JS_Eval(ctx, buf, "[cli]");
-        }
+        JS_Eval_File(ctx, "::code");
     }
 
     loop_run(main_loop);
@@ -44,7 +37,7 @@ int main(int argc, char *argv[], char *envp[]) {
 
 #ifdef ESP32
 void app_main() {
-    char *argv[] = { "rainbow", "::esp32" };
+    char *argv[] = { "jib", "::code" };
     main(2, argv, NULL);
 }
 #endif

@@ -30128,27 +30128,26 @@ const static struct builtin_module builtin_modules[] = {
         "= 0) {\nreturn charStr;\n}\nbreak;\n}\nthis.detectIncompleteChar(buffer);\nvar e" \
         "nd = buffer.length;\nif (this.charLength) {\nbuffer.copy(this.charBuffer, 0, buf" \
         "fer.length - this.charReceived, end);\nend -= this.charReceived;\n}\ncharStr += " \
-        "new TextDecoder(this.encoding).decode(buffer.subarray(0, end).buffer);\nvar end " \
-        "= charStr.length - 1;\nvar charCode = charStr.charCodeAt(end);\nif (charCode >= " \
-        "0xD800 && charCode <= 0xDBFF) {\nvar size = this.surrogateSize;\nthis.charLength" \
-        " += size;\nthis.charReceived += size;\nthis.charBuffer.copy(this.charBuffer, siz" \
-        "e, 0, size);\nbuffer.copy(this.charBuffer, 0, 0, size);\nreturn charStr.substrin" \
-        "g(0, end);\n}\nreturn charStr;\n};\nStringDecoder.prototype.detectIncompleteChar" \
-        " = function(buffer) {\nvar i = (buffer.length >= 3) ? 3 : buffer.length;\nfor (;" \
-        " i > 0; i--) {\nvar c = buffer[buffer.length - i];\nif (i == 1 && c >> 5 == 0x06" \
-        ") {\nthis.charLength = 2;\nbreak;\n}\nif (i <= 2 && c >> 4 == 0x0E) {\nthis.char" \
-        "Length = 3;\nbreak;\n}\nif (i <= 3 && c >> 3 == 0x1E) {\nthis.charLength = 4;\nb" \
-        "reak;\n}\n}\nthis.charReceived = i;\n};\nStringDecoder.prototype.end = function(" \
-        "buffer) {\nvar res = '';\nif (buffer && buffer.length)\nres = this.write(buffer)" \
-        ";\nif (this.charReceived) {\nvar cr = this.charReceived;\nvar buf = this.charBuf" \
-        "fer;\nvar enc = this.encoding;\nres += new TextDecoder(enc).decode(buf.subarray(" \
-        "0, cr).buffer);\n}\nreturn res;\n};\nfunction passThroughWrite(buffer) {\nreturn" \
-        " new TextDecoder(this.encoding).decode(buffer);\n}\nfunction utf16DetectIncomple" \
-        "teChar(buffer) {\nthis.charReceived = buffer.length % 2;\nthis.charLength = this" \
-        ".charReceived ? 2 : 0;\n}\nfunction base64DetectIncompleteChar(buffer) {\nthis.c" \
-        "harReceived = buffer.length % 3;\nthis.charLength = this.charReceived ? 3 : 0;\n" \
-        "}",
-    3657, 3657, 0},
+        "new TextDecoder(this.encoding).decode(buffer.subarray(0, end));\nvar end = charS" \
+        "tr.length - 1;\nvar charCode = charStr.charCodeAt(end);\nif (charCode >= 0xD800 " \
+        "&& charCode <= 0xDBFF) {\nvar size = this.surrogateSize;\nthis.charLength += siz" \
+        "e;\nthis.charReceived += size;\nthis.charBuffer.copy(this.charBuffer, size, 0, s" \
+        "ize);\nbuffer.copy(this.charBuffer, 0, 0, size);\nreturn charStr.substring(0, en" \
+        "d);\n}\nreturn charStr;\n};\nStringDecoder.prototype.detectIncompleteChar = func" \
+        "tion(buffer) {\nvar i = (buffer.length >= 3) ? 3 : buffer.length;\nfor (; i > 0;" \
+        " i--) {\nvar c = buffer[buffer.length - i];\nif (i == 1 && c >> 5 == 0x06) {\nth" \
+        "is.charLength = 2;\nbreak;\n}\nif (i <= 2 && c >> 4 == 0x0E) {\nthis.charLength " \
+        "= 3;\nbreak;\n}\nif (i <= 3 && c >> 3 == 0x1E) {\nthis.charLength = 4;\nbreak;\n" \
+        "}\n}\nthis.charReceived = i;\n};\nStringDecoder.prototype.end = function(buffer)" \
+        " {\nvar res = '';\nif (buffer && buffer.length)\nres = this.write(buffer);\nif (" \
+        "this.charReceived) {\nvar cr = this.charReceived;\nvar buf = this.charBuffer;\nv" \
+        "ar enc = this.encoding;\nres += new TextDecoder(enc).decode(buf.subarray(0, cr))" \
+        ";\n}\nreturn res;\n};\nfunction passThroughWrite(buffer) {\nreturn new TextDecod" \
+        "er(this.encoding).decode(buffer);\n}\nfunction utf16DetectIncompleteChar(buffer)" \
+        " {\nthis.charReceived = buffer.length % 2;\nthis.charLength = this.charReceived " \
+        "? 2 : 0;\n}\nfunction base64DetectIncompleteChar(buffer) {\nthis.charReceived = " \
+        "buffer.length % 3;\nthis.charLength = this.charReceived ? 3 : 0;\n}",
+    3634, 3634, 0},
     #else
     {"string_decoder",
         "\x78\x01\x95\x56\xdb\x4e\xdb\x40\x10\x7d\xf7\x57\x6c\x1f\x8a\x1d\x91\x98\x84\xd0" \
@@ -30183,22 +30182,21 @@ const static struct builtin_module builtin_modules[] = {
         "\x75\xad\xb9\x2e\x1c\x54\xb8\xc8\x8b\x64\x84\xc8\x69\xcc\xd3\xeb\xc6\xb9\x90\xbf" \
         "\xec\x14\x8d\xb0\x6e\x43\x6c\x35\x35\x94\xcc\xef\xd4\x20\x90\x51\x07\xa9\x91\x75" \
         "\x1f\xcb\x41\x61\x2c\x3a\xa8\xdc\xb6\x38\x47\xdc\x45\xc3\xa0\x9f\x9f\x93\x47\x53" \
-        "\x79\0\x04\xab\xd8\x9a\x6b\xb6\x89\xff\x8c\x5c\x24\xe6\x7d\xf5\x81\x79\x13\xb9\x5c" \
-        "\x75\xba\xd0\xc8\x07\xbd\x3b\x26\xb5\x71\x94\x0f\x82\x9e\x08\xf4\xcd\xe8\xc0\x1f" \
-        "\0\xfc\x23\xd6\x4a\xcf\xba\x9a\xb0\xa3\x49\xb6\x52\x8b\x96\x22\x3d\x2d\xc5\x75\xef" \
-        "\xdd\x8e\x77\x49\xc7\x1a\x66\xda\x95\x3a\x86\x85\x49\xc6\x64\xda\x54\x68\x10\x73" \
-        "\x62\x39\x10\x34\x83\t\x21\x6c\x30\x50\xdb\x5c\xa9\xf9\xa1\x29\x47\xf6\x28\x59\x84" \
-        "\x4a\x2e\x19\x65\xcc\x91\xd9\x8c\x7c\xc3\xc7\xe1\x76\x38\xd1\x4d\x75\xf6\xfa\x55" \
-        "\x33\x25\xa3\x81\xe6\x63\x15\x7d\x92\x47\x5f\xeb\xa3\xcb\x17\x7f\x25\x7a\xac\xa2" \
-        "\xc7\x32\x7a\xd4\x11\x7d\x52\x89\xd6\x2f\x0c\xb6\x93\x01\xa9\xfa\x8e\x86\x73\x9a" \
-        "\xe4\x5b\xa9\x5c\x30\x08\xac\xbe\xae\x81\x70\x74\x2b\x5f\xea\xe5\xfa\xd0\xbe\x33" \
-        "\x14\x0f\x48\xb5\x66\xc0\xf1\x0c\x32\x54\x0f\xa5\x16\x8b\x39\x45\x02\x6b\x83\x8e" \
-        "\xba\x4c\x74\xeb\0\x1c\xaa\x4b\xa0\xb6\x01\x7c\x5e\x59\0\x4a\xb5\x90\x28\xeb\x57" \
-        "\xd1\x91\xd6\xe7\x49\xa5\x45\x79\xc8\x3e\x3b\x28\x2b\xa5\x72\x77\x7e\x98\x55\x8a" \
-        "\xe8\x28\xad\xcb\xf6\xab\xfa\xfe\xab\x29\xa3\x1d\x78\x0e\xa2\x9c\x66\x5f\x42\x25" \
-        "\x84\xee\xcf\xb6\x3d\x31\x14\x9f\x87\x1f\x62\xc0\x51\x45\x0c\xff\x01\x30\x0b\x2e" \
-        "\x2a",
-    932, 3168, 1},
+        "\x79\0\x04\xab\xd4\xee\xd7\x66\xfc\x33\x3a\x91\x60\xf7\x15\x06\xe6\x4d\xe4\x56\xd5" \
+        "\t\x42\xa3\x1b\xf4\xee\x18\xd1\xc6\x51\x3e\x01\x7a\x06\xd0\x37\xe3\x01\x7f\0\xf0" \
+        "\x8f\xe8\x2a\x3d\xeb\x32\xc2\x56\x26\xd9\x2e\x2d\x7a\x89\xbc\xb4\xa4\xd6\xbd\x70" \
+        "\x3b\x5e\x22\x1d\xfb\x97\x69\x77\xe9\x18\x36\x25\x19\x93\x69\x53\x9a\x41\xcc\x89" \
+        "\xe5\x40\xd0\x0c\x46\x83\xb0\xc1\x40\xad\x71\x25\xe3\x87\xa6\x0e\xd9\xa3\x64\x11" \
+        "\x2a\xb9\x64\x94\x31\x47\x66\x33\xf2\r\x1f\x87\xdb\xe1\x44\x37\xce\xd9\x7b\x57\r" \
+        "\x93\x8c\x06\x9a\x8f\x55\xf4\x49\x1e\x7d\xad\x8f\x2e\xdf\xf8\x95\xe8\xb1\x8a\x1e" \
+        "\xcb\xe8\x51\x47\xf4\x49\x25\x5a\xbf\x29\xd8\x4e\x06\xa4\xea\x3b\x1a\xce\x69\x92" \
+        "\xaf\xa3\x72\xb3\x20\xb0\xfa\x9e\x06\xc2\xd1\xad\x7c\x9b\x97\x7b\x43\xfb\xb2\x50" \
+        "\x3c\x20\xd5\x9a\xc9\xc6\x33\xc8\x50\x3d\x94\x5a\x2c\xe6\x14\t\xac\x4d\x38\xea\x32" \
+        "\xd1\xed\x01\x70\xa8\x4e\x7f\x6d\xf4\x7d\x8e\x93\xaf\xe4\n\x19\xb2\x46\x15\xad\x68" \
+        "\x7d\x90\x54\x7a\x93\x87\xec\xb3\x75\xb2\x52\x2a\x77\xe7\xa7\x58\xa5\x88\x8e\xcb" \
+        "\xba\x5e\xbf\xaa\x2f\xbe\x9a\x24\xda\x81\xe7\xa0\xc6\x69\xf6\xed\x53\x42\xe8\xfe" \
+        "\x50\xdb\x13\x43\xf1\x41\xf8\x21\x06\x9c\x51\xc4\xf0\x1f\x8f\x6b\x28\xda",
+    930, 3154, 1},
     #endif
     #ifndef ESP32
     #ifdef NO_COMPRESSION
@@ -33689,6 +33687,25 @@ const static struct builtin_module builtin_modules[] = {
         "wifi.start();\n",
     0, 0, 0},
 #endif
+    {"::code",
+        "// process.stdin.setEncoding('utf8');\n"
+        "process.stdout.write('jib v1.0\\nWaiting for code (empty line for run, or end line by \\';\\')\\n\\n');\n"
+        "var data_buffer = '';\n"
+        "/* process.stdin.on('data', function(data) {\n"
+	        "try {\n"
+		        "data_buffer += data;\n"
+		        "var trim_buf = data_buffer.trim();\n"
+		        "if ((trim_buf.length) && ((data.trim().length === 0) || (trim_buf[trim_buf.length - 1] == ';'))) {\n"
+			        "eval(data_buffer);\n"
+			        "data_buffer = '';\n"
+		        "}\n"
+	        "} catch(e) {\n"
+		        "console.error(e.toString());\n"
+		        "data_buffer = '';\n"
+	        "}\n"
+        "});*/\n"
+        "process.stdout.ref();\n",
+    0, 0, 0},
     {NULL, NULL, 0, 0, 0}
 };
 

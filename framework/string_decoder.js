@@ -125,7 +125,7 @@ StringDecoder.prototype.write = function(buffer) {
     buffer.copy(this.charBuffer, 0, buffer.length - this.charReceived, end);
     end -= this.charReceived;
   }
-  charStr += new TextDecoder(this.encoding).decode(buffer.subarray(0, end).buffer);
+  charStr += new TextDecoder(this.encoding).decode(buffer.subarray(0, end));
 
   var end = charStr.length - 1;
   var charCode = charStr.charCodeAt(end);
@@ -187,7 +187,7 @@ StringDecoder.prototype.end = function(buffer) {
     var cr = this.charReceived;
     var buf = this.charBuffer;
     var enc = this.encoding;
-    res += new TextDecoder(enc).decode(buf.subarray(0, cr).buffer);
+    res += new TextDecoder(enc).decode(buf.subarray(0, cr));
   }
 
   return res;

@@ -39,7 +39,11 @@
     #include <sys/event.h>
 #endif
 #ifdef WITH_POLL
+#ifdef ESP32
+    #include <sys/poll.h>
+#else
     #include <poll.h>
+#endif
 #endif
 
 #define DOOPS_MAX_SLEEP     500
