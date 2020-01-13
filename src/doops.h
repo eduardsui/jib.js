@@ -15,10 +15,14 @@
 #else
     #define DOOPS_SPINLOCK_TYPE int
 #ifdef __linux__
-    #define WITH_EPOLL
+    #if !defined(WITH_POLL) && !defined(WITH_SELECT)
+        #define WITH_EPOLL
+    #endif
 #else
 #if defined(__MACH__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
-    #define WITH_KQUEUE
+    #if !defined(WITH_POLL) && !defined(WITH_SELECT)
+        #define WITH_KQUEUE
+    #endif
 #else
 #ifndef DOOPS_NO_IO_EVENTS
     #pragma message ( "WARNING: Cannot determine operating system. Falling back to select." )
@@ -133,7 +137,7 @@ struct doops_loop;
     #define LOOP_IS_READABLE(loop) (loop->io_read)
     #define LOOP_IS_WRITABLE(loop) (loop->io_write)
 #else
-#ifdef __clang__
+#if defined(__clang__) && !defined(WITHOUT_BLOCKS)
     #define WITH_BLOCKS
 
     #include <Block.h>
@@ -416,8 +420,12 @@ static int loop_add_io_data(struct doops_loop *loop, int fd, int mode, void *use
     event.data.u64 = 0;
     event.data.fd = fd;
     event.events = EPOLLIN | EPOLLPRI | EPOLLHUP | EPOLLRDHUP | EPOLLET;
-    if (mode)
+    if (mode) {
         event.events |= EPOLLOUT;
+        // write-only
+        if (mode == 2)
+            event.events &= ~(EPOLLIN | EPOLLRDHUP);
+    }
 
     int err = epoll_ctl (loop->poll_fd, EPOLL_CTL_ADD, fd, &event);
     if ((err) && (errno == EEXIST))
@@ -437,13 +445,17 @@ static int loop_add_io_data(struct doops_loop *loop, int fd, int mode, void *use
 #else
 #ifdef WITH_KQUEUE
     struct kevent events[2];
-    int num_events = 1;
-    EV_SET(&events[0], fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, 0);
-    events[0].udata = userdata;
+    int num_events = 0;
+    if (mode != 2) {
+        EV_SET(&events[0], fd, EVFILT_READ, EV_ADD | EV_ENABLE | EV_CLEAR, 0, 0, 0);
+        events[0].udata = userdata;
+        num_events ++;
+    }
+
     if (mode) {
-        EV_SET(&events[1], fd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_CLEAR, 0, 0, 0);
-        events[1].udata = userdata;
-        num_events = 2;
+        EV_SET(&events[num_events], fd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_CLEAR, 0, 0, 0);
+        events[num_events].udata = userdata;
+        num_events ++;
     }
     doops_unlock(&loop->lock);
     return kevent(loop->poll_fd, events, num_events, NULL, 0, NULL);
@@ -452,8 +464,12 @@ static int loop_add_io_data(struct doops_loop *loop, int fd, int mode, void *use
     loop->fds = (struct pollfd *)DOOPS_REALLOC(loop->fds, sizeof(struct pollfd) * (loop->max_fd + 1));
     loop->fds[loop->max_fd].fd = fd;
     loop->fds[loop->max_fd].events = POLLIN | POLLPRI | POLLERR | POLLHUP | POLLNVAL;
-    if (mode)
+    if (mode) {
         loop->fds[loop->max_fd].events |= POLLOUT;
+        // write-only
+        if (mode == 2)
+            loop->fds[loop->max_fd].events &= ~POLLIN;
+    }
 
     if ((userdata) || (loop->udata)) {
         loop->udata = (void **)DOOPS_REALLOC(loop->udata, sizeof(void *) * (loop->max_fd + 1));
@@ -462,7 +478,8 @@ static int loop_add_io_data(struct doops_loop *loop, int fd, int mode, void *use
     }
     loop->max_fd ++;
 #else
-    FD_SET(fd, &loop->inlist);
+    if (mode != 2)
+        FD_SET(fd, &loop->inlist);
     FD_SET(fd, &loop->exceptlist);
     if (mode)
         FD_SET(fd, &loop->outlist);

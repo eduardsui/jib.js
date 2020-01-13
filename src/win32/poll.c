@@ -116,8 +116,8 @@ static int windows_compute_revents(HANDLE h, int *p_sought) {
             return happened;
 
         case FILE_TYPE_CHAR:
-            ret = WaitForSingleObject (h, 0);
-            if (!IsConsoleHandle (h))
+            ret = WaitForSingleObject(h, 0);
+            if (!IsConsoleHandle(h))
                 return ret == WAIT_OBJECT_0 ? *p_sought & ~(POLLPRI | POLLRDBAND) : 0;
 
             nbuffer = avail = 0;
@@ -196,6 +196,7 @@ int poll(struct pollfd *pfd, unsigned long nfd, int timeout) {
     MSG msg;
     int rc = 0;
     unsigned long i;
+    int orig_timeout = timeout;
 
     hEvent = CreateEvent (NULL, FALSE, FALSE, NULL);
 
@@ -216,7 +217,7 @@ restart:
 
         h = HandleFromFd (pfd[i].fd);
         assert (h != NULL && h != INVALID_HANDLE_VALUE);
-        if (IsSocketHandle (h)) {
+        if (IsSocketHandle(h)) {
             int requested = FD_CLOSE;
 
             if (sought & (POLLIN | POLLRDNORM)) {
@@ -235,15 +236,16 @@ restart:
             if (requested)
                 WSAEventSelect ((SOCKET) h, hEvent, requested);
         } else {
-            pfd[i].revents = windows_compute_revents (h, &sought);
+            pfd[i].revents = windows_compute_revents(h, &sought);
             if (sought)
                 handle_array[nhandles++] = h;
             if (pfd[i].revents)
                 timeout = 0;
         }
     }
+
     tv.tv_sec = tv.tv_usec = 0;
-    if (select (0, &rfds, &wfds, &xfds, &tv) > 0) {
+    if (select(0, &rfds, &wfds, &xfds, &tv) > 0) {
         poll_again = FALSE;
         wait_timeout = 0;
     } else {
@@ -251,12 +253,11 @@ restart:
         if (timeout == -1)
             wait_timeout = INFINITE;
         else
-        wait_timeout = timeout;
+            wait_timeout = timeout;
     }
 
     for (;;) {
         ret = MsgWaitForMultipleObjects (nhandles, handle_array, FALSE, wait_timeout, QS_ALLINPUT);
-
         if (ret == WAIT_OBJECT_0 + nhandles) {
             BOOL bRet;
             while ((bRet = PeekMessage (&msg, NULL, 0, 0, PM_REMOVE)) != 0) {
@@ -280,7 +281,7 @@ restart:
         int happened;
 
         if (pfd[i].fd < 0)
-        continue;
+            continue;
         if (!(pfd[i].events & (POLLIN | POLLRDNORM | POLLOUT | POLLWRNORM | POLLWRBAND)))
             continue;
 
@@ -298,7 +299,7 @@ restart:
             if (FD_ISSET ((SOCKET) h, &xfds))
                 ev.lNetworkEvents |= FD_OOB;
 
-            happened = windows_compute_revents_socket ((SOCKET) h, pfd[i].events, ev.lNetworkEvents);
+            happened = windows_compute_revents_socket((SOCKET) h, pfd[i].events, ev.lNetworkEvents);
         } else {
             int sought = pfd[i].events;
             happened = windows_compute_revents (h, &sought);
@@ -310,9 +311,16 @@ restart:
     }
 
     if (!rc && timeout == -1) {
-        SleepEx (1, TRUE);
+        SleepEx(1, TRUE);
         goto restart;
     }
     CloseHandle(hEvent);
+
+    if ((!rc) && (!timeout) && (orig_timeout > 0)) {
+        if (orig_timeout < 5)
+            SleepEx(orig_timeout, TRUE);
+        else
+            SleepEx(orig_timeout / 4, TRUE);
+    }
     return rc;
 }

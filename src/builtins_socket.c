@@ -621,11 +621,9 @@ static void io_get_object(JS_CONTEXT ctx, int fd, const char *method) {
         duk_get_prop_string(ctx, -1, func_buffer);
         if (duk_is_object(ctx, -1)) {
             duk_get_prop_string(ctx, -1, method);
-            if (duk_is_function(ctx, -1)) {
+            if (duk_is_function(ctx, -1))
                 duk_call(ctx, 0);
-                duk_pop(ctx);
-            }
-            duk_pop(ctx);
+            duk_pop_2(ctx);
         }
     duk_pop(ctx);
 #else

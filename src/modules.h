@@ -27460,115 +27460,116 @@ const static struct builtin_module builtin_modules[] = {
         "se\nif (nbytes) {\nself._lastRead = new Date().getTime();\nself.bytesRead += nby" \
         "tes;\nif (nbytes != 8192)\nbuf = buf.subarray(0, nbytes);\nif (self._readableSta" \
         "te.decoder)\nself.emit(\"data\", self._readableState.decoder.write(buf));\nelse\n" \
-        "self.emit(\"data\", buf);\n} else {\nself.close();\n}\n};\n}\nif (writable) {\nr" \
-        "ead_write = 1;\nobj.write = function() {\nif (self.destroyed)\nreturn;\nself._dr" \
-        "ain = true;\nself.emit(\"drain\");\nif ((!self._buffer) || (!self._buffer.length" \
-        "))\n_net_.pollPauseWrite(self._socket);\nself.flush();\n};\n}\n_net_.poll(this._" \
-        "socket, read_write, obj);\n}\nthis.address = function() {\nif (!this._info)\nthi" \
-        "s._info = _net_.info(this._socket);\nif (this._info)\nreturn {\"port\": this._in" \
-        "fo[\"local_port\"], \"family\": this._info[\"local_family\"] === net.constants.A" \
-        "F_INET6 ? \"IPv6\" : \"IPv4\" , \"address\": this._info[\"local_address\"]};\n}\n" \
-        "Object.defineProperty(this, \"localAddress\", {  get: function() { if (!this._in" \
-        "fo) this._info = _net_.info(this._socket); if (this._info) return this._info[\"l" \
-        "ocal_address\"]; } } );\nObject.defineProperty(this, \"localPort\", {  get: func" \
-        "tion() { if (!this._info) this._info = _net_.info(this._socket); if (this._info)" \
-        " return this._info[\"local_port\"]; } } );\nObject.defineProperty(this, \"remote" \
-        "Address\", {  get: function() { if (!this._info) this._info = _net_.info(this._s" \
-        "ocket); if (this._info) return this._info[\"remote_address\"]; } } );\nObject.de" \
-        "fineProperty(this, \"remoteFamily\", {  get: function() { if (!this._info) this." \
-        "_info = _net_.info(this._socket); if (this._info) return this._info[\"remote_fam" \
-        "ily\"] === net.constants.AF_INET6 ? \"IPv6\" : \"IPv4\"; } } );\nObject.definePr" \
-        "operty(this, \"remotePort\", {  get: function() { if (!this._info) this._info = " \
-        "_net_.info(this._socket); if (this._info) return this._info[\"remote_port\"]; } " \
-        "} );\nthis.setNoDelay = function(noDelay) {\nif (noDelay === undefined)\nnoDelay" \
-        " = true;\nif (_net_.setNoDelay(this._socket, noDelay))\nself.emit(\"error\", new" \
-        " Error(_net_.strerror(_net_.errno())));\nreturn this;\n}\nthis.setKeepAlive = fu" \
-        "nction(enabled) {\nif (enabled === undefined)\nenabled = true;\nif (_net_.setKee" \
-        "pAlive(this._socket, enabled))\nself.emit(\"error\", new Error(_net_.strerror(_n" \
-        "et_.errno())));\nreturn this;\n}\nthis.setTimeout = function(timeout, callback) " \
-        "{\nvar err = _net_.setTimeout(this._socket, timeout);\nif (callback)\nsetImmedia" \
-        "te(function() { callback(err ? new Error(_net_.strerror(_net_.errno())) : undefi" \
-        "ned); });\nif (err)\nself.emit(\"error\", new Error(_net_.strerror(_net_.errno()" \
-        ")));\nreturn this;\n}\nthis.setReadTimeout = function(timeout) {\nthis._readTime" \
-        "out = timeout;\nif (this._lastReadInterval)\nclearInterval(this._lastReadInterva" \
-        "l);\nif (timeout > 0) {\nthis._lastReadInterval = setInterval(function() {\nif (" \
-        "new Date().getTime() - self._lastRead > timeout) {\nclearInterval(self._lastRead" \
-        "Interval);\nself.close();\n}\n}, timeout / 2);\n}\nreturn this;\n}\nthis.flush =" \
-        " function() {\nif ((this._drain) && (this._socket !== undefined) && (!this.destr" \
-        "oyed) && (this._buffer) && (this._buffer.length)) {\n_net_.pollResumeWrite(this." \
-        "_socket);\nvar sent = _net_.send(this._socket, this._buffer, this._buffer.length" \
-        ");\nif (sent > 0) {\nthis._lastRead = new Date().getTime();\nthis.bytesWritten +" \
-        "= sent;\nif (sent == this._buffer.length) {\nthis._buffer = undefined;\nif (this" \
-        "._half_closed) {\nthis._half_closed = false;\nthis.close();\n}\n} else\nthis._bu" \
-        "ffer = this._buffer.slice(sent);\n} else\nif (sent < 0) {\nself.emit(\"error\", " \
-        "new Error(_net_.strerror(_net_.errno())));\nthis.close();\n}\n}\nreturn false;\n" \
-        "}\nthis.write = function(data, encoding, callback) {\nif ((this.destroyed) || (t" \
-        "his._socket === undefined))\nthrow new Error(\"socket is closed\");\nvar buf = d" \
-        "ata;\nif (typeof data === \"string\") {\nif (!encoding)\nencoding = \"utf-8\";\n" \
-        "buf = new TextEncoder(encoding).encode(data);\n}\nif (this._buffer) {\nvar buf2 " \
-        "= new Uint8Array(this._buffer.length + buf.length);\nbuf2.set(this._buffer);\nbu" \
-        "f2.set(buf, this._buffer.length);\nthis._buffer = buf2;\n} else\nthis._buffer = " \
-        "buf;\nreturn this.flush();\n}\nthis._read = function(n) {\nreturn 0;\n}\nthis.cl" \
-        "ose = function() {\nif ((this._socket !== undefined) && (this._socket >= 0)) {\n" \
-        "this.emit(\"close\");\n_net_.unpoll(this._socket);\n_net_.close(this._socket);\n" \
-        "this._socket = undefined;\nthis._buffer = undefined;\nif (server) {\nserver.conn" \
-        "ections --;\nserver = undefined;\n}\nif (this._lastReadInterval) {\nclearInterva" \
-        "l(this._lastReadInterval);\nthis._lastReadInterval = undefined;\n}\nfor (var k i" \
-        "n this)\ndelete this[k];\nthis.destroyed = true;\n}\nthis.removeAllListeners();\n" \
-        "}\nthis.end = function(data, encoding, callback) {\nif (data)\nthis.write(data, " \
-        "encoding, callback);\nthis.emit(\"end\", false);\nif (this._buffer) {\nthis._hal" \
-        "f_closed = true;\nreturn false;\n}\nthis.close();\nreturn true;\n}\nthis.destroy" \
-        " = function() {\nthis.destroyed = true;\nthis.close();\n}\nthis.finalize = funct" \
-        "ion(self) {\nif ((self._socket !== undefined) && (self._socket >= 0))\nself.clos" \
-        "e();\n}\nthis.__refHandler = undefined;\nthis.ref = function() {\nif (!this.__re" \
-        "fHandler)\nthis.__refHandler = new Array();\nthis.__refHandler.push(setInterval(" \
-        "function() { }, 3600000));\n}\nthis.unref = function() {\nif ((this.__refHandler" \
-        ") && (this.__refHandler.length)) {\nvar handler = this.__refHandler.pop();\nif (" \
-        "handler)\nclearInterval(handler);\n}\n}\nglobal.__destructor(this, this.finalize" \
-        ");\n},\nServer: function(connectionListener) {\nthis.listening = false;\nthis.ma" \
-        "xConnections = 0;\nthis.connections = 0;\nthis.connectionListener = connectionLi" \
-        "stener;\nthis._info = undefined;\nthis._socket = _net_.socket(net.constants.AF_I" \
-        "NET, net.constants.SOCK_STREAM, 0);\nthis.listen = function(port, host, backlog," \
-        " callback) {\nif (!callback) {\ncallback = backlog;\nbacklog = 1024;\n}\nif (!ca" \
-        "llback) {\ncallback = host;\nhost = \"0.0.0.0\";\n}\nif (!host)\nhost = \"0.0.0." \
-        "0\";\nif (this.listening) {\nif (callback)\ncallback(new Error(\"already listeni" \
-        "ng\"));\nthis.emit(\"error\", new Error(\"already listening\"));\nreturn this;\n" \
-        "}\nvar ipv6_only = false;\nif (typeof port == \"object\") {\nvar options = port;" \
-        "\nhost = options.host ? options.host : \"0.0.0.0\";\nport = options.port;\nbackl" \
-        "og = options.backlog ? options.backlog : 1024;\nipv6_only = options.ipv6Only ? o" \
-        "ptions.ipv6Only : false;\nif (!options.exclusive)\n_net_.setReuseAddr(this._sock" \
-        "et, true);\n}\nthis.listening = true;\n_net_.bind(this._socket, host, port)\nvar" \
-        " self = this;\nif (_net_.listen(this._socket, backlog)) {\nif (callback)\nsetImm" \
-        "ediate(function() { callback(new Error(_net_.strerror(_net_.errno()))); });\nthi" \
-        "s.emit(\"error\", new Error(_net_.strerror(_net_.errno())));\n} else {\nthis.ref" \
-        "();\n_net_.poll(this._socket, 0, {\"read\": function() {\nvar sock = _net_.accep" \
-        "t(self._socket);\nif (sock < 0) {\nself.emit(\"error\", new Error(_net_.strerror" \
-        "(_net_.errno())));\n} else {\n_net_.setKeepAlive(sock, true);\nvar sock_obj = ne" \
-        "w net.Socket({ \"fd\": sock, \"readable\": true, \"writable\": true, \"_server\"" \
-        ": self });\nself.emit(\"connection\", sock_obj);\nself.connections ++;\nif (self" \
-        ".connectionListener)\nself.connectionListener(sock_obj);\n}\n}});\nif (callback)" \
-        "\nsetImmediate(callback);\nthis.emit(\"listening\");\n}\nreturn this;\n}\nthis.c" \
-        "lose = function() {\nif ((this._socket !== undefined) && (this._socket >= 0)) {\n" \
-        "this.emit(\"close\");\n_net_.unpoll(this._socket);\n_net_.close(this._socket);\n" \
-        "this._socket = undefined;\n}\nthis.unref();\nthis.removeAllListeners();\n}\nthis" \
-        ".getConnections = function(callback) {\nvar self = this;\nsetImmediate(callback(" \
-        "undefined, self.connections));\n}\nthis.address = function() {\nif (!this._info)" \
-        "\nthis._info = _net_.info(this._socket);\nif (this._info)\nreturn {\"port\": thi" \
-        "s._info[\"local_port\"], \"family\": this._info[\"local_family\"] === net.consta" \
-        "nts.AF_INET6 ? \"IPv6\" : \"IPv4\" , \"address\": this._info[\"local_address\"]}" \
-        ";\n}\nthis.__refHandler = undefined;\nthis.ref = function() {\nif (!this.__refHa" \
-        "ndler)\nthis.__refHandler = new Array();\nthis.__refHandler.push(setInterval(fun" \
-        "ction() { }, 3600000));\n}\nthis.unref = function() {\nif ((this.__refHandler) &" \
-        "& (this.__refHandler.length)) {\nvar handler = this.__refHandler.pop();\nif (han" \
-        "dler)\nclearInterval(handler);\n}\n}\nthis.finalize = function(self) {\nself.clo" \
-        "se();\n}\nglobal.__destructor(this, this.finalize);\n},\ncreateServer(options, c" \
-        "onnectionListener) {\nif (connectionListener === undefined)\nconnectionListener " \
-        "= options;\nreturn new this.Server(connectionListener);\n},\ncreateConnection(op" \
-        "tions, connectionListener) {\nreturn new this.Socket(options, connectionListener" \
-        ");\n},\nconnect(options, connectionListener) {\nreturn createConnection(options," \
-        " connectionListener);\n}\n}\nutil.inherits(net.Socket, Stream.Duplex);\nutil.inh" \
-        "erits(net.Server, EventEmitter);\nmodule.exports = net;",
-    12170, 12170, 0},
+        "self.emit(\"data\", buf);\n} else {\nself.close();\n}\n};\n}\nif (writable) {\ni" \
+        "f (readable)\nread_write = 1;\nelse\nread_write = 2;\nobj.write = function() {\n" \
+        "if (self.destroyed)\nreturn;\nself._drain = true;\nself.emit(\"drain\");\nif ((!" \
+        "self._buffer) || (!self._buffer.length))\n_net_.pollPauseWrite(self._socket);\ns" \
+        "elf.flush();\n};\n}\n_net_.poll(this._socket, read_write, obj);\n}\nthis.address" \
+        " = function() {\nif (!this._info)\nthis._info = _net_.info(this._socket);\nif (t" \
+        "his._info)\nreturn {\"port\": this._info[\"local_port\"], \"family\": this._info" \
+        "[\"local_family\"] === net.constants.AF_INET6 ? \"IPv6\" : \"IPv4\" , \"address\"" \
+        ": this._info[\"local_address\"]};\n}\nObject.defineProperty(this, \"localAddress" \
+        "\", {  get: function() { if (!this._info) this._info = _net_.info(this._socket);" \
+        " if (this._info) return this._info[\"local_address\"]; } } );\nObject.defineProp" \
+        "erty(this, \"localPort\", {  get: function() { if (!this._info) this._info = _ne" \
+        "t_.info(this._socket); if (this._info) return this._info[\"local_port\"]; } } );" \
+        "\nObject.defineProperty(this, \"remoteAddress\", {  get: function() { if (!this." \
+        "_info) this._info = _net_.info(this._socket); if (this._info) return this._info[" \
+        "\"remote_address\"]; } } );\nObject.defineProperty(this, \"remoteFamily\", {  ge" \
+        "t: function() { if (!this._info) this._info = _net_.info(this._socket); if (this" \
+        "._info) return this._info[\"remote_family\"] === net.constants.AF_INET6 ? \"IPv6" \
+        "\" : \"IPv4\"; } } );\nObject.defineProperty(this, \"remotePort\", {  get: funct" \
+        "ion() { if (!this._info) this._info = _net_.info(this._socket); if (this._info) " \
+        "return this._info[\"remote_port\"]; } } );\nthis.setNoDelay = function(noDelay) " \
+        "{\nif (noDelay === undefined)\nnoDelay = true;\nif (_net_.setNoDelay(this._socke" \
+        "t, noDelay))\nself.emit(\"error\", new Error(_net_.strerror(_net_.errno())));\nr" \
+        "eturn this;\n}\nthis.setKeepAlive = function(enabled) {\nif (enabled === undefin" \
+        "ed)\nenabled = true;\nif (_net_.setKeepAlive(this._socket, enabled))\nself.emit(" \
+        "\"error\", new Error(_net_.strerror(_net_.errno())));\nreturn this;\n}\nthis.set" \
+        "Timeout = function(timeout, callback) {\nvar err = _net_.setTimeout(this._socket" \
+        ", timeout);\nif (callback)\nsetImmediate(function() { callback(err ? new Error(_" \
+        "net_.strerror(_net_.errno())) : undefined); });\nif (err)\nself.emit(\"error\", " \
+        "new Error(_net_.strerror(_net_.errno())));\nreturn this;\n}\nthis.setReadTimeout" \
+        " = function(timeout) {\nthis._readTimeout = timeout;\nif (this._lastReadInterval" \
+        ")\nclearInterval(this._lastReadInterval);\nif (timeout > 0) {\nthis._lastReadInt" \
+        "erval = setInterval(function() {\nif (new Date().getTime() - self._lastRead > ti" \
+        "meout) {\nclearInterval(self._lastReadInterval);\nself.close();\n}\n}, timeout /" \
+        " 2);\n}\nreturn this;\n}\nthis.flush = function() {\nif ((this._drain) && (this." \
+        "_socket !== undefined) && (!this.destroyed) && (this._buffer) && (this._buffer.l" \
+        "ength)) {\n_net_.pollResumeWrite(this._socket);\nvar sent = _net_.send(this._soc" \
+        "ket, this._buffer, this._buffer.length);\nif (sent > 0) {\nthis._lastRead = new " \
+        "Date().getTime();\nthis.bytesWritten += sent;\nif (sent == this._buffer.length) " \
+        "{\nthis._buffer = undefined;\nif (this._half_closed) {\nthis._half_closed = fals" \
+        "e;\nthis.close();\n}\n} else\nthis._buffer = this._buffer.slice(sent);\n} else\n" \
+        "if (sent < 0) {\nself.emit(\"error\", new Error(_net_.strerror(_net_.errno())));" \
+        "\nthis.close();\n}\n}\nreturn false;\n}\nthis.write = function(data, encoding, c" \
+        "allback) {\nif ((this.destroyed) || (this._socket === undefined))\nthrow new Err" \
+        "or(\"socket is closed\");\nvar buf = data;\nif (typeof data === \"string\") {\ni" \
+        "f (!encoding)\nencoding = \"utf-8\";\nbuf = new TextEncoder(encoding).encode(dat" \
+        "a);\n}\nif (this._buffer) {\nvar buf2 = new Uint8Array(this._buffer.length + buf" \
+        ".length);\nbuf2.set(this._buffer);\nbuf2.set(buf, this._buffer.length);\nthis._b" \
+        "uffer = buf2;\n} else\nthis._buffer = buf;\nreturn this.flush();\n}\nthis._read " \
+        "= function(n) {\nreturn 0;\n}\nthis.close = function() {\nif ((this._socket !== " \
+        "undefined) && (this._socket >= 0)) {\nthis.emit(\"close\");\n_net_.unpoll(this._" \
+        "socket);\n_net_.close(this._socket);\nthis._socket = undefined;\nthis._buffer = " \
+        "undefined;\nif (server) {\nserver.connections --;\nserver = undefined;\n}\nif (t" \
+        "his._lastReadInterval) {\nclearInterval(this._lastReadInterval);\nthis._lastRead" \
+        "Interval = undefined;\n}\nfor (var k in this)\ndelete this[k];\nthis.destroyed =" \
+        " true;\n}\nthis.removeAllListeners();\n}\nthis.end = function(data, encoding, ca" \
+        "llback) {\nif (data)\nthis.write(data, encoding, callback);\nthis.emit(\"end\", " \
+        "false);\nif (this._buffer) {\nthis._half_closed = true;\nreturn false;\n}\nthis." \
+        "close();\nreturn true;\n}\nthis.destroy = function() {\nthis.destroyed = true;\n" \
+        "this.close();\n}\nthis.finalize = function(self) {\nif ((self._socket !== undefi" \
+        "ned) && (self._socket >= 0))\nself.close();\n}\nthis.__refHandler = undefined;\n" \
+        "this.ref = function() {\nif (!this.__refHandler)\nthis.__refHandler = new Array(" \
+        ");\nthis.__refHandler.push(setInterval(function() { }, 3600000));\n}\nthis.unref" \
+        " = function() {\nif ((this.__refHandler) && (this.__refHandler.length)) {\nvar h" \
+        "andler = this.__refHandler.pop();\nif (handler)\nclearInterval(handler);\n}\n}\n" \
+        "global.__destructor(this, this.finalize);\n},\nServer: function(connectionListen" \
+        "er) {\nthis.listening = false;\nthis.maxConnections = 0;\nthis.connections = 0;\n" \
+        "this.connectionListener = connectionListener;\nthis._info = undefined;\nthis._so" \
+        "cket = _net_.socket(net.constants.AF_INET, net.constants.SOCK_STREAM, 0);\nthis." \
+        "listen = function(port, host, backlog, callback) {\nif (!callback) {\ncallback =" \
+        " backlog;\nbacklog = 1024;\n}\nif (!callback) {\ncallback = host;\nhost = \"0.0." \
+        "0.0\";\n}\nif (!host)\nhost = \"0.0.0.0\";\nif (this.listening) {\nif (callback)" \
+        "\ncallback(new Error(\"already listening\"));\nthis.emit(\"error\", new Error(\"" \
+        "already listening\"));\nreturn this;\n}\nvar ipv6_only = false;\nif (typeof port" \
+        " == \"object\") {\nvar options = port;\nhost = options.host ? options.host : \"0" \
+        ".0.0.0\";\nport = options.port;\nbacklog = options.backlog ? options.backlog : 1" \
+        "024;\nipv6_only = options.ipv6Only ? options.ipv6Only : false;\nif (!options.exc" \
+        "lusive)\n_net_.setReuseAddr(this._socket, true);\n}\nthis.listening = true;\n_ne" \
+        "t_.bind(this._socket, host, port)\nvar self = this;\nif (_net_.listen(this._sock" \
+        "et, backlog)) {\nif (callback)\nsetImmediate(function() { callback(new Error(_ne" \
+        "t_.strerror(_net_.errno()))); });\nthis.emit(\"error\", new Error(_net_.strerror" \
+        "(_net_.errno())));\n} else {\nthis.ref();\n_net_.poll(this._socket, 0, {\"read\"" \
+        ": function() {\nvar sock = _net_.accept(self._socket);\nif (sock < 0) {\nself.em" \
+        "it(\"error\", new Error(_net_.strerror(_net_.errno())));\n} else {\n_net_.setKee" \
+        "pAlive(sock, true);\nvar sock_obj = new net.Socket({ \"fd\": sock, \"readable\":" \
+        " true, \"writable\": true, \"_server\": self });\nself.emit(\"connection\", sock" \
+        "_obj);\nself.connections ++;\nif (self.connectionListener)\nself.connectionListe" \
+        "ner(sock_obj);\n}\n}});\nif (callback)\nsetImmediate(callback);\nthis.emit(\"lis" \
+        "tening\");\n}\nreturn this;\n}\nthis.close = function() {\nif ((this._socket !==" \
+        " undefined) && (this._socket >= 0)) {\nthis.emit(\"close\");\n_net_.unpoll(this." \
+        "_socket);\n_net_.close(this._socket);\nthis._socket = undefined;\n}\nthis.unref(" \
+        ");\nthis.removeAllListeners();\n}\nthis.getConnections = function(callback) {\nv" \
+        "ar self = this;\nsetImmediate(callback(undefined, self.connections));\n}\nthis.a" \
+        "ddress = function() {\nif (!this._info)\nthis._info = _net_.info(this._socket);\n" \
+        "if (this._info)\nreturn {\"port\": this._info[\"local_port\"], \"family\": this." \
+        "_info[\"local_family\"] === net.constants.AF_INET6 ? \"IPv6\" : \"IPv4\" , \"add" \
+        "ress\": this._info[\"local_address\"]};\n}\nthis.__refHandler = undefined;\nthis" \
+        ".ref = function() {\nif (!this.__refHandler)\nthis.__refHandler = new Array();\n" \
+        "this.__refHandler.push(setInterval(function() { }, 3600000));\n}\nthis.unref = f" \
+        "unction() {\nif ((this.__refHandler) && (this.__refHandler.length)) {\nvar handl" \
+        "er = this.__refHandler.pop();\nif (handler)\nclearInterval(handler);\n}\n}\nthis" \
+        ".finalize = function(self) {\nself.close();\n}\nglobal.__destructor(this, this.f" \
+        "inalize);\n},\ncreateServer(options, connectionListener) {\nif (connectionListen" \
+        "er === undefined)\nconnectionListener = options;\nreturn new this.Server(connect" \
+        "ionListener);\n},\ncreateConnection(options, connectionListener) {\nreturn new t" \
+        "his.Socket(options, connectionListener);\n},\nconnect(options, connectionListene" \
+        "r) {\nreturn createConnection(options, connectionListener);\n}\n}\nutil.inherits" \
+        "(net.Socket, Stream.Duplex);\nutil.inherits(net.Server, EventEmitter);\nmodule.e" \
+        "xports = net;",
+    12217, 12217, 0},
     #else
     {"net",
         "\x78\x01\xed\x1a\x6b\x6f\x1b\x37\xf2\xbb\x7e\xc5\x5a\x1f\x1a\t\x51\x74\x8e\x9b\xfa" \
@@ -27615,88 +27616,89 @@ const static struct builtin_module builtin_modules[] = {
         "\x01\xa9\xdd\x61\x8b\xa0\x42\x79\x39\x0f\xc9\x1e\xfb\x20\x2a\x33\x65\x14\xe6\x6b" \
         "\x4c\x7c\x5e\0\x47\xb8\x07\x16\xe9\x92\xbd\xc6\xea\xb9\x0c\x8b\x10\xd4\xdc\xb1\x9c" \
         "\xa2\x93\xea\x01\x37\x54\x92\x54\xac\xe3\xe3\xac\x70\x7f\x5a\x40\x37\x05\x2a\x77" \
-        "\xd3\x81\x1d\x67\xc7\x31\x91\x0e\x4d\xe3\xb8\xc8\xd3\x23\xf2\x01\x33\x74\x9c\xc0" \
-        "\xea\x63\x2f\x32\x0c\xc3\x45\x99\x25\xda\x70\xf6\x22\xe3\xa3\x26\xc5\xc3\t\x3c\x3f" \
-        "\x48\xa3\xb7\xc7\xab\xf9\x6a\xea\x07\xbf\xff\x0e\x57\xb7\x04\r\x63\xf6\x8d\x7e\x87" \
-        "\x77\x77\x93\xc6\xf1\x34\x2c\x73\x85\x97\xad\x72\x9c\xca\xec\xd9\x2a\x2e\xf3\x4b" \
-        "\x52\x12\x55\xac\xd0\xbc\x28\x53\xe9\n\x77\xff\xfc\x23\x19\x85\x56\x84\xcb\x65\xa6" \
-        "\x72\xf4\xde\x9a\xca\x7b\xd5\xd5\xda\x77\xaf\x59\x66\x83\x03\x87\x8d\x13\x4a\x19" \
-        "\x8d\xcd\x14\x7c\xe9\x62\x80\xeb\x8e\xe8\xa6\xe4\xb9\xdf\xf8\x12\x98\xd1\xc4\xfb" \
-        "\x41\xd0\x5d\x85\xeb\x28\xbe\x6e\x5c\xa3\xa7\xde\xc3\x8d\x83\x0e\xdc\x10\xe3\x0f" \
-        "\x21\xaa\x74\x4f\xa6\xdb\xc3\x2e\x5e\x2f\xf0\xf1\xac\x1b\0\x4d\xad\x5d\x23\x51\x33" \
-        "\xf7\x9e\x2c\xf7\x6e\xfe\x11\xa2\x13\xec\x30\x46\x91\x69\x96\x6e\x54\x56\x5c\xeb" \
-        "\x64\x89\x11\xc6\x7a\xfd\0\x22\x48\0\x47\x47\xe4\x67\x18\xef\x7c\x8b\t\x8e\xbb\x2c" \
-        "\x46\x78\x12\x4d\x5b\x6c\x87\xbc\x10\x08\xe1\x2f\x18\xfb\x76\x99\xa7\x68\xdc\xaf" \
-        "\x25\x30\xef\xec\xdd\xa4\xcd\xd4\x3a\x2d\xd4\xd7\x33\x31\xf3\xbf\xaf\x8d\x19\xeb" \
-        "\x07\xf6\xce\xaf\x26\xf4\x1f\x3a\x1d\xf7\x51\xf0\x2b\x79\x91\x56\xcf\x73\x23\x5a" \
-        "\x01\x69\xc7\xdb\xf4\x58\xc5\xe1\xb5\x0c\x5c\t\x83\x4c\xfc\xd2\x43\x32\x8b\xc8\x7f" \
-        "\x2d\x58\x47\xeb\x2a\x41\xab\xa8\x7a\xd1\xd3\x10\x76\x6e\xae\x3f\x70\x43\x0b\x25" \
-        "\x6d\0\x06\xa6\x6f\x94\xda\x8c\xe3\x68\xeb\x5c\x3c\x2a\xc1\x7b\x8a\xf2\x19\x94\x50" \
-        "\x0f\x7d\x65\x2c\xb8\x49\x19\x4b\xd7\x53\xc7\x90\xfe\x3f\xa9\x83\x39\x45\x5a\x62" \
-        "\x6e\x6e\x95\x29\x18\x04\x05\x2c\x94\xa0\xf3\x70\x71\x65\x72\x2b\x20\x57\xe5\xf0" \
-        "\x16\xd5\x93\x57\x63\xeb\xeb\xc5\x92\xd8\x95\x7c\xea\x35\x3d\xa4\xff\xea\xce\x3a" \
-        "\xc1\xe9\xa8\x6c\xcb\xf9\x26\xd9\x3e\x73\x73\x96\x87\x33\x15\x26\x5b\xed\xe6\xaa" \
-        "\xaa\x45\xbc\xbe\xab\x75\x7a\x5a\xde\xb6\x26\xc1\x3b\x49\xa0\x2f\xb3\r\xe3\x7e\x67" \
-        "\x11\xab\x30\x33\xc3\xb6\x55\x9a\x84\xa6\xfc\x52\x94\x3d\xb5\xb5\xc0\x17\xed\x6d" \
-        "\x08\xd6\xb2\x85\xa6\xbc\x32\x78\xa2\x13\x3b\x9b\x7f\xbe\xb4\x9b\x89\x45\x8a\x23" \
-        "\xa2\xbb\x52\x88\x58\x4b\xe6\xac\x47\x04\x7f\x0b\x30\t\xbf\x69\x34\x2f\x65\x46\x4d" \
-        "\x79\x8d\x36\x06\xa5\x66\xfd\xe0\x9b\x6f\x76\x97\x13\x38\xcf\x01\xae\xca\xfe\x04" \
-        "\x92\xc9\xe5\x7c\x88\x4d\xe5\x80\x69\x95\x95\x9d\xa9\xbc\x5c\xeb\x6c\xce\xcb\x9c" \
-        "\xb8\x7b\x90\x88\x92\x56\x25\x4b\xff\x20\x08\x06\xee\xc8\xb0\x33\xc9\x37\xd0\x69" \
-        "\xdc\xcd\xd6\x02\xa0\xde\xd8\x81\x1a\0\xe9\x08\x8a\x60\x98\x26\x9e\x96\x49\x53\xe7" \
-        "\xa6\x72\x51\xd1\xbd\xa9\x50\xda\x5b\x3a\x72\xc3\xb9\xb0\xf1\x98\x38\xa2\xe4\x71" \
-        "\xb4\xc0\x04\x39\x41\x53\x8a\x42\x88\xe4\x7e\x90\xea\xaa\x26\x94\x71\x3a\x2d\xb4" \
-        "\xf6\xba\x5a\x01\x81\x05\n\x86\x5c\xa8\x65\xa0\x33\xe6\x46\xc0\xca\x1b\x85\x6f\x61" \
-        "\x55\xe0\xb5\x59\xa4\x43\x62\x2a\x9e\xa5\x9f\x84\xe8\x5d\xbd\x2e\xca\x03\xb6\x24" \
-        "\xd6\x1b\x55\xe1\x8a\x02\xe8\x7d\xb8\xde\xa8\x74\x45\0\x22\xda\x05\x9e\x20\x53\xd7" \
-        "\x26\xfc\x46\x4a\xbc\x57\xf8\x0b\xf0\xbb\x65\xb1\x7a\xf2\x1c\x1a\x35\x55\x1d\x7c" \
-        "\xa1\x3e\x17\x13\x5c\x01\x75\xbd\xc5\x19\xd2\x97\x22\x85\xbd\x42\xdd\x1c\x12\x5b" \
-        "\x4f\x1f\xd4\x0b\xea\x06\xcf\n\x1e\x53\x8d\x69\x5d\x1b\x11\x31\x6a\xba\x54\x05\x9c" \
-        "\xea\xec\xe6\x63\xe1\x39\x0f\xa2\x58\x47\xa9\xcf\x39\x01\x5b\xd4\x58\x22\x1c\x3b" \
-        "\x89\x07\x97\x93\x84\x01\xbd\x06\xbd\x8c\x36\x63\x47\0\x6a\x8f\x37\xce\xfc\x4b\xe8" \
-        "\x5f\xf8\xad\x21\x22\x8d\xdb\xcc\x7e\x5a\x26\xb5\x92\xcf\xce\xb1\xcb\x7a\x53\xb7" \
-        "\x34\x7d\x5b\x4f\x32\x37\x03\xf9\x30\xe1\x97\xed\xf9\x62\xcf\xf9\xc9\x13\xd1\x3f" \
-        "\x14\x88\xd2\x13\x6a\xe1\xbd\x76\r\xb4\xde\x54\xad\xd7\x92\xc3\x6a\x95\x66\x41\x0f" \
-        "\xbd\xec\x2a\x80\x8a\x1c\x71\xfa\x9d\xa5\x8a\x15\x1c\x4a\x1c\xfc\x76\xf5\xbe\xa1" \
-        "\x29\xcd\xb9\x93\xde\x36\x4c\x3b\xb7\x6a\x1c\xc7\xa6\x75\x95\x8b\xad\x87\x98\x7c" \
-        "\x9f\xc3\x4d\x67\x41\x04\x86\x76\x04\xa7\xeb\x06\x5c\x20\x38\x51\x60\x71\x6a\xea" \
-        "\xea\x1c\x35\x45\x4f\xd6\xa2\x31\x2a\xd9\xb8\x65\xdc\x5a\x2a\xac\x2d\xe1\x7b\x6a" \
-        "\x8b\x95\xfc\x38\xc8\x27\x24\x4a\xc2\x98\x5b\xed\x96\x06\x86\x5b\xeb\xf1\xb2\x75" \
-        "\xd1\xe4\xf1\xce\x3c\x7b\x7c\xed\xde\x67\x9d\xe1\xf0\xad\xfe\x15\x26\xcb\xb8\xf1" \
-        "\x8d\0\x26\x77\xb4\x32\x04\xae\xe9\x68\xb8\xe4\x30\x26\x71\x38\xb2\x0e\x27\x16\x0c" \
-        "\x37\x18\x07\xda\xb2\xa0\0\xf2\x92\x6f\x0f\xf7\xf1\x0f\x75\xe3\x18\xbf\x4c\x5a\x44" \
-        "\xd2\x5b\x2a\x45\x12\x67\x5f\x72\x15\x99\x04\x75\xd8\xad\xb4\r\x02\xa6\x1b\x94\x1c" \
-        "\xe9\xeb\x65\x7e\x22\x68\xc0\x7c\x85\x7d\x88\xd3\x79\x18\x03\r\xda\xe7\x72\x51\xc0" \
-        "\x75\xc2\xa5\x9f\xb3\xad\xb8\x1a\x9e\xa5\xe8\x6c\x8b\xfa\xaf\x3a\xfc\xf2\x41\x8a" \
-        "\x30\x63\x02\xd4\x9f\x82\xd6\xe1\xe7\xd7\x22\x64\xd4\x1f\x8f\xda\xa0\x86\x03\x4c" \
-        "\xd6\x81\xde\x2b\x50\x2d\x9c\x3d\xe4\x63\x81\x50\x4f\x6e\x2b\x56\xa9\xa6\x99\x8f" \
-        "\x07\x3a\x4e\x1b\xc2\xc1\x9e\x04\x98\x6f\xbc\x71\x18\x01\x6e\x32\xfe\xc0\x7e\xe4" \
-        "\xfe\xc1\x33\x13\x3a\xdb\xd0\x90\xdb\x51\x47\xbf\xb8\x74\xf7\x87\xf4\x17\x2e\x6a" \
-        "\x8d\x85\x13\xfd\x86\x69\x1b\x4f\xec\x26\x19\xf9\xaa\xd2\xca\x16\x50\x22\xcd\x08" \
-        "\x63\x7a\r\x08\x2c\x5a\xd7\xe6\x45\x6d\x59\x55\x0b\x8e\x97\xae\xa3\x57\x47\x9b\xed" \
-        "\xe1\x2c\x4d\x62\n\x43\xec\x30\x22\x65\xe1\xf7\x21\xd0\x02\x7a\x97\xf4\x48\xa1\xcf" \
-        "\x42\xf5\xdc\xc9\x4f\x46\x77\x7b\x7d\xaa\x4c\xd1\xf8\xee\x54\x6d\x82\x81\x1b\x48" \
-        "\x45\xca\x40\xf0\xf9\x16\x37\x4a\x8a\x6f\xd6\x20\xec\x1d\x82\x2a\x34\x0b\x82\x53" \
-        "\x54\x29\x69\x9e\x6f\x87\xea\xf3\x02\x52\r\x28\xd8\x4d\x03\x98\x4a\x44\xe8\xff\x62" \
-        "\x63\xcc\xaf\x05\x20\x1a\x57\x61\x46\x9e\x37\x8e\xd3\x4c\x60\x1e\xd5\x8a\x08\xf1" \
-        "\xe0\x54\x7f\xc3\xac\xfa\x07\x4c\xd1\xc3\xd5\x6a\x53\x2c\xba\x77\x2d\x7e\xcf\x97" \
-        "\x9e\x9d\x8e\x75\xf7\x97\x30\x73\x2d\x60\x5c\x6c\x6d\x8f\xc3\xeb\xc5\x17\x7a\xeb" \
-        "\x82\x4e\x71\xed\xfd\x07\x17\xd9\xd8\x11\x2e\x16\x6a\x53\xf8\xad\x78\xca\x8d\x70" \
-        "\xd9\x03\x3e\xe4\xd8\xc2\xd1\xe9\xe4\x20\x17\xbb\xf9\x46\xba\x19\xbf\x6c\x21\x0b" \
-        "\x8c\x5e\xe7\x1c\xdf\xbe\x40\x4f\x1d\x15\x62\x14\x52\x0f\xfb\x3e\xd8\x0c\x07\x74" \
-        "\x80\x98\xc7\x90\n\xa2\x5f\x7b\x11\t\xbd\x02\xb7\x41\xa8\x52\x05\x5e\x7c\xb1\xd1" \
-        "\x7c\x6d\x81\x2e\x02\xf8\xe3\xc7\xe2\x11\xa8\xe1\x96\xf0\x31\xec\x23\xa1\x20\n\xd7" \
-        "\x93\xe9\xbf\xb4\x78\x59\x73\xee\x24\x22\x4d\x5b\x67\xe0\x4f\x99\x98\xcb\x7c\xc2" \
-        "\x66\x27\x3b\x73\x55\xa8\xee\xdd\xbb\xb6\xba\xb8\xbd\x2e\x9c\x13\x02\x1a\x6d\xdc" \
-        "\xb3\x92\xe8\xb7\x3a\xb1\xdd\x22\xdb\xf9\xeb\x35\x89\x5f\x93\xfe\x4a\x55\x1f\x3c" \
-        "\x55\xbd\xb5\xce\xf0\xcb\x85\x7b\xe5\xb6\x0b\x88\x8e\x85\xe2\x0c\xb7\xf6\x73\x2b" \
-        "\x2f\xc1\x15\x3f\x84\x70\x12\x53\xb7\x33\xdf\x98\xba\x6a\xca\x36\x03\xc2\x4d\x24" \
-        "\x69\x34\xe7\x06\x86\x42\xbc\xea\x34\xdf\x26\x62\x8d\x3c\xdf\x08\xbb\xb0\x98\x8f" \
-        "\xfe\x89\xca\xdd\xc8\xdf\x4b\x2a\xde\x45\xfc\x71\x20\x1c\xf5\x4b\x05\x57\x4f\x4e" \
-        "\x19\x38\x8b\x36\xd0\x3f\x15\xd4\x3f\x55\x83\xd5\r\x2b\xc9\x46\x03\xe7\x37\x8a\xb0" \
-        "\x70\x9d\x2e\xcb\x58\x41\xee\x84\x67\x1f\x43\x0f\xac\x3d\xfa\x1f\x0f\xe9\xdd\x95" \
-        "",
-    2525, 10444, 1},
+        "\xd3\x81\x1d\x67\xc7\x31\x91\xce\xdc\x9c\xd6\x07\x28\xae\x5a\x87\x79\xaa\x19\x39" \
+        "\xc0\x83\x23\x72\x13\x33\x74\xfc\xc4\xaa\x6c\xef\x3a\xa4\x58\x94\x59\xa2\x6d\x6b" \
+        "\xef\x3a\x3e\x8d\x52\x03\x9c\xc0\x23\x86\x34\x7a\x7b\xbc\x9a\x6f\xaf\x7e\xf0\xfb" \
+        "\xef\x70\xbb\x4b\xd0\x30\x66\xf7\xe9\x77\xd8\x01\x36\x69\x1c\x4f\xc3\x32\x57\x78" \
+        "\x1f\x2b\xc7\xef\xcc\xb6\xae\xe2\x32\xbf\x24\x3b\xa0\x15\x2a\x34\x2f\x10\x55\xba" \
+        "\x42\x7a\x30\xff\x48\x76\xa3\x15\xe1\x72\x99\xa9\x1c\x1d\xbc\xa6\xf2\x5e\x75\xfb" \
+        "\xf6\xdd\x9b\x98\xd9\xe0\xc0\x61\xe3\x44\x5b\x46\x63\x33\x05\x5f\xba\x18\x03\xbb" \
+        "\x23\xba\x4c\x79\xee\x37\xbe\x27\x66\x34\xf1\x7e\x10\x74\x57\xe1\x3a\x8a\xaf\x1b" \
+        "\xd7\xe8\xa9\xf7\x70\x29\xa1\x8f\x37\x5c\x03\x87\x10\x78\xba\x27\xd3\xed\x61\x17" \
+        "\x6f\x20\xf8\x78\xd6\r\x80\xa6\xd6\xae\x91\xa8\x99\x7b\x4f\x96\x7b\x37\xff\x08\x01" \
+        "\x0c\x76\x18\x03\xcd\x34\x4b\x37\x2a\x2b\xae\x75\x3e\xc5\x08\x63\xbd\x7e\0\x41\x26" \
+        "\x80\xd3\x25\x52\x38\x0c\x89\xbe\xc5\x04\xc7\x5d\x16\x23\x3c\x89\xa6\x2d\xb6\x43" \
+        "\x5e\x88\x95\xf0\x17\x8c\x7d\xbb\xcc\x53\x34\xee\xd7\x12\x98\x77\xf6\x6e\xd2\x66" \
+        "\x6a\x9d\x16\xea\xeb\x99\x98\xf9\xdf\xd7\xc6\x8c\xf5\x03\x7b\xe7\x57\x13\xfa\x0f" \
+        "\x9d\x8e\xfb\x28\xf8\x95\xbc\x48\xab\xe7\xb9\x11\xad\x80\xcc\xe4\x6d\x7a\xac\xe2" \
+        "\xf0\x5a\x06\xae\x84\x41\x26\x7e\xe9\x21\x99\x45\xa4\xc8\x16\xac\xa3\x75\x95\xc3" \
+        "\x55\x54\xbd\xe8\x69\x08\x3b\x97\xdb\x1f\xb8\xc4\x85\x92\x36\0\x03\xd3\x37\x4a\x6d" \
+        "\xc6\x71\xb4\x75\x2e\x1e\x95\xe0\xd5\x45\x29\x0f\x4a\xa8\x87\xbe\x32\x16\xdc\xa4" \
+        "\x8c\xa5\xeb\xa9\x63\x48\xff\x9f\xd4\xc1\xb4\x23\x2d\x31\x7d\xb7\xca\x14\x0c\x82" \
+        "\x1a\x17\xaa\xd4\x79\xb8\xb8\x32\xe9\x17\x90\xab\xd2\x7c\x8b\xea\xc9\xab\xb1\xf5" \
+        "\xf5\x62\x49\xec\xca\x4f\xf5\x9a\x1e\xd2\x7f\x75\x67\x9d\xe0\x74\x54\xb6\xe5\x94" \
+        "\x94\x6c\x9f\xb9\x69\xcd\xc3\x99\n\xf3\xb1\x76\x73\x55\x05\x25\x5e\xdf\xd5\x3a\x3d" \
+        "\x2d\x6f\x5b\x93\x03\x9e\x24\xd0\xba\xd9\x86\x71\xbf\xb3\x88\x55\x98\x99\x61\xdb" \
+        "\x2a\x4d\x42\x53\x7e\x29\x2a\xa3\xda\x5a\xe0\x8b\xf6\x36\x04\x6b\xd9\x42\x53\xea" \
+        "\x19\x3c\xd1\xb9\x9f\x4d\x51\x5f\xda\xcd\xc4\x3a\xc6\x11\xd1\x5d\x29\x44\xac\xe5" \
+        "\x7b\xd6\x23\x82\xbf\x05\x98\xa7\xdf\x34\x9a\x97\x32\xa3\xa6\xbc\x46\x1b\x83\x52" \
+        "\xb3\x7e\xf0\xcd\x37\xbb\x2b\x0e\x9c\xe7\0\x57\x65\x7f\x02\xc9\xe4\x72\x3e\xc4\xa6" \
+        "\x72\xc0\xb4\xca\xca\xce\x54\x5e\xae\x75\x36\xe7\x65\x4e\xdc\x60\x48\x44\xd5\xab" \
+        "\x92\xa5\x7f\x10\x04\x03\x77\x64\xd8\x99\xfc\x1c\xe8\x34\xee\x66\x6b\x8d\x50\xef" \
+        "\xfd\x40\x99\x80\x74\x04\x45\x30\x4c\x13\x4f\xcb\xa4\xa9\xb9\x53\xb9\xa8\x68\xf0" \
+        "\x54\x28\xed\x5d\x1f\xb9\xe1\x5c\xfb\x78\x4c\x1c\x51\xf2\x38\x5a\x60\x82\x9c\xa0" \
+        "\x29\x45\xad\x44\x72\x3f\x48\x01\x56\x13\xca\x38\x9d\x16\x5a\x7b\x5d\xad\x80\xc0" \
+        "\x1a\x06\x43\x2e\x94\x3b\xd0\x3c\x73\x23\x60\xe5\x8d\xc2\xb7\xb0\x2a\xf0\x3a\x31" \
+        "\xd2\x21\x31\x15\xcf\xd2\x4f\x42\xf4\xae\x5e\x17\xe5\x01\x5b\x12\xeb\x8d\xaa\xb6" \
+        "\x45\x01\xf4\x3e\x5c\x6f\x54\xba\x22\0\x11\xed\x02\x4f\x90\xa9\x6b\x13\x7e\x23\x25" \
+        "\xde\x2b\xfc\x05\xf8\xdd\xb2\x58\x3d\x79\x0e\xbd\x9c\xaa\x54\xbe\x50\x9f\x8b\t\xae" \
+        "\x80\xd2\xdf\xe2\x0c\xe9\x4b\x91\xc2\x5e\x2d\x6f\x0e\x89\x2d\xb9\x0f\xea\x35\x77" \
+        "\x83\x67\x05\x8f\xa9\x0c\xb5\xae\x8d\x88\x18\x35\x5d\xaa\x02\x4e\xa5\x78\xf3\xb1" \
+        "\xf0\x9c\x07\x51\xac\xa3\xd4\xe7\x9c\x80\x2d\x6a\x2c\x11\x8e\x9d\xc4\x03\x55\xd3" \
+        "\x18\xd0\x8e\xd0\xcb\x68\x33\x76\x04\xa0\xf6\x78\xe3\xcc\xbf\x84\x16\x87\xdf\x3d" \
+        "\x22\xd2\xb8\xcd\xec\xa7\x65\x52\x2b\xf9\xec\x1c\xbb\xac\x37\x75\x4b\x5f\xb8\xf5" \
+        "\x24\x73\xbf\x90\x0f\x13\x7e\xd9\xb6\x30\xb6\xa5\x9f\x3c\x11\x2d\x46\x81\x28\x3d" \
+        "\xa1\x16\xde\x6b\xd7\x40\xeb\x4d\xd5\x7a\x2d\x39\xac\x56\x69\x16\xf4\xd0\xcb\xae" \
+        "\x02\xa8\xc8\x11\xa7\xdf\x59\xaa\x58\xc1\xa1\xc4\xc1\x6f\x57\xef\x1b\xfa\xd6\x9c" \
+        "\x3b\xe9\x6d\xc3\xb4\x73\xab\xc6\x71\x6c\xba\x5b\xb9\xd8\x7a\x88\xc9\xf7\x39\xdc" \
+        "\x74\x16\x44\x60\x68\x47\x70\x1a\x73\xc0\x05\x82\x13\x05\x16\xa7\xa6\xae\xce\x51" \
+        "\x53\xf4\x64\x2d\x1a\xa3\x92\x8d\x5b\xc6\xad\xa5\xc2\xda\x12\xbe\xa7\xb6\x58\xc9" \
+        "\x8f\x83\x7c\x42\xa2\x24\x8c\xb9\x1b\x6f\x69\x60\xb8\xb5\x1e\x2f\x5b\x17\x4d\x1e" \
+        "\xef\xcc\xb3\xc7\xd7\xee\x7d\xd6\x19\x0e\xdf\xea\x5f\x61\xb2\x8c\x1b\x9f\x11\x60" \
+        "\x72\x47\x2b\x43\xe0\x9a\x8e\x86\x4b\x0e\x63\x12\x87\x23\xeb\x70\x62\xc1\x70\x83" \
+        "\x71\xa0\x2d\x0b\n\x20\x2f\xf9\xf6\x70\x1f\xff\x50\xc3\x8e\xf1\xcb\xa4\x45\x24\xbd" \
+        "\xa5\x52\x24\x71\xf6\x25\x57\x91\x49\x50\x13\xde\x4a\xdb\x20\x60\xba\x41\xc9\x91" \
+        "\xbe\x5e\xe6\x27\x82\x06\xcc\x57\xd8\x87\x38\x9d\x87\x31\xd0\xa0\x7d\x2e\x17\x05" \
+        "\x5c\x27\x5c\xfa\x39\xdb\x8a\xab\xe1\xe5\x8a\xce\xb6\xa8\xff\xaa\xc3\x2f\xdf\xac" \
+        "\x08\x33\x26\x40\xfd\xb5\x68\x1d\x7e\x7e\x2d\x42\x46\xfd\x7d\xa9\r\x6a\x38\xc0\x64" \
+        "\x1d\xe8\x3d\x14\xd5\xc2\xd9\x43\xbe\x27\x08\xf5\xe4\xb6\x62\x95\x6a\xfa\xfd\x78" \
+        "\xa0\xe3\xb4\x21\x1c\xec\x49\x80\xf9\xc6\x1b\x87\x11\xe0\x26\xe3\x0f\x6c\x52\xee" \
+        "\x1f\x3c\x33\xa1\xb3\r\r\xb9\x1d\x75\xf4\xa3\x4c\x77\x7f\x48\x7f\xe1\xa2\xd6\x58" \
+        "\x38\xd1\x6f\x98\xb6\xf1\xc4\x6e\x92\x91\xaf\x2a\xad\x6c\x01\x25\xd2\x8c\x30\xa6" \
+        "\x07\x83\xc0\xa2\x75\x6d\x5e\xd4\x96\x55\xb5\xe0\x78\xe9\x3a\x7a\x75\xb4\xd9\x1e" \
+        "\xce\xd2\x24\xa6\x30\xc4\x0e\x23\x52\x16\x7e\x42\x02\x2d\xa0\x77\x49\xef\x18\xfa" \
+        "\x2c\x54\x2f\xa2\xfc\xaa\x74\xb7\x07\xaa\xca\x14\x8d\x4f\x53\xd5\x26\x18\xb8\x81" \
+        "\x54\xa4\x0c\x04\x5f\x78\x71\xa3\xa4\xf8\x66\r\xc2\xde\x21\xa8\x42\xb3\x20\x38\x45" \
+        "\x95\x92\xe6\x85\x77\xa8\x3e\x2f\x20\xd5\x80\x82\xdd\x34\x80\xa9\x44\x84\xfe\x2f" \
+        "\x36\xc6\xfc\x5a\0\xa2\x71\x15\x66\xe4\x79\xe3\x38\xcd\x04\xe6\x51\xad\x88\x10\x6f" \
+        "\x52\xf5\x67\xce\xaa\x7f\xc0\x14\x3d\x5c\xad\x36\xc5\xa2\x7b\xd7\xe2\xf7\x7c\x0c" \
+        "\xda\xe9\x58\x77\x7f\x2c\x33\xd7\x02\xc6\xc5\xd6\xf6\x38\x3c\x70\x7c\xa1\xe7\x30" \
+        "\xe8\x14\xd7\x9e\x88\x70\x91\x8d\x1d\xe1\x62\xa1\x36\x85\xdf\x8a\xa7\xdc\x08\x97" \
+        "\x3d\xe0\x5b\x8f\x2d\x1c\x9d\x4e\x0e\x72\xb1\x9b\x6f\xa4\x9b\xf1\xe3\x17\xb2\xc0" \
+        "\xe8\x75\xce\xf1\xed\x0b\xf4\xd4\x51\x21\x46\x21\xf5\xb0\xef\x83\xcd\x70\x40\x07" \
+        "\x88\x79\x2f\xa9\x20\xfa\x41\x18\x91\xd0\x2b\x70\x1b\x84\x2a\x55\xe0\xc5\x47\x1d" \
+        "\xcd\xd7\x16\xe8\x22\x80\x3f\x7e\x2c\xde\x89\x1a\x6e\t\x1f\xc3\xbe\x23\n\xa2\x70" \
+        "\x3d\x99\xfe\x4b\x8b\x97\x35\xe7\x4e\x22\xd2\xb4\x75\x06\xfe\x94\x89\xb9\xcc\x27" \
+        "\x6c\x76\xb2\x33\x57\x85\xea\xde\xbd\x6b\xab\x8b\xdb\xeb\xc2\x39\x21\xa0\xd1\xc6" \
+        "\x3d\x2b\x89\x7e\xce\x13\xdb\x2d\xb2\x9d\xbf\x5e\x93\xf8\x35\xe9\xaf\x54\xf5\xc1" \
+        "\x53\xd5\x5b\xeb\x0c\xbf\x5c\xb8\x57\x6e\xbb\x80\xe8\x58\x28\xce\x70\x6b\xbf\xc8" \
+        "\xf2\x12\x5c\xf1\x5b\t\x27\x31\x75\x3b\xf3\x8d\xa9\xab\xa6\x6c\x33\x20\xdc\x44\x92" \
+        "\x46\x73\x6e\x60\x28\xc4\xab\x4e\xf3\x6d\x22\xd6\xc8\xf3\x8d\xb0\x0b\x8b\xf9\xe8" \
+        "\x5f\xb1\xdc\x8d\xfc\xbd\xa4\xe2\x5d\xc4\xdf\x0f\xc2\x51\xbf\x54\x70\xf5\xe4\x94" \
+        "\x81\xb3\x68\x03\xfd\x6b\x42\xfd\x6b\x36\x58\xdd\xb0\x92\x6c\x34\x70\x7e\xc6\x08" \
+        "\x0b\xd7\xe9\xb2\x8c\x15\xe4\x4e\x78\xf6\x31\xf4\xc0\xda\xa3\xff\x01\x73\x9f\xe8" \
+        "\xdc",
+    2534, 10479, 1},
     #endif
     #ifndef ESP32
     #ifdef NO_COMPRESSION
@@ -33688,10 +33690,10 @@ const static struct builtin_module builtin_modules[] = {
     0, 0, 0},
 #endif
     {"::code",
-        "// process.stdin.setEncoding('utf8');\n"
+        "process.stdin.setEncoding('utf8');\n"
         "process.stdout.write('jib v1.0\\nWaiting for code (empty line for run, or end line by \\';\\')\\n\\n');\n"
         "var data_buffer = '';\n"
-        "/* process.stdin.on('data', function(data) {\n"
+        "process.stdin.on('data', function(data) {\n"
 	        "try {\n"
 		        "data_buffer += data;\n"
 		        "var trim_buf = data_buffer.trim();\n"
@@ -33703,7 +33705,7 @@ const static struct builtin_module builtin_modules[] = {
 		        "console.error(e.toString());\n"
 		        "data_buffer = '';\n"
 	        "}\n"
-        "});*/\n"
+        "});\n"
         "process.stdout.ref();\n",
     0, 0, 0},
     {NULL, NULL, 0, 0, 0}
