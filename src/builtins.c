@@ -2308,9 +2308,15 @@ void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *
     JS_EvalSimple(ctx, "esp.uartDriverInstall(0, 1024, 1024);esp.devUartUseDriver(0);");
 #endif
     JS_EvalSimple(ctx, "process._stdstreams=[];"
+#ifdef ESP32
+                       "Object.defineProperty(process,'stdin',{ get : function () {if (!process._stdstreams[0]) { var io=require('io');process._stdstreams[0]=new io(0, true);}return process._stdstreams[0];}});"
+                       "Object.defineProperty(process,'stdout',{ get : function () {if (!process._stdstreams[1]) { var io=require('io');process._stdstreams[1]=new io(1);}return process._stdstreams[1];}});"
+                       "Object.defineProperty(process,'stderr',{ get : function () {if (!process._stdstreams[2]) { var io=require('io');process._stdstreams[2]=new io(2);}return process._stdstreams[2];}});");
+#else
                        "Object.defineProperty(process,'stdin',{ get : function () {if (!process._stdstreams[0]) { var net=require('net');process._stdstreams[0]=new net.Socket({fd:0,readable:true,writable:false});}return process._stdstreams[0];}});"
                        "Object.defineProperty(process,'stdout',{ get : function () {if (!process._stdstreams[1]) { var net=require('net');process._stdstreams[1]=new net.Socket({fd:1,readable:false,writable:true});process._stdstreams[1]._drain=true;}return process._stdstreams[1];}});"
                        "Object.defineProperty(process,'stderr',{ get : function () {if (!process._stdstreams[2]) { var net=require('net');process._stdstreams[2]=new net.Socket({fd:2,readable:false,writable:true});process._stdstreams[2]._drain=true;}return process._stdstreams[2];}});");
+#endif
 #endif
 #ifdef WITH_DUKTAPE
     duk_pop_2(ctx);
