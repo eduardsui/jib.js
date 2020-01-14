@@ -1,7 +1,8 @@
-var net = require('net');
+var tls = require('tls');
 var util = require('util');
 var Stream = require('stream').Stream;
 var EventEmitter = require('events').EventEmitter;
+var http = require('http');
 
 function _concatenateUint8Arrays(header_buf, buf) {
 	if (header_buf) {
@@ -13,7 +14,10 @@ function _concatenateUint8Arrays(header_buf, buf) {
 	return buf;
 }
 
-var http = {
+var https = {
+	IncomingMessage: http.IncomingMessage,
+	ServerResponse: http.ServerResponse,
+
 	ClientRequest: function(header, host, port, timeout, callback) {
 		var self = this;
 		var _headers_set = false;
@@ -24,14 +28,9 @@ var http = {
 		this.bytesRead = 0;
 		this.aborted = false;
 
-		this.socket = net.createConnection({ "host": host, "port": port}, function(err) {
-			if (err) {
-				self.emit('error', err);
-				self.close();
-			} else {
-				self.socket.write(header);
-				self.socket.ref();
-			}
+		this.socket = tls.createConnection({ "host": host, "port": port}, function(err) {
+			self.socket.write(header);
+			self.socket.ref();
 		});
 		if (timeout)
 			this.socket.setReadTimeout(timeout);
@@ -152,7 +151,7 @@ var http = {
 		var agent = options.agent ? options.agent : "jib.js";
 		var host = options.host ? options.host : "";
 		var timeout = options.timeout ? options.timeout : 3000;
-		var port = options.port ? options.port : 80;
+		var port = options.port ? options.port : 443;
 		var path = options.path ? options.path : "";
 		var protocol = options.protocol ? options.protocol : "http";
 		var headers = options.headers ? options.headers : undefined;
@@ -179,7 +178,7 @@ var http = {
 			path = "/";
 
 		var host_str = host;
-		if (port != 80)
+		if (port != 443)
 			host_str += ":" + port;
 		var req_str = "" + method + " " + encodeURI(path) + " HTTP/1.1\r\nHost: " + host_str + "\r\n";
 		if ((agent) && (agent.length))
@@ -192,141 +191,15 @@ var http = {
 		if ((content) && (content.length))
 			req_str += content;
 
-		return new http.ClientRequest(req_str, host, port, timeout, callback);
+		return new https.ClientRequest(req_str, host, port, timeout, callback);
 	},
 
 	get: function(url, options, callback) {
-		return http.request(url, options, callback);
+		return https.request(url, options, callback);
 	},
 
-	Server: function(options) {
-		net.Server.call(this, options); 
-	},
-
-	IncomingMessage: function(c, request) {
-		this.url = request.url;
-		this.method = request.method;
-		this.headers = request.headers;
-		this.upgrade = request.upgrade;
-		this.httpVersion = request.httpVersion;
-		this.socket = c;
-	},
-
-	ServerResponse: function(c, request) {
-		this.socket = c;
-		this._headers = { "Date": new Date().toUTCString(), "Transfer-Encoding": "chunked" };
-		this.headersSent = false;
-		this.statusCode = 200;
-		this.statusMessage = "OK";
-		this.writableEnded = false;
-		this._readTimeout = this.socket._readTimeout;
-		
-		this._errorHandler = function(err) { this.end(); }
-		this._closeHandler = function(arg) { this.emit("end", arg); }
-
-		this.setTimeout = function(timeout) {
-			this.socket.setReadTimeout(timeout);
-			return this;
-		}
-
-		var self = this;
-		this.socket.on("close", this._closeHandler);
-		this.socket.on("error", this._errorHandler);
-
-		this.setHeader = function(name, val) {
-			this._headers[name] = val;
-			return this;
-		},
-
-		this.getHeader = function(name) {
-			return this._headers[name];
-		},
-
-		this.getHeaders = function() {
-			return this._headers;
-		},
-
-		this.hasHeader = function(name) {
-			return (this._headers[name] !== undefined);
-		},
-
-		this.removeHeader = function(name) {
-			delete this._headers[name];
-			return this;
-		},
-
-		this.write = function(data, encoding, callback) {
-			if ((!this.socket) || (!data) || (!data.length))
-				return this;
-			try {
-				this.flushHeaders();
-
-				if (this._headers["Transfer-Encoding"] === "chunked") {
-					if (typeof data === "string")
-						this.socket.write("" + new TextEncoder("utf-8").encode(data).byteLength.toString(16) + "\r\n", "utf-8");
-					else
-						this.socket.write("" + data.byteLength.toString(16) + "\r\n", "utf-8");
-				}
-				this.socket.write(data, encoding, callback);
-				this.socket.write("\r\n", "utf-8");
-			} catch (e) {
-				this.headersSent = true;
-				this._buffer = undefined;
-				this.end();
-			}
-			return this;
-		},
-
-		this.end = function(data, encoding, callback) {
-			if (this.writableEnded)
-				return this;
-			this.writableEnded = true;
-			try {
-				this.flushHeaders();
-				if ((this.socket) && (!this.socket.destroyed)) {
-					if ((data) && (data.length))
-						this.write(data, encoding, callback);
-					if (this._headers["Transfer-Encoding"] === "chunked")
-						this.socket.write("0\r\n\r\n", "utf-8");
-					this.socket.setReadTimeout(this._readTimeout);
-				}
-			} catch (e) {
-				console.warn(e.toString());
-			}
-			this.emit("finish");
-			this.removeAllListeners();
-			if (this.socket) {
-				delete this.socket._processRequest;
-				this.socket.removeListener("close", this._closeHandler);
-				this.socket.removeListener("error", this._errorHandler);
-			}
-			return this;
-		},
-
-		this.writeHead = function(statusCode, statusMessage, headers) {
-			if ((this.headersSent) || (!this.socket))
-				return this;
-			this.headersSent = true;
-
-			if (!headers)
-				headers = { };
-			if (!statusMessage)
-				statusMessage = "";
-
-			var data = "HTTP/1.1 " + statusCode + " " + statusMessage + "\r\n";
-			for (var k in headers)
-				data += k + ": " + headers[k] + "\r\n";
-			data += "\r\n";
-			this.socket.write(data, "utf-8");
-			return this;	
-		},
-
-		this.flushHeaders = function() {
-			if (this.headersSent)
-				return this;
-
-			return this.writeHead(this.statusCode, this.statusMessage, this._headers);
-		}
+	Server: function(options, connectionHandler) {
+		tls.Server.call(this, options, connectionHandler); 
 	},
 
 	createServer: function(options, requestListener) {
@@ -404,8 +277,8 @@ var http = {
 				try {
 					if (request) {
 						if (requestListener) {
-							var message = new http.IncomingMessage(c, request);
-							requestListener(message, new http.ServerResponse(c));
+							var message = new https.IncomingMessage(c, request);
+							requestListener(message, new https.ServerResponse(c));
 							var remaining = request.contentLength;
 							if (pending_buffer) {
 								if (remaining > 0) {
@@ -436,16 +309,12 @@ var http = {
 				}
 			});
 		};
-		return new http.Server(connectionHandler);
+		return new https.Server(options, connectionHandler);
 	}
 };
 
-module.exports = http;
+module.exports = https;
 
-util.inherits(http.Server, net.Server);
-util.inherits(http.IncomingMessage, EventEmitter);
-util.inherits(http.IncomingMessage, Stream.Stream);
-util.inherits(http.ServerResponse, EventEmitter);
-util.inherits(http.ServerResponse, Stream.Writable);
-util.inherits(http.ClientRequest, EventEmitter);
-util.inherits(http.ClientRequest, Stream.Stream);
+util.inherits(https.Server, tls.Server);
+util.inherits(https.ClientRequest, EventEmitter);
+util.inherits(https.ClientRequest, Stream.Stream);

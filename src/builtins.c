@@ -828,28 +828,30 @@ JS_C_FUNCTION_FORWARD(parseHeader, int type) {
     size_t nparsed = http_parser_execute(&parser, &settings_null, header, header_len);
     if (nparsed > 0) {
         JS_ObjectSetBoolean(ctx, obj_id, "upgrade", parser.upgrade);
-        if (type == HTTP_REQUEST)
+        if (type == HTTP_RESPONSE)
             JS_ObjectSetNumber(ctx, obj_id, "statusCode", parser.status_code);
         JS_ObjectSetNumber(ctx, obj_id, "errno", parser.http_errno);
-        switch (parser.method) {
-            case HTTP_GET:
-                JS_ObjectSetString(ctx, obj_id, "method", "GET");
-                break;
-            case HTTP_HEAD:
-                JS_ObjectSetString(ctx, obj_id, "method", "HEAD");
-                break;
-            case HTTP_POST:
-                JS_ObjectSetString(ctx, obj_id, "method", "POST");
-                break;
-            case HTTP_PUT:
-                JS_ObjectSetString(ctx, obj_id, "method", "PUT");
-                break;
-            case HTTP_DELETE:
-                JS_ObjectSetString(ctx, obj_id, "method", "DELETE");
-                break;
-            default:
-                JS_ObjectSetNumber(ctx, obj_id, "method", parser.method);
-                break;
+        if (type == HTTP_RESPONSE) {
+            switch (parser.method) {
+                case HTTP_GET:
+                    JS_ObjectSetString(ctx, obj_id, "method", "GET");
+                    break;
+                case HTTP_HEAD:
+                    JS_ObjectSetString(ctx, obj_id, "method", "HEAD");
+                    break;
+                case HTTP_POST:
+                    JS_ObjectSetString(ctx, obj_id, "method", "POST");
+                    break;
+                case HTTP_PUT:
+                    JS_ObjectSetString(ctx, obj_id, "method", "PUT");
+                    break;
+                case HTTP_DELETE:
+                    JS_ObjectSetString(ctx, obj_id, "method", "DELETE");
+                    break;
+                default:
+                    JS_ObjectSetNumber(ctx, obj_id, "method", parser.method);
+                    break;
+            }
         }
         if ((int64_t)parser.content_length >= 0)
             JS_ObjectSetNumber(ctx, obj_id, "contentLength", parser.content_length);
@@ -1794,7 +1796,7 @@ JS_C_FUNCTION(cpuUsage) {
 #ifdef _WIN32
 BOOL sig_handler(DWORD fdwCtrlType) {
     char buf[0x80];
-    int sig = 15;
+    int sig = 2;
     snprintf(buf, sizeof(buf), "if ((process._sig_handler) && (process._sig_handler[%i])) process._sig_handler[%i](%i);", sig, sig, sig);
     JS_EvalSimple(js(), buf);
     return TRUE;

@@ -763,13 +763,25 @@ JS_C_FUNCTION(js_tls_connect) {
 
 JS_C_FUNCTION(js_tls_consume_stream) {
     JS_ParameterPointer(ctx, 0);
-    JS_ParameterPointer(ctx, 0);
+
     struct TLSContext *context = (struct TLSContext *)JS_GetPointerParameter(ctx, 0);
-    if (!context)
+    js_size_t sz;
+    const unsigned char *buf = JS_GetBufferParameter(ctx, 1, &sz);
+
+    int len = sz;
+    if (JS_ParameterCount(ctx) > 2) {
+        JS_ParameterNumber(ctx, 2);
+
+        len = JS_GetIntParameter(ctx, 2);
+        if ((len < 0) || (len > sz))
+            len = sz;
+    }
+
+    if ((!context) || (!len) || (!buf))
         JS_RETURN_BOOLEAN(ctx, 0);
 
-    int established = tls_established(context);
-    JS_RETURN_BOOLEAN(ctx, established);
+    int err = tls_consume_stream(context, buf, len, NULL);
+    JS_RETURN_NUMBER(ctx, err);
 }
 
 JS_C_FUNCTION(js_tls_established) {
@@ -979,6 +991,7 @@ JS_C_FUNCTION(js_tls_destroy_context) {
     struct TLSContext *context = (struct TLSContext *)JS_GetPointerParameter(ctx, 0);
     if (!context)
         JS_RETURN_NOTHING(ctx);
+    tls_destroy_context(context);
     JS_RETURN_NOTHING(ctx);
 }
 

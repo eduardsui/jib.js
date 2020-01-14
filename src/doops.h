@@ -412,7 +412,11 @@ static int loop_add_io_data(struct doops_loop *loop, int fd, int mode, void *use
         errno = EINVAL;
         return -1;
     }
-    doops_lock(&loop->lock);
+    int locked = 0;
+    if (!loop->in_event) {
+        doops_lock(&loop->lock);
+        locked = 1;
+    }
     _private_loop_init_io(loop);
 #ifdef WITH_EPOLL
     struct epoll_event event;
@@ -431,7 +435,8 @@ static int loop_add_io_data(struct doops_loop *loop, int fd, int mode, void *use
     if ((err) && (errno == EEXIST))
         err = epoll_ctl (loop->poll_fd, EPOLL_CTL_MOD, fd, &event);
     if (err) {
-        doops_unlock(&loop->lock);
+        if (locked)
+            doops_unlock(&loop->lock);
         return -1;
     }
     if ((userdata) || (loop->udata)) {
@@ -457,7 +462,8 @@ static int loop_add_io_data(struct doops_loop *loop, int fd, int mode, void *use
         events[num_events].udata = userdata;
         num_events ++;
     }
-    doops_unlock(&loop->lock);
+    if (locked)
+        doops_unlock(&loop->lock);
     return kevent(loop->poll_fd, events, num_events, NULL, 0, NULL);
 #else
 #ifdef WITH_POLL
@@ -495,7 +501,8 @@ static int loop_add_io_data(struct doops_loop *loop, int fd, int mode, void *use
 #endif
 #endif
     loop->io_objects ++;
-    doops_unlock(&loop->lock);
+    if (locked)
+        doops_unlock(&loop->lock);
     return 0;
 }
 

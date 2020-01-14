@@ -140,7 +140,7 @@
     #define JS_GetBufferParameter(ctx, index, sz)               _JS_GetArrayBuffer((ctx), (sz), argv[(index)])
     #define JS_GetObjectParameter(ctx, index)                   argv[(index)]
     
-    #define JS_ObjectSetNumber(ctx, obj, mem, val)              JS_SetPropertyStr((ctx), (obj), (mem), JS_NewInt32((ctx), (val)))
+    #define JS_ObjectSetNumber(ctx, obj, mem, val)              JS_SetPropertyStr((ctx), (obj), (mem), JS_NewFloat64((ctx), (val)))
     #define JS_ObjectSetString(ctx, obj, mem, val)              JS_SetPropertyStr((ctx), (obj), (mem), JS_NewString((ctx), (val)))
     #define JS_ObjectSetStringLen(ctx, obj, mem, val, len)      JS_SetPropertyStr((ctx), (obj), (mem), JS_NewStringLen((ctx), (val), (len)))
     #define JS_ObjectSetStringLenLen(ctx, obj, mem, lm, val, lv) _JS_ObjectSetStringLenLen((ctx), (obj), (mem), (lm), (val), (lv))
@@ -169,7 +169,7 @@
     #define JS_C_FUNCTION_FORWARD(name, ...)                    static JSValue name(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv, __VA_ARGS__)
     #define JS_C_FORWARD_PARAMETERS                             ctx, this_val, argc, argv
 
-    #define JS_RETURN_NUMBER(ctx, val)                          return JS_NewInt32((ctx), (val))
+    #define JS_RETURN_NUMBER(ctx, val)                          return JS_NewFloat64((ctx), (val))
     #define JS_RETURN_BOOLEAN(ctx, val)                         return ((val) ? JS_TRUE : JS_FALSE)
     #define JS_RETURN_STRING(ctx, val)                          return JS_NewString((ctx), (val))
 #ifdef ESP32
