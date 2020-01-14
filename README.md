@@ -12,7 +12,7 @@ Its objectives are:
 
 It may store all .js modules inside the library/executable (see `src/modules.h`), external I/O being optional.
 
-It currently supports: `fs`, `net`, `http`, `url`, `querystringify`, `events` and Promises.
+It currently supports: `fs`, `net`, `tls`, `crypto`, `path`, `http`, `https`, `url`, `querystringify`, `events` and Promises.
 
 jib.js uses duktape(default) or quickjs as interpreter.
 
