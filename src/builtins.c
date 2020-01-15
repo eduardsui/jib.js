@@ -32,6 +32,18 @@
 #include "builtins_wifi.h"
 #endif
 
+#ifdef WITH_SPI
+#include "builtins_spi.h"
+#endif
+
+#ifdef WITH_I2C
+#include "builtins_i2c.h"
+#endif
+
+#ifdef WITH_LEDC
+#include "builtins_ledc.h"
+#endif
+
 #ifndef NO_HTTP
     #include "misc/http_parser.h"
 #endif
@@ -2183,6 +2195,15 @@ void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *
 #endif
 #ifdef WITH_WIFI
     register_wifi_functions(loop, ctx);
+#endif
+#ifdef WITH_SPI
+    register_spi_functions(loop, ctx);
+#endif
+#ifdef WITH_I2C
+    register_i2c_functions(loop, ctx);
+#endif
+#ifdef WITH_LEDC
+    register_ledc_functions(loop, ctx);
 #endif
 #ifdef ESP32
     register_esp32_functions(loop, ctx);

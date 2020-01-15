@@ -119,12 +119,12 @@
 
     #define JS_Eval_File(ctx, filename)                         duk_run_file((ctx), filename)
 
-    #define JS_ParameterNumber(ctx, index)                      if (!JS_IsNumber(argv[(index)])) { JS_ThrowTypeError(ctx, "Number expected in parameter %i", (int)index); return JS_EXCEPTION; }
-    #define JS_ParameterBoolean(ctx, index)                     if (!JS_IsBool(argv[(index)])) { JS_ThrowTypeError(ctx, "Boolean value expected in parameter %i", (int)index); return JS_EXCEPTION; }
-    #define JS_ParameterString(ctx, index)                      if (!JS_IsString(argv[(index)])) { JS_ThrowTypeError(ctx, "String expected in parameter %i", (int)index); return JS_EXCEPTION; }
-    #define JS_ParameterFunction(ctx, index)                    if (!JS_IsFunction((ctx), argv[(index)])) { JS_ThrowTypeError(ctx, "Function expected in parameter %i", (int)index); return JS_EXCEPTION; }
-    #define JS_ParameterObject(ctx, index)                      if (!JS_IsObject(argv[(index)])) { JS_ThrowTypeError(ctx, "Object expected in parameter %i", (int)index); return JS_EXCEPTION; }
-    #define JS_ParameterPointer(ctx, index)                     if (!JS_IsInteger(argv[(index)])) { JS_ThrowTypeError(ctx, "Handle expected in parameter %i", (int)index); return JS_EXCEPTION; }
+    #define JS_ParameterNumber(ctx, index)                      if ((index >= argc) || (!JS_IsNumber(argv[(index)]))) { JS_ThrowTypeError(ctx, "Number expected in parameter %i", (int)index); return JS_EXCEPTION; }
+    #define JS_ParameterBoolean(ctx, index)                     if ((index >= argc) || (!JS_IsBool(argv[(index)]))) { JS_ThrowTypeError(ctx, "Boolean value expected in parameter %i", (int)index); return JS_EXCEPTION; }
+    #define JS_ParameterString(ctx, index)                      if ((index >= argc) || (!JS_IsString(argv[(index)]))) { JS_ThrowTypeError(ctx, "String expected in parameter %i", (int)index); return JS_EXCEPTION; }
+    #define JS_ParameterFunction(ctx, index)                    if ((index >= argc) || (!JS_IsFunction((ctx), argv[(index)]))) { JS_ThrowTypeError(ctx, "Function expected in parameter %i", (int)index); return JS_EXCEPTION; }
+    #define JS_ParameterObject(ctx, index)                      if ((index >= argc) || (!JS_IsObject(argv[(index)]))) { JS_ThrowTypeError(ctx, "Object expected in parameter %i", (int)index); return JS_EXCEPTION; }
+    #define JS_ParameterPointer(ctx, index)                     if ((index >= argc) || (!JS_IsInteger(argv[(index)]))) { JS_ThrowTypeError(ctx, "Handle expected in parameter %i", (int)index); return JS_EXCEPTION; }
     #define JS_ParameterCount(ctx)                              argc
 
     #define JS_FreeString(ctx, str)                             JS_FreeCString(ctx, str)
