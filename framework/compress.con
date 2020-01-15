@@ -119,6 +119,9 @@ class Main {
 			if (file) {
 				var orig_size = length file;
 				filename = StrReplace(filename, ".js", "");
+				if ((filename == "https") || (filename == "tls"))
+					content += "#ifndef NO_TLS\n";
+					
 				var size;
 				var plain_data = false;
 				if (orig_size > 30 * 1024) {
@@ -152,6 +155,8 @@ class Main {
 					content += "#endif\n";
 				content += "#endif\n";
 				if (plain_data)
+					content += "#endif\n";
+				if ((filename == "https") || (filename == "tls"))
 					content += "#endif\n";
 			}
 		}
