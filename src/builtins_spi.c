@@ -6,9 +6,6 @@
 
 #include <driver/spi_master.h>
 
-#define STR_HELPER(x)   #x
-#define TO_STR(x)       STR_HELPER(x)
-
 #define DEFAULT_HOST HSPI_HOST
 #define DEFAULT_CLOCK_SPEED (10000)
 
@@ -230,7 +227,8 @@ void register_spi_functions(void *main_loop, void *js_ctx) {
 	    "busFree", js_spi_bus_free,
 	    "busInitialize", js_spi_bus_initialize,
 	    "removeDevice", js_spi_bus_remove_device,
-	    "transmit", js_spi_device_transmit
+	    "transmit", js_spi_device_transmit,
+        NULL, NULL
     );
-    JS_EvalSimple(js_ctx, "spi.constants = {SPI_HOST:" TO_STR(SPI_HOST) ",HSPI_HOST:" TO_STR(HSPI_HOST) ",VSPI_HOST:" TO_STR(VSPI_HOST) "};\n");
+    JS_EvalSimple(js_ctx, "spi.constants={SPI_HOST:0,HSPI_HOST:1,VSPI_HOST:2};");
 }

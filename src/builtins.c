@@ -1806,7 +1806,7 @@ JS_C_FUNCTION(cpuUsage) {
 }
 
 #ifdef _WIN32
-BOOL sig_handler(DWORD fdwCtrlType) {
+static BOOL sig_handler(DWORD fdwCtrlType) {
     char buf[0x80];
     int sig = 2;
     snprintf(buf, sizeof(buf), "if ((process._sig_handler) && (process._sig_handler[%i])) process._sig_handler[%i](%i);", sig, sig, sig);
@@ -1814,7 +1814,7 @@ BOOL sig_handler(DWORD fdwCtrlType) {
     return TRUE;
 }
 #else
-void sig_handler(int sig) {
+static void sig_handler(int sig) {
     char buf[0x80];
     snprintf(buf, sizeof(buf), "if ((process._sig_handler) && (process._sig_handler[%i])) process._sig_handler[%i](%i);", sig, sig, sig);
     JS_EvalSimple(js(), buf);
@@ -2267,10 +2267,10 @@ void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *
     register_spi_functions(loop, ctx);
 #endif
 #ifdef WITH_I2C
-    register_i2c_functions(loop, ctx);
+    // register_i2c_functions(loop, ctx);
 #endif
 #ifdef WITH_LEDC
-    register_ledc_functions(loop, ctx);
+    // register_ledc_functions(loop, ctx);
 #endif
 #ifdef ESP32
     register_esp32_functions(loop, ctx);
