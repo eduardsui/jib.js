@@ -1753,7 +1753,7 @@ JS_C_FUNCTION(cpuUsage) {
    if (fp) {
        double usage = -1.0f;
        fscanf(fp," %*s\n%lf", &usage);
-       fclose(fp);
+       pclose(fp);
        if (usage > 0) {
            usage /= ncpu;
            usage = (100.0f - usage) / 100;
@@ -2061,6 +2061,73 @@ JS_C_FUNCTION(js_kill) {
     JS_RETURN_NUMBER(ctx, err);
 }
 
+#if !defined(NO_IO) && !defined(ESP32)
+JS_C_FUNCTION(js_popen) {
+    JS_ParameterString(ctx, 0);
+    int open_write = 0;
+    if (JS_ParameterCount(ctx) > 1) {
+        JS_ParameterBoolean(ctx, 1);
+        open_write = JS_GetBooleanParameter(ctx, 1);
+    }
+    const char *command = JS_GetStringParameter(ctx, 0);
+
+    FILE *fp = popen(command, open_write ? "w" : "r");
+    JS_FreeString(ctx, command);
+
+    if (fp) {
+        int fd = fileno(fp);
+        char func_buffer[32]; 
+        snprintf(func_buffer, sizeof(func_buffer), "fd%x", fd); 
+
+#ifdef WITH_DUKTAPE
+        duk_push_global_stash(ctx);
+            duk_push_pointer(ctx, fp);
+            duk_put_prop_string(ctx, -2, func_buffer);
+        duk_pop(ctx);
+#else
+        JS_ObjectSetPointer(ctx, global_stash(ctx), func_buffer, fp);
+#endif
+        JS_RETURN_NUMBER(ctx, fd);
+    }
+
+    JS_RETURN_NOTHING(ctx);
+}
+
+JS_C_FUNCTION(js_pclose) {
+    JS_ParameterNumber(ctx, 0);
+    int fd = JS_GetIntParameter(ctx, 0);
+    char func_buffer[32]; 
+    snprintf(func_buffer, sizeof(func_buffer), "fd%x", fd);
+    FILE *fp = NULL;
+#ifdef WITH_DUKTAPE
+    duk_push_global_stash(ctx);
+        duk_get_prop_string(ctx, -1, func_buffer);
+        if (!duk_is_undefined(ctx, -1))
+            fp = duk_get_pointer(ctx, -1);
+        duk_pop(ctx);
+        duk_push_string(js_ctx, func_buffer);
+        duk_del_prop(js_ctx, -1);
+    duk_pop(ctx);
+#else
+    JSAtom prop = JS_NewAtom(ctx, func_buffer);
+
+    js_object_type fp_val = JS_GetProperty(ctx, global_stash(ctx), prop);
+    if (!JS_IsUndefined(fp_val))
+        fp = (FILE *)_JS_GetPointerParameter(ctx, fp_val);
+    JS_FreeValue(ctx, fp_val);
+
+    JS_DeleteProperty(ctx, global_stash(ctx), prop, 0);
+    JS_FreeAtom(ctx, prop);
+#endif
+    int err = 0;
+    if (fp)
+        err = pclose((FILE *)fp);
+    JS_RETURN_NUMBER(ctx, err);
+}
+#endif
+
+
+
 void duk_run_file(JS_CONTEXT ctx, const char *path) {
 #ifdef WITH_DUKTAPE
     duk_push_global_object(ctx); 
@@ -2222,7 +2289,11 @@ void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *
     register_object(ctx, "_http_helpers", "parseRequest", parseRequest, "parseResponse", parseResponse, (void *)NULL);
 #endif
     
-    register_object(ctx, "process", "abort", native_quit, "exit", native_exit, "chdir", native_chdir, "cwd", native_cwd, "nextTick", setImmediate, "randomBytes", randomBytes, "cpuUsage", cpuUsage, "mapSignal", js_signal, "kill", js_kill, (void *)NULL);
+    register_object(ctx, "process", "abort", native_quit, "exit", native_exit, "chdir", native_chdir, "cwd", native_cwd, "nextTick", setImmediate, "randomBytes", randomBytes, "cpuUsage", cpuUsage, "mapSignal", js_signal, "kill", js_kill, 
+#if !defined(NO_IO) && !defined(ESP32)
+        "open", js_popen, "close", js_pclose, 
+#endif
+        (void *)NULL);
 #ifdef WITH_DUKTAPE
     duk_push_string(ctx, "process");
     duk_get_prop(ctx, -2);
