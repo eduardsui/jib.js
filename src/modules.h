@@ -20733,6 +20733,7 @@ const static struct builtin_module builtin_modules[] = {
         "\x17\xb7\x02\xba\x91\x82\xd7\x83\xa7\x70\x89\x10\x22\x4d\xfe\r\x6e\x15\x2b\xe6",
     2874, 11375, 1},
     #endif
+#ifndef NO_TLS
     #ifdef NO_COMPRESSION
     {"https",
         "var tls = require('tls');\nvar util = require('util');\nvar Stream = require('st" \
@@ -20959,6 +20960,7 @@ const static struct builtin_module builtin_modules[] = {
         "\x04\x03\x34",
     2209, 8265, 1},
     #endif
+#endif
     #ifdef NO_COMPRESSION
     {"inherits",
         "if (typeof Object.create === 'function') {\nmodule.exports = function inherits(c" \
@@ -31258,6 +31260,7 @@ const static struct builtin_module builtin_modules[] = {
     #endif
     #endif
     #ifdef NO_COMPRESSION
+#ifndef NO_TLS
     {"tls",
         "var EventEmitter = require('events').EventEmitter;\nvar util = require('util');\n" \
         "var net = require('net');\nvar _net_socket = net.Socket;\nvar _net_server = net." \
@@ -31421,6 +31424,7 @@ const static struct builtin_module builtin_modules[] = {
         "\x9d\xb7\xa5\x4a\xd4\xd7\xbb\x5a\x1b\xfc\xfe\x06\xca\xc5\xbf\xa9\x4e\x8a\xcb",
     1681, 5599, 1},
     #endif
+#endif
     #ifdef NO_COMPRESSION
     {"types",
         "'use strict';\nfunction isBuffer(arg) {\nreturn arg && typeof arg === 'object'\n" \

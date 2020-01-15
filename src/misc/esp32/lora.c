@@ -119,7 +119,11 @@ lora_write_reg(int reg, int val)
       .flags = 0,
       .length = 8 * sizeof(out),
       .tx_buffer = out,
-      .rx_buffer = in  
+      .rx_buffer = in,
+      .cmd = 0,
+      .addr = 0,
+      .rxlength = 8 * sizeof(in),
+      .user = NULL,
    };
 
    gpio_set_level(CS_GPIO, 0);
@@ -142,7 +146,11 @@ lora_read_reg(int reg)
       .flags = 0,
       .length = 8 * sizeof(out),
       .tx_buffer = out,
-      .rx_buffer = in
+      .rx_buffer = in,
+      .cmd = 0,
+      .addr = 0,
+      .rxlength = 8 * sizeof(in),
+      .user = NULL,
    };
 
    gpio_set_level(CS_GPIO, 0);
@@ -366,7 +374,9 @@ lora_init(void)
       .sclk_io_num = SCK_GPIO,
       .quadwp_io_num = -1,
       .quadhd_io_num = -1,
-      .max_transfer_sz = 0
+      .max_transfer_sz = 0,
+      .flags = 0,
+      .intr_flags = 0,
    };
            
    ret = spi_bus_initialize(VSPI_HOST, &bus, 0);
@@ -376,9 +386,17 @@ lora_init(void)
       .clock_speed_hz = 9000000,
       .mode = 0,
       .spics_io_num = -1,
+      .input_delay_ns = 0,
+      .command_bits = 0,
+      .address_bits = 0,
+      .dummy_bits = 0,
+      .duty_cycle_pos = 0,
+      .cs_ena_pretrans = 0,
+      .cs_ena_posttrans = 0,
       .queue_size = 1,
       .flags = 0,
-      .pre_cb = NULL
+      .pre_cb = NULL,
+      .post_cb = NULL,
    };
    ret = spi_bus_add_device(VSPI_HOST, &dev, &__spi);
    assert(ret == ESP_OK);
