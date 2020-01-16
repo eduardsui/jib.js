@@ -1855,19 +1855,22 @@ JS_C_FUNCTION(cpuUsage) {
 #endif
 }
 
-#ifdef _WIN32
-static BOOL sig_handler(DWORD fdwCtrlType) {
+static int js_sig_handler(struct doops_loop *loop) {
+    int sig = (int)(intptr_t)loop_event_data(loop);
     char buf[0x80];
-    int sig = 2;
     snprintf(buf, sizeof(buf), "if ((process._sig_handler) && (process._sig_handler[%i])) process._sig_handler[%i](%i);", sig, sig, sig);
     JS_EvalSimple(js(), buf);
+    return 1;
+}
+
+#ifdef _WIN32
+static BOOL sig_handler(DWORD fdwCtrlType) {
+    loop_add(js_loop(), js_sig_handler, (int)0, (void *)(uintptr_t)2);
     return TRUE;
 }
 #else
 static void sig_handler(int sig) {
-    char buf[0x80];
-    snprintf(buf, sizeof(buf), "if ((process._sig_handler) && (process._sig_handler[%i])) process._sig_handler[%i](%i);", sig, sig, sig);
-    JS_EvalSimple(js(), buf);
+    loop_add(js_loop(), js_sig_handler, (int)0, (void *)(uintptr_t)sig);
 }
 #endif
 
