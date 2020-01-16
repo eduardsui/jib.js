@@ -303,7 +303,7 @@ void register_esp32_functions(void *main_loop, void *js_ctx) {
         "setSyncWord", js_lora_set_sync_word,
         "enableCrc", js_lora_enable_crc,
         "send", js_lora_send_packet,
-        "receive", js_lora_receive_packet,
+        "recv", js_lora_receive_packet,
         "received", js_lora_received,
         "rssi", js_lora_packet_rssi,
         "snr", js_lora_packet_snr,
