@@ -105,6 +105,7 @@ var net = {
 						self.bytesRead += nbytes;
 						if (nbytes != read_size)
 							buf = buf.subarray(0, nbytes);
+
 						if (self._readableState.decoder)
 							self.emit("data", self._readableState.decoder.write(buf));
 						else

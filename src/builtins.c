@@ -843,7 +843,7 @@ JS_C_FUNCTION_FORWARD(parseHeader, int type) {
         if (type == HTTP_RESPONSE)
             JS_ObjectSetNumber(ctx, obj_id, "statusCode", parser.status_code);
         JS_ObjectSetNumber(ctx, obj_id, "errno", parser.http_errno);
-        if (type == HTTP_RESPONSE) {
+        if (type == HTTP_REQUEST) {
             switch (parser.method) {
                 case HTTP_GET:
                     JS_ObjectSetString(ctx, obj_id, "method", "GET");

@@ -373,6 +373,7 @@ var http = {
 				var pending_buffer;
 				try {
 					buf = _concatenateUint8Arrays(c._header_buf, buf);
+
 					var limit = buf.length - 3;
 					var header_pos = 0;
 					for (var i = 0; i < limit; i ++) {
