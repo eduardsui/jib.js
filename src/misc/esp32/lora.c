@@ -75,7 +75,7 @@ static long __frequency;
 #endif
 
 #ifndef CONFIG_RST_GPIO
-    #define CONFIG_RST_GPIO     4
+    #define CONFIG_RST_GPIO     13
 #endif
 
 #ifndef CONFIG_MISO_GPIO
@@ -386,7 +386,7 @@ lora_init(void)
    dev.clock_speed_hz = 9000000;
    dev.mode = 0;
    dev.spics_io_num = -1;
-   dev.queue_size = 7;
+   dev.queue_size = 1;
 
    ret = spi_bus_add_device(VSPI_HOST, &dev, &__spi);
    assert(ret == ESP_OK);
