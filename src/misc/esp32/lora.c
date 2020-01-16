@@ -71,11 +71,11 @@ static int __implicit;
 static long __frequency;
 
 #ifndef CONFIG_CS_GPIO
-    #define CONFIG_CS_GPIO      17
+    #define CONFIG_CS_GPIO      5
 #endif
 
 #ifndef CONFIG_RST_GPIO
-    #define CONFIG_RST_GPIO     18
+    #define CONFIG_RST_GPIO     4
 #endif
 
 #ifndef CONFIG_MISO_GPIO
@@ -83,11 +83,11 @@ static long __frequency;
 #endif
 
 #ifndef CONFIG_MOSI_GPIO
-    #define CONFIG_MOSI_GPIO    27
+    #define CONFIG_MOSI_GPIO    23
 #endif
 
 #ifndef CONFIG_SCK_GPIO
-    #define CONFIG_SCK_GPIO     5
+    #define CONFIG_SCK_GPIO     18
 #endif
 
 static int CS_GPIO = CONFIG_CS_GPIO;

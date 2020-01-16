@@ -1294,6 +1294,40 @@ void helper_notify(JS_CONTEXT ctx, const char *object, const char *event_name) {
 #endif
 }
 
+#ifndef NO_IO
+static char **paths = NULL;
+static int paths_len = 0;
+
+void try_add_path(const char *path, int len) {
+    if (((len == 1) && (path[0] == '.')) ||
+        ((len == 2) && (path[0] == '.')  && (path[1] == '.')))
+        return;
+
+    if (len) {
+        for (int i = 0; i < paths_len; i ++) {
+            // already set
+            if ((strlen(paths[i]) == len) && (!strncmp(paths[i], path, len)))
+                    return;
+        }
+    }
+    char **new_paths = (char **)realloc(paths, sizeof(char *) * (paths_len + 1));
+    // allocation failed
+    if (!new_paths)
+        return;
+    paths = new_paths;
+    if (len <= 0) {
+        new_paths[paths_len] = strdup(path);
+    } else {
+        new_paths[paths_len] = (char *)malloc(len + 1);
+        if (new_paths[paths_len]) {
+            memcpy(new_paths[paths_len], path, len);
+            new_paths[paths_len][len] = 0;
+        }
+    }
+    if (new_paths[paths_len])
+        paths_len ++;
+}
+
 #ifdef WITH_DUKTAPE
 static void _push_dirname(JS_CONTEXT ctx, const char *path) {
     if ((!path) || (!path[0])) {
@@ -1306,6 +1340,7 @@ static void _push_dirname(JS_CONTEXT ctx, const char *path) {
     for (i = len - 1; i >= 0; i --) {
         if ((path[i] == '/') || (path[i] == '\\')) {
             directory = i;
+            try_add_path(path, i);
             break;
         }
     }
@@ -1326,6 +1361,7 @@ static void _push_dirname(JS_CONTEXT ctx, js_object_type obj, const char *member
     for (i = len - 1; i >= 0; i --) {
         if ((path[i] == '/') || (path[i] == '\\')) {
             directory = i;
+            try_add_path(path, i);
             break;
         }
     }
@@ -1336,7 +1372,45 @@ static void _push_dirname(JS_CONTEXT ctx, js_object_type obj, const char *member
 }
 #endif
 
-#ifndef NO_IO
+FILE *try_fopen(const char *path, const char *directory, char *buffer, int buffer_size, int recursive) {
+    FILE *f = fopen(path, "rb");
+    if (f) {
+        snprintf(buffer, buffer_size, "%s", path);
+        return f;
+    }
+    // try .js
+    snprintf(buffer, buffer_size, "%s.js", path);
+    f = fopen(buffer, "rb");
+    if (f)
+        return f;
+
+    // try index.js
+    snprintf(buffer, buffer_size, "%s/index.js", path);
+    f = fopen(buffer, "rb");
+    if (f)
+        return f;
+
+    char path_buffer[4096];
+    if ((directory) && (directory[0]) && (path[0] != '/') && (path[0] != '\\')) {
+        snprintf(path_buffer, sizeof(path_buffer), "%s/%s", directory, path);
+        f = try_fopen(path_buffer, NULL, buffer, buffer_size, 1);
+    }
+    if ((!recursive) && (!f)) {
+        snprintf(path_buffer, sizeof(path_buffer), "%s/%s", DEFAULT_FRAMEWORK_DIR, path);
+        f = try_fopen(path_buffer, NULL, buffer, buffer_size, 1);
+    }
+
+    if ((!f) && (!recursive) && (path[0] != '/') && (path[0] != '\\')) {
+        int i;
+        for (i = 0; i < paths_len; i ++) {
+            f = try_fopen(path, paths[i], buffer, buffer_size, 1);
+            if (f)
+                break;
+        }
+    }
+    return f;
+}
+
 #ifdef WITH_DUKTAPE
 static const char *duk_push_string_file_raw(JS_CONTEXT ctx, const char *path, const char *directory, js_uint_t flags) {
 #else
@@ -1349,53 +1423,8 @@ static char *duk_push_string_file_raw(JS_CONTEXT ctx, const char *path, const ch
 	if ((!path) || (!path[0]))
 		goto fail;
 
-	f = fopen(path, "rb");
-    if (!f) {
-        char js_path[4096];
-        snprintf(js_path, sizeof(js_path), "%s.js", path);
-        f = fopen(js_path, "rb");
-
-        if ((!f) && (directory) && (directory[0]) && (path[0] != '/') && (path[0] != '\\')) {
-            snprintf(js_path, sizeof(js_path), "%s/%s", directory, path);
-            f = fopen(js_path, "rb");
-
-            if (!f) {
-                snprintf(js_path, sizeof(js_path), "%s/%s.js", directory, path);
-                f = fopen(js_path, "rb");
-            }
-        }
-        if ((!f) && (directory)) {
-            if ((path[0] != '.') || ((path[1] != '/') && (path[1] == '\\'))) {
-                snprintf(js_path, sizeof(js_path), DEFAULT_FRAMEWORK_DIR "/%s", path);
-                f = fopen(js_path, "rb");
-                if (!f) {
-                    snprintf(js_path, sizeof(js_path), DEFAULT_FRAMEWORK_DIR "/%s.js", path);
-                    f = fopen(js_path, "rb");
-                }
-            }
-        }
-        if (f) {
-#ifdef WITH_DUKTAPE
-            duk_push_global_object(ctx);
-                duk_get_prop_string(ctx, -1, "module");
-
-                duk_push_string(ctx, js_path);
-                duk_put_prop_string(ctx, -2, "filename");
-
-                _push_dirname(ctx, js_path);
-                duk_put_prop_string(ctx, -2, "path");
-            duk_pop_2(ctx);
-#else
-            js_object_type global_object = JS_GetGlobalObject(ctx);
-            js_object_type obj = JS_GetPropertyStr(ctx, global_object, "module");
-            JS_ObjectSetString(ctx, obj, "filename", js_path);
-            _push_dirname(ctx, obj, "path", js_path);
-            JS_FreeValue(ctx, obj);
-            JS_FreeValue(ctx, global_object);
-#endif
-        }
-    }
-    
+    char js_path[4096];
+    f = try_fopen(path, directory, js_path, sizeof(js_path), 0);  
 	if (!f)
 		goto fail;
 
@@ -1409,6 +1438,26 @@ static char *duk_push_string_file_raw(JS_CONTEXT ctx, const char *path, const ch
 	if (fseek(f, 0, SEEK_SET) < 0)
 		goto fail;
 
+    if (strcmp(path, js_path)) {
+#ifdef WITH_DUKTAPE
+        duk_push_global_object(ctx);
+            duk_get_prop_string(ctx, -1, "module");
+
+            duk_push_string(ctx, js_path);
+            duk_put_prop_string(ctx, -2, "filename");
+
+            _push_dirname(ctx, js_path);
+            duk_put_prop_string(ctx, -2, "path");
+        duk_pop_2(ctx);
+#else
+        js_object_type global_object = JS_GetGlobalObject(ctx);
+        js_object_type obj = JS_GetPropertyStr(ctx, global_object, "module");
+        JS_ObjectSetString(ctx, obj, "filename", js_path);
+        _push_dirname(ctx, obj, "path", js_path);
+        JS_FreeValue(ctx, obj);
+        JS_FreeValue(ctx, global_object);
+#endif
+    }
 #ifdef WITH_DUKTAPE
 	buf = (char *) duk_push_fixed_buffer(ctx, (duk_size_t) sz);
 #else
@@ -1539,8 +1588,6 @@ JS_C_FUNCTION(native_require) {
         duk_pop(ctx);
     duk_pop(ctx);
 
-    const char *filename = module_id;
-
     duk_get_global_string(ctx, "Module");
     duk_new(ctx, 0);
     duk_idx_t obj_idx = duk_get_top(ctx) - 1;
@@ -1551,8 +1598,10 @@ JS_C_FUNCTION(native_require) {
         duk_dup(ctx, -3);
         duk_put_prop_string(ctx, -2, "filename");
 
-        _push_dirname(ctx, filename);
+#ifndef NO_IO
+        _push_dirname(ctx, module_id);
         duk_put_prop_string(ctx, -2, "path");
+#endif
 
         duk_push_heap_stash(js_ctx);
             duk_get_prop_string(ctx, -1, "parent_module");
@@ -1595,7 +1644,7 @@ JS_C_FUNCTION(native_require) {
 #ifdef NO_IO
         JS_Error(ctx, "no sourcecode");
 #else
-        duk_eval_file(ctx, filename, path ? path : "");
+        duk_eval_file(ctx, module_id, path ? path : "");
         duk_pop(ctx);
 #endif
     }
@@ -1652,12 +1701,13 @@ JS_C_FUNCTION(native_require) {
     js_object_type parent_module = JS_GetPropertyStr(ctx, global_object, "module");
     js_object_type parent_exports = JS_GetPropertyStr(ctx, parent_module, "exports");
 
-    const char *filename = module_id;
     js_object_type module = JS_NewClassObject(ctx, "Module");
     
     JS_ObjectSetString(ctx, module, "id", module_id);
     JS_ObjectSetString(ctx, module, "filename", module_id);
+#ifndef NO_IO
     _push_dirname(ctx, module, "path", module_id);
+#endif
     JS_ObjectSetObject(ctx, module, "parent", JS_DupValue(ctx, parent_module));
 
     JS_ObjectSetBoolean(ctx, module, "loaded", 0);
@@ -1678,7 +1728,7 @@ JS_C_FUNCTION(native_require) {
 #else
         js_object_type path_obj = JS_GetPropertyStr(ctx, parent_module, "path");
         const char *path = JS_ToCString(ctx, path_obj);
-        duk_eval_file(ctx, filename, path ? path : "");
+        duk_eval_file(ctx, module_id, path ? path : "");
         JS_FreeString(ctx, path);
         JS_FreeValue(ctx, path_obj);
 #endif
@@ -2140,8 +2190,10 @@ void duk_run_file(JS_CONTEXT ctx, const char *path) {
         duk_push_string(ctx, path);
         duk_put_prop_string(ctx, -2, "filename");
 
+#ifndef NO_IO
         _push_dirname(ctx, path);
         duk_put_prop_string(ctx, -2, "path");
+#endif
 
         duk_push_null(ctx);
         duk_put_prop_string(ctx, -2, "parent");
@@ -2169,7 +2221,9 @@ void duk_run_file(JS_CONTEXT ctx, const char *path) {
     JS_ObjectSetObject(ctx, global_object, "module", obj);
     JS_ObjectSetString(ctx, obj, "id", path);
     JS_ObjectSetString(ctx, obj, "filename", path);
+#ifndef NO_IO
     _push_dirname(ctx, obj, "path", path);
+#endif
     JS_ObjectSetNull(ctx, obj, "parent");
     JS_ObjectSetBoolean(ctx, obj, "loaded", 0);
     JS_SetPropertyStr(ctx, obj, "children", JS_NewArray(ctx));

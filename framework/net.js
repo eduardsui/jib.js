@@ -1,6 +1,9 @@
 var EventEmitter = require('events').EventEmitter;
 var util = require('util');
 var Stream = require('stream').Stream;
+var Buffer = global.Buffer;
+if (!Buffer)
+	Buffer = require('buffer').Buffer;
 
 var net = {
 	constants: {
@@ -25,7 +28,14 @@ var net = {
 		AF_MAX: 12
 	},
 
-	Socket: function(options, connectListener) {
+	Socket: function(use_port, use_host, connectListener) {
+		var options;
+		if (typeof use_port == "object") {
+			options = use_port;
+			connectListener = use_host;
+		} else {
+			options = { host: use_host, port: use_port }
+		}
 		if (!options)
 			options = { };
 
@@ -84,7 +94,8 @@ var net = {
 			var obj = { };
 			if (readable) {
 				obj.read = function() {
-					var buf = new Uint8Array(8192);
+					var read_size = 4096;
+					var buf = new Uint8Array(read_size);
 					var nbytes = _net_.recv(self._socket, buf, buf.byteLength);
 					if (nbytes < 0) {
 						self.emit("error", new Error(_net_.strerror(_net_.errno())));
@@ -92,12 +103,12 @@ var net = {
 					if (nbytes) {
 						self._lastRead = new Date().getTime();
 						self.bytesRead += nbytes;
-						if (nbytes != 8192)
+						if (nbytes != read_size)
 							buf = buf.subarray(0, nbytes);
 						if (self._readableState.decoder)
 							self.emit("data", self._readableState.decoder.write(buf));
 						else
-							self.emit("data", buf);
+							self.emit("data", new Buffer(buf, 0, nbytes));
 					} else {
 						self.close();
 					}
