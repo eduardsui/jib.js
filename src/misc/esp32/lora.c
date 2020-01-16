@@ -368,36 +368,26 @@ lora_init(void)
    gpio_pad_select_gpio(CS_GPIO);
    gpio_set_direction(CS_GPIO, GPIO_MODE_OUTPUT);
 
-   spi_bus_config_t bus = {
-      .miso_io_num = MISO_GPIO,
-      .mosi_io_num = MOSI_GPIO,
-      .sclk_io_num = SCK_GPIO,
-      .quadwp_io_num = -1,
-      .quadhd_io_num = -1,
-      .max_transfer_sz = 0,
-      .flags = 0,
-      .intr_flags = 0,
-   };
+   spi_bus_config_t bus;
+   memset(&bus, 0, sizeof(spi_bus_config_t));
+   
+   bus.miso_io_num = MISO_GPIO;
+   bus.mosi_io_num = MOSI_GPIO;
+   bus.sclk_io_num = SCK_GPIO;
+   bus.quadwp_io_num = -1;
+   bus.quadhd_io_num = -1;
            
    ret = spi_bus_initialize(VSPI_HOST, &bus, 0);
    assert(ret == ESP_OK);
 
-   spi_device_interface_config_t dev = {
-      .clock_speed_hz = 9000000,
-      .mode = 0,
-      .spics_io_num = -1,
-      .input_delay_ns = 0,
-      .command_bits = 0,
-      .address_bits = 0,
-      .dummy_bits = 0,
-      .duty_cycle_pos = 0,
-      .cs_ena_pretrans = 0,
-      .cs_ena_posttrans = 0,
-      .queue_size = 1,
-      .flags = 0,
-      .pre_cb = NULL,
-      .post_cb = NULL,
-   };
+   spi_device_interface_config_t dev;
+   memset(&dev, 0, sizeof(spi_device_interface_config_t));
+
+   dev.clock_speed_hz = 9000000;
+   dev.mode = 0;
+   dev.spics_io_num = -1;
+   dev.queue_size = 7;
+
    ret = spi_bus_add_device(VSPI_HOST, &dev, &__spi);
    assert(ret == ESP_OK);
 
