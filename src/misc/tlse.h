@@ -2,6 +2,7 @@
 #define TLSE_H
 
 // #define DEBUG
+#define TLS_CURVE25519
 
 // define TLS_LEGACY_SUPPORT to support TLS 1.1/1.0 (legacy)
 // legacy support it will use an additional 272 bytes / context

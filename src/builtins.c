@@ -20,6 +20,10 @@
 #include "builtins_io.h"
 #endif
 
+#ifndef NO_CRYPTO
+#include "builtins_crypto.h"
+#endif
+
 #ifdef WITH_GPIO
 #include "builtins_gpio.h"
 #endif
@@ -538,6 +542,7 @@ JS_C_FUNCTION(randomBytes) {
 #else
 #ifdef ESP32
     esp_fill_random(key, len);
+    JS_RETURN_BUFFER_FREE_VAL(ctx, key, len);
 #else
     FILE *fp = fopen("/dev/urandom", "r");
     if (fp) {
@@ -2310,6 +2315,9 @@ void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *
 #endif
 #ifndef NO_SOCKET
     register_socket_functions(loop, ctx);
+#endif
+#ifndef NO_CRYPTO
+    register_crypto_functions(loop, ctx);
 #endif
 #ifdef WITH_GPIO
     register_gpio_functions(loop, ctx);

@@ -132,7 +132,7 @@ JS_C_FUNCTION(js_lora_receive_packet) {
 
     int err = lora_receive_packet(buf, 0x100);
     if (err > 0) {
-        duk_push_buffer_object(ctx, -1, 0, err, DUK_BUFOBJ_NODEJS_BUFFER);
+        duk_push_buffer_object(ctx, -1, 0, err, DUK_BUFOBJ_UINT8ARRAY);
         return 1;
     }
     duk_pop(ctx);
