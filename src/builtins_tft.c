@@ -1,9 +1,10 @@
 #include "builtins.h"
 #include "builtins_adc.h"
 #include "doops.h"
-
 #include "misc/esp32/tft/tftspi.h"
 #include "misc/esp32/tft/tft.h"
+
+#include <driver/gpio.h>
 
 #define SPI_BUS TFT_HSPI_HOST
 
@@ -374,8 +375,8 @@ JS_C_FUNCTION(js_tft_text_width) {
 }
 
 JS_C_FUNCTION(js_tft_deinit) {
-    spi_lobo_device_deselect(disp_spi);
     int err = spi_lobo_bus_remove_device(disp_spi);
+    gpio_set_level(PIN_NUM_BCKL, PIN_BCKL_OFF);
     JS_RETURN_NUMBER(ctx, err);
 }
 
@@ -388,6 +389,15 @@ JS_C_FUNCTION(js_tft_text_wrap) {
 JS_C_FUNCTION(js_tft_grayscale) {
     JS_ParameterBoolean(ctx, 0);
     gray_scale = JS_GetBooleanParameter(ctx, 0);
+    JS_RETURN_NOTHING(ctx);
+}
+
+JS_C_FUNCTION(js_tft_off) {
+    JS_ParameterBoolean(ctx, 0);
+    if (JS_GetBooleanParameter(ctx, 0))
+        gpio_set_level(PIN_NUM_BCKL, PIN_BCKL_OFF);
+    else
+        gpio_set_level(PIN_NUM_BCKL, PIN_BCKL_ON);
     JS_RETURN_NOTHING(ctx);
 }
 
@@ -423,6 +433,7 @@ void register_tft_functions(void *main_loop, void *js_ctx) {
         "setTextWrap", js_tft_text_wrap,
         "grayscale", js_tft_grayscale,
         "deinit", js_tft_deinit,
+        "off", js_tft_off,
         NULL, NULL
     );
 }
