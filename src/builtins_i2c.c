@@ -1,7 +1,7 @@
 // adapted from https://github.com/nkolban/duktape-esp32/
 
 #include "builtins.h"
-#include "builtins_spi.h"
+#include "builtins_i2c.h"
 #include "doops.h"
 
 #include <driver/i2c.h>

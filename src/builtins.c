@@ -13,39 +13,43 @@
 #endif
 
 #ifndef NO_SOCKET
-#include "builtins_socket.h"
+    #include "builtins_socket.h"
 #endif
 
 #ifndef NO_IO
-#include "builtins_io.h"
+    #include "builtins_io.h"
 #endif
 
 #ifndef NO_CRYPTO
-#include "builtins_crypto.h"
+    #include "builtins_crypto.h"
 #endif
 
 #ifdef WITH_GPIO
-#include "builtins_gpio.h"
+    #include "builtins_gpio.h"
 #endif
 
 #ifdef WITH_NVS
-#include "builtins_nvs.h"
+    #include "builtins_nvs.h"
 #endif
 
 #ifdef WITH_WIFI
-#include "builtins_wifi.h"
+    #include "builtins_wifi.h"
 #endif
 
 #ifdef WITH_SPI
-#include "builtins_spi.h"
+    #include "builtins_spi.h"
 #endif
 
 #ifdef WITH_I2C
-#include "builtins_i2c.h"
+    #include "builtins_i2c.h"
 #endif
 
 #ifdef WITH_LEDC
-#include "builtins_ledc.h"
+    #include "builtins_ledc.h"
+#endif
+
+#ifdef WITH_ADC
+    #include "builtins_adc.h"
 #endif
 
 #ifndef NO_HTTP
@@ -58,13 +62,13 @@
 #endif
 
 #ifndef NO_UI
-#include "ui/htmlwindow.h"
+    #include "ui/htmlwindow.h"
 
-static int ui_initialized;
+    static int ui_initialized;
 #endif
 
 #ifndef NO_COMPRESSION
-#include "miniz.c"
+    #include "miniz.c"
 #endif
 
 #ifdef _WIN32
@@ -2332,10 +2336,13 @@ void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *
     register_spi_functions(loop, ctx);
 #endif
 #ifdef WITH_I2C
-    // register_i2c_functions(loop, ctx);
+    register_i2c_functions(loop, ctx);
 #endif
 #ifdef WITH_LEDC
-    // register_ledc_functions(loop, ctx);
+    register_ledc_functions(loop, ctx);
+#endif
+#ifdef WITH_ADC
+    register_adc_functions(loop, ctx);
 #endif
 #ifdef ESP32
     register_esp32_functions(loop, ctx);

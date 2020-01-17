@@ -1,7 +1,7 @@
 // adapted from https://github.com/nkolban/duktape-esp32/
 
 #include "builtins.h"
-#include "builtins_spi.h"
+#include "builtins_ledc.h"
 #include "doops.h"
 
 #include <driver/ledc.h>
