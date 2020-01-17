@@ -52,6 +52,10 @@
     #include "builtins_adc.h"
 #endif
 
+#ifdef WITH_TFT
+    #include "builtins_tft.h"
+#endif
+
 #ifndef NO_HTTP
     #include "misc/http_parser.h"
 #endif
@@ -2343,6 +2347,9 @@ void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *
 #endif
 #ifdef WITH_ADC
     register_adc_functions(loop, ctx);
+#endif
+#ifdef WITH_TFT
+    register_tft_functions(loop, ctx);
 #endif
 #ifdef ESP32
     register_esp32_functions(loop, ctx);
