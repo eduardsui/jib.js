@@ -53,14 +53,14 @@
 
 #define USE_TOUCH	TOUCH_TYPE_NONE
 
-#define PIN_NUM_MISO 23		// SPI MISO
+#define PIN_NUM_MISO  0		// SPI MISO
 #define PIN_NUM_MOSI 19		// SPI MOSI
 #define PIN_NUM_CLK  18		// SPI CLOCK pin
 #define PIN_NUM_CS   05		// Display CS pin
 #define PIN_NUM_DC   16		// Display command/data pin
 #define PIN_NUM_TCS   0		// Touch screen CS pin
 
-#define PIN_NUM_RST   23  	// GPIO used for RESET control
+#define PIN_NUM_RST  23  	// GPIO used for RESET control
 #define PIN_NUM_BCKL  4     // GPIO used for backlight control
 #define PIN_BCKL_ON   1     // GPIO value for backlight ON
 #define PIN_BCKL_OFF  0     // GPIO value for backlight OFF
