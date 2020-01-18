@@ -89,20 +89,24 @@ var jiblib = {
 		}
 
 		function pack(data, msg_type, destination_key) {
-			if (data.length > 46) {
+			if (data.length > 44) {
 				console.warn("message to big");
 				return undefined;
 			}
-			var header = new Uint8Array(5 + data.length);
+			var index = 4;
+			if (destination_key)
+				index += 2;
+
+			var header = new Uint8Array(index + 1 + data.length);
 			if (!msg_type)
 				msg_type = 0x00;
 		
-			header[4] = msg_type;
+			header[index] = msg_type;
 
 			for (var i = 0; i < data.length; i ++)
-				header[i + 5] = data[i];
+				header[i + index + 1] = data[i];
 
-			var crc = _crypto_.crc16(header.subarray(4));
+			var crc = _crypto_.crc16(header.subarray(index));
 
 			header[0] = Math.floor(crc / 0x100);
 			header[1] = crc % 0x100;
@@ -119,19 +123,33 @@ var jiblib = {
 			header[2] = Math.floor(dest_keyId / 0x100);
 			header[3] = dest_keyId % 0x100;
 
-			var payload = _crypto_.chacha20(header.subarray(4), self.netKey);
+			var payload = _crypto_.chacha20(header.subarray(index), self.netKey);
+
 			if (!payload) {
 				console.warn("error encrypting message");
 				return undefined;
 			}
+
+			payload = header.subarray(index);
 			if (destination_key) {
 				var shared = new Uint8Array(32);
 				_crypto_.x25519(shared, self.privateKey, destination_key);
 				payload = _crypto_.chacha20(payload, shared);
+
+				crc = _crypto_.crc16(payload);
+
+				header[4] = Math.floor(crc / 0x100);
+				header[5] = crc % 0x100;
+			}
+
+			var payload = _crypto_.chacha20(payload, self.netKey);
+			if (!payload) {
+				console.warn("error encrypting message");
+				return undefined;
 			}
 
 			for (var i = 0; i < payload.length; i ++)
-				header[i + 4] = payload[i];
+				header[i + index] = payload[i];
 
 			return header;
 		}
@@ -163,37 +181,52 @@ var jiblib = {
 
 			var crc = buf[0] * 0x100 + buf[1];
 			var key_id = buf[2] * 0x100 + buf[3];
+			var index = 4;
+			var crc2 = 0;
+			if (key_id) {
+				if (buf.length < 7) {
+					console.warn("buffer too small");
+					return undefined;
+				}
+				crc2 = buf[4] * 0x100 + buf[5];
+				index = 6;
+			}
 
-			var payload = _crypto_.chacha20(buf.subarray(4), self.netKey);
+
+			var payload = _crypto_.chacha20(buf.subarray(index), self.netKey);
 			if (!payload) {
 				console.warn("error decrypting message");
 				return undefined;
 			}
 
 			if (key_id) {
-				if (key_id !== self.keyIdCrc) {
-					console.log("message is not for this device");
+				if (_crypto_.crc16(payload) != crc2) {
+					console.warn("dropping invalid message (invalid crc)", crc2, _crypto_.crc16(payload));
 					return undefined;
 				}
+
+				if (key_id !== self.keyIdCrc) {
+					console.log("message is not for this device");
+					return { "keyId": key_id, "relay": true };
+				}
+				
 				var shared = new Uint8Array(32);
 				for (k in self._friends) {
 					var key = self._friends[k];
 					_crypto_.x25519(shared, self.privateKey, key);
 					var payload2 = _crypto_.chacha20(payload, shared);
 					if (_crypto_.crc16(payload2) == crc)
-						return {"message": payload2.subarray(1), "keyId": key_id, "type": payload2[0], "from": k};
+						return { "message": payload2.subarray(1), "keyId": key_id, "type": payload2[0], "from": k };
 				}
 				console.warn("dropping invalid message (no matching key)");
-				return undefined;
+				return { "keyId": key_id, "relay": true };
 			}
-
 
 			if (_crypto_.crc16(payload) != crc) {
 				console.warn("dropping invalid message");
 				return undefined;
 			}
-
-			return {"message": payload.subarray(1), "keyId": key_id, "type": payload[0]};
+			return { "message": payload.subarray(1), "keyId": key_id, "type": payload[0] };
 		}
 
 		function clean(limit_ms) {
@@ -218,10 +251,10 @@ var jiblib = {
 							if (!self._sent_cache[k]) {
 								self._sent_cache[k] = Date.now();
 								console.log("received message");
-								if (((!msg.keyId) || (msg.keyId == self.keyIdCrc)) && (self.onmessage))
+								if (((!msg.keyId) || (msg.keyId == self.keyIdCrc)) && (self.onmessage) && (!msg.relay))
 									self.onmessage(msg);
 
-								if ((!msg.keyId) || (msg.keyId != self.keyIdCrc)) {
+								if ((!msg.keyId) || (msg.keyId != self.keyIdCrc) || (msg.relay)) {
 									if (self.queue_repeater.length >= self.maxRelay) {
 										self.queue_repeater.pop();
 										console.warn("dequeued repeater (too many messages)");
