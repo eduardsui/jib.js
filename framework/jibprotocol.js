@@ -1,5 +1,5 @@
 var jiblib = {
-	makeKey: function(seed) {
+	makeKey: function(seed, no_encoding) {
 		if (!seed)
 			seed = process.randomBytes(32);
 
@@ -10,13 +10,18 @@ var jiblib = {
 		var mypublic = new Uint8Array(32);
 		_crypto_.x25519(mypublic, seed);
 
+		if (no_encoding)
+			return { "public": mypublic, "private": seed };
 		var base32_encode = require("base32").encode;
 		return { "public": base32_encode(mypublic), "private": base32_encode(seed) };
 	},
 
 	jibprotocol: function(network_key, keyId, privateKey, tx_interval, max_relay, lora_options) {
 		var base32_decode = undefined;
-
+		if (typeof network_key == "string") {
+			base32_decode = require("base32").decode;
+			network_key = new Uint8Array(base32_decode(network_key));
+		}
 		if (!keyId) {
 			var keyPair = jiblib.makeKey();
 			keyId = keyPair.public;
@@ -26,18 +31,16 @@ var jiblib = {
 		this.txInterval =  tx_interval ? tx_interval :  10000;
 		if ((keyId) && (typeof keyId === "string")) {
 			console.log("Device id is " + keyId);
-			base32_decode = require("base32").decode;
+			if (!base32_decode)
+				base32_decode = require("base32").decode;
 			this.keyId = new Uint8Array(base32_decode(keyId));
 		} else {
 			this.keyId = keyId;
 		}
-		if ((privateKey) && (typeof privateKey === "string")) {
-			if (!base32_decode)
-				base32_decode = require("base32").decode;
+		if ((privateKey) && (typeof privateKey === "string"))
 			this.privateKey = new Uint8Array(base32_decode(privateKey));
-		} else {
+		else
 			this.privateKey = privateKey;
-		}
 		if (this.keyId)
 			this.keyIdCrc = _crypto_.crc16(this.keyId);
 		else

@@ -2288,13 +2288,11 @@ JS_C_FUNCTION(js_normalize_string) {
 JS_C_FUNCTION(js_make_raw_fd) {
     JS_ParameterNumber(ctx, 0);
     int fd = JS_GetIntParameter(ctx, 0);
-#ifdef WIN32
-    _setmode(fd, _O_BINARY);
-#else
+#if !defined(WIN32) && !defined(ESP32)
     struct termios raw;
     tcgetattr(fd, &raw);
     cfmakeraw(&raw);
-    tcsetattr(fd,TCSANOW,&raw);
+    tcsetattr(fd, TCSANOW, &raw);
 #endif
     JS_RETURN_NUMBER(ctx, fd);
 }
@@ -2600,11 +2598,11 @@ void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *
 #endif
     JS_EvalSimple(ctx, "process._stdstreams=[];"
 #ifdef ESP32
-                       "Object.defineProperty(process,'stdin',{ get : function () {if (!process._stdstreams[0]) { var io=require('io');process._stdstreams[0]=new io(process.makeRawFd(0), true);}return process._stdstreams[0];}});"
+                       "Object.defineProperty(process,'stdin',{ get : function () {if (!process._stdstreams[0]) { var io=require('io');process._stdstreams[0]=new io(0, true);}return process._stdstreams[0];}});"
                        "Object.defineProperty(process,'stdout',{ get : function () {if (!process._stdstreams[1]) { var io=require('io');process._stdstreams[1]=new io(1);}return process._stdstreams[1];}});"
                        "Object.defineProperty(process,'stderr',{ get : function () {if (!process._stdstreams[2]) { var io=require('io');process._stdstreams[2]=new io(2);}return process._stdstreams[2];}});");
 #else
-                       "Object.defineProperty(process,'stdin',{ get : function () {if (!process._stdstreams[0]) { var net=require('net');process._stdstreams[0]=new net.Socket({fd:process.makeRawFd(0),readable:true,writable:false});}return process._stdstreams[0];}});"
+                       "Object.defineProperty(process,'stdin',{ get : function () {if (!process._stdstreams[0]) { var net=require('net');process._stdstreams[0]=new net.Socket({fd:0, readable:true,writable:false});}return process._stdstreams[0];}});"
                        "Object.defineProperty(process,'stdout',{ get : function () {if (!process._stdstreams[1]) { var net=require('net');process._stdstreams[1]=new net.Socket({fd:1,readable:false,writable:true});process._stdstreams[1]._drain=true;}return process._stdstreams[1];}});"
                        "Object.defineProperty(process,'stderr',{ get : function () {if (!process._stdstreams[2]) { var net=require('net');process._stdstreams[2]=new net.Socket({fd:2,readable:false,writable:true});process._stdstreams[2]._drain=true;}return process._stdstreams[2];}});");
 #endif
