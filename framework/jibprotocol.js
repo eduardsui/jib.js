@@ -14,7 +14,7 @@ var jiblib = {
 		return { "public": base32_encode(mypublic), "private": base32_encode(seed) };
 	},
 
-	jibprotocol: function(network_key, keyId, privateKey, frequency, tx_interval, max_relay) {
+	jibprotocol: function(network_key, keyId, privateKey, tx_interval, max_relay, lora_options) {
 		var base32_decode = undefined;
 
 		if (!keyId) {
@@ -48,11 +48,14 @@ var jiblib = {
 		this.maxRelay = max_relay ? max_relay : 100;
 
 		lora.init();
-		lora.setFrequency(frequency ? frequency : 433e6);
-		lora.setTxPower(17);
-		lora.setSpreadingFactor(12);
-		// lora.setBandwidth(20.8E3);
-		lora.setCodingRate(8);
+		if (!lora_options)
+			lora_options = { };
+		lora.setFrequency(lora_options.frequency ? lora_options.frequency : 433e6);
+		lora.setTxPower(lora_options.txPower ? lora_options.txPower : 17);
+		lora.setSpreadingFactor(lora_options.spreadingFactor ? lora_options.spreadingFactor : 11);
+		if (lora_options.bandWidth)
+			lora.setBandwidth(lora_options.bandWidth);
+		lora.setCodingRate(lora_options.codingRate ? lora_options.codingRate : 8);
 	
 		lora.reset();
 		lora.receive();

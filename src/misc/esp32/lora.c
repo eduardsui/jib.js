@@ -368,6 +368,15 @@ lora_init(void)
    gpio_pad_select_gpio(CS_GPIO);
    gpio_set_direction(CS_GPIO, GPIO_MODE_OUTPUT);
 
+   gpio_pad_select_gpio(MISO_GPIO);
+   gpio_set_direction(MISO_GPIO, GPIO_MODE_INPUT);
+
+   gpio_pad_select_gpio(MOSI_GPIO);
+   gpio_set_direction(MOSI_GPIO, GPIO_MODE_OUTPUT);
+
+   gpio_pad_select_gpio(SCK_GPIO);
+   gpio_set_direction(SCK_GPIO, GPIO_MODE_OUTPUT);
+
    spi_bus_config_t bus;
    memset(&bus, 0, sizeof(spi_bus_config_t));
    
