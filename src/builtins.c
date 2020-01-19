@@ -4,12 +4,16 @@
 
 #include <unistd.h>
 #include <stdarg.h>
-#ifndef _WIN32
+#ifdef _WIN32
+    #include <fcntl.h>
+    #include <io.h>
+#else
     #include <sys/types.h>
     #ifndef ESP32
         #include <sys/sysctl.h>
         #include <signal.h>
     #endif
+    #include <termios.h>
 #endif
 
 #ifndef NO_SOCKET
@@ -835,7 +839,7 @@ JS_C_FUNCTION_FORWARD(parseHeader, int type) {
     const char *header = JS_GetAsStringParameterLen(ctx, 0, &header_len);
 
     struct http_parser parser;
-    http_parser_init(&parser, type);
+    http_parser_init(&parser, (enum http_parser_type)type);
 
     struct http_parser_container data;
 
@@ -1339,6 +1343,11 @@ void try_add_path(const char *path, int len) {
     }
     if (new_paths[paths_len])
         paths_len ++;
+}
+
+void js_add_path(const char *path) {
+    if (path)
+        try_add_path(path, strlen(path));
 }
 
 #ifdef WITH_DUKTAPE
@@ -2169,7 +2178,7 @@ JS_C_FUNCTION(js_pclose) {
     duk_push_global_stash(ctx);
         duk_get_prop_string(ctx, -1, func_buffer);
         if (!duk_is_undefined(ctx, -1))
-            fp = duk_get_pointer(ctx, -1);
+            fp = (FILE *)duk_get_pointer(ctx, -1);
         duk_pop(ctx);
         duk_push_string(js_ctx, func_buffer);
         duk_del_prop(js_ctx, -1);
@@ -2192,7 +2201,103 @@ JS_C_FUNCTION(js_pclose) {
 }
 #endif
 
+JS_C_FUNCTION(js_normalize_string) {
+    JS_ParameterString(ctx, 0);
+    js_size_t len;
+    const char *str = JS_GetStringParameterLen(ctx, 0, &len);
+    char *str2 = strdup(str);
+    unsigned char *str2_utf8_lengths = NULL;
+    int index = 0;
+    int utf8_len = 0;
+    int utf8_last_len = 1;
+    int skip_next = 0;
+    for (int i = 0; i < len; i ++) {
+        if (utf8_len) {
+            if (str2)
+                str2[index ++] = str[i];
+            utf8_len --;
+            continue;
+        }
+        switch ((unsigned char)str[i]) {
+            case 0x08:
+                index -= utf8_last_len;
+                if (str2_utf8_lengths) {
+                    if (index > 0)
+                        utf8_last_len = str2_utf8_lengths[index];
+                    else
+                        utf8_last_len = 1;
+                }
+                if (index < 0)
+                    index = 0;
+                break;
+            case 0x7F:
+                skip_next ++;
+                break;
+            default:
+                // control char ?
+                if (((unsigned char)str[i] < 0x20) && (str[i] != '\r') && (str[i] != '\n') && (str[i] != '\t'))
+                    continue;
 
+                if (((unsigned char)str[i] >> 7) == 0)
+                    utf8_len = 1;
+                else
+                if (((unsigned char)str[i] >> 5) == 0x06)
+                    utf8_len = 2;
+                else
+                if (((unsigned char)str[i] >> 4) == 0x0E)
+                    utf8_len = 3;
+                else
+                if (((unsigned char)str[i] >> 5) == 0x1E)
+                    utf8_len = 4;
+                else
+                    utf8_len = 1;
+
+                if (skip_next) {
+                    skip_next --;
+                    i += utf8_len - 1;
+                    continue;
+                }
+                utf8_last_len = utf8_len;
+                if (str2) {
+                    if (utf8_last_len > 1) {
+                        if (!str2_utf8_lengths) {
+                            str2_utf8_lengths = (unsigned char *)malloc(len);
+                            if (str2_utf8_lengths)
+                                memset(str2_utf8_lengths, 1, len);
+                        }
+                        if (str2_utf8_lengths) {
+                            if (index + utf8_last_len < len)
+                                str2_utf8_lengths[index + utf8_last_len] = utf8_last_len;
+                        }
+                    }
+                    str2[index ++] = str[i];
+                    utf8_len --;
+                }
+        }
+    }
+    if (str2_utf8_lengths)
+        free(str2_utf8_lengths);
+    JS_FreeString(ctx, str);
+    if (str2) {
+        str2[index] = 0;
+        JS_RETURN_STRING_FREE(ctx, str2);
+    }
+    JS_RETURN_STRING(ctx, "");
+}
+
+JS_C_FUNCTION(js_make_raw_fd) {
+    JS_ParameterNumber(ctx, 0);
+    int fd = JS_GetIntParameter(ctx, 0);
+#ifdef WIN32
+    _setmode(fd, _O_BINARY);
+#else
+    struct termios raw;
+    tcgetattr(fd, &raw);
+    cfmakeraw(&raw);
+    tcsetattr(fd,TCSANOW,&raw);
+#endif
+    JS_RETURN_NUMBER(ctx, fd);
+}
 
 void duk_run_file(JS_CONTEXT ctx, const char *path) {
 #ifdef WITH_DUKTAPE
@@ -2285,6 +2390,19 @@ struct doops_loop *js_loop() {
     return main_loop;
 }
 
+void js_deinit() {
+#ifndef NO_IO
+    int i;
+    if (paths) {
+        for (i = 0; i < paths_len; i ++)
+            free(paths[i]);
+        free(paths);
+    }
+    paths = NULL;
+    paths_len = 0;
+#endif
+}
+
 void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *argv[], char *envp[]) {
     int i;
 
@@ -2368,7 +2486,7 @@ void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *
     register_object(ctx, "_http_helpers", "parseRequest", parseRequest, "parseResponse", parseResponse, (void *)NULL);
 #endif
     
-    register_object(ctx, "process", "abort", native_quit, "exit", native_exit, "chdir", native_chdir, "cwd", native_cwd, "nextTick", setImmediate, "randomBytes", randomBytes, "cpuUsage", cpuUsage, "mapSignal", js_signal, "kill", js_kill, 
+    register_object(ctx, "process", "abort", native_quit, "exit", native_exit, "chdir", native_chdir, "cwd", native_cwd, "nextTick", setImmediate, "randomBytes", randomBytes, "cpuUsage", cpuUsage, "mapSignal", js_signal, "kill", js_kill, "makeRawFd", js_make_raw_fd, "normalizeString", js_normalize_string,
 #if !defined(NO_IO) && !defined(ESP32)
         "open", js_popen, "close", js_pclose, 
 #endif
@@ -2482,11 +2600,11 @@ void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *
 #endif
     JS_EvalSimple(ctx, "process._stdstreams=[];"
 #ifdef ESP32
-                       "Object.defineProperty(process,'stdin',{ get : function () {if (!process._stdstreams[0]) { var io=require('io');process._stdstreams[0]=new io(0, true);}return process._stdstreams[0];}});"
+                       "Object.defineProperty(process,'stdin',{ get : function () {if (!process._stdstreams[0]) { var io=require('io');process._stdstreams[0]=new io(process.makeRawFd(0), true);}return process._stdstreams[0];}});"
                        "Object.defineProperty(process,'stdout',{ get : function () {if (!process._stdstreams[1]) { var io=require('io');process._stdstreams[1]=new io(1);}return process._stdstreams[1];}});"
                        "Object.defineProperty(process,'stderr',{ get : function () {if (!process._stdstreams[2]) { var io=require('io');process._stdstreams[2]=new io(2);}return process._stdstreams[2];}});");
 #else
-                       "Object.defineProperty(process,'stdin',{ get : function () {if (!process._stdstreams[0]) { var net=require('net');process._stdstreams[0]=new net.Socket({fd:0,readable:true,writable:false});}return process._stdstreams[0];}});"
+                       "Object.defineProperty(process,'stdin',{ get : function () {if (!process._stdstreams[0]) { var net=require('net');process._stdstreams[0]=new net.Socket({fd:process.makeRawFd(0),readable:true,writable:false});}return process._stdstreams[0];}});"
                        "Object.defineProperty(process,'stdout',{ get : function () {if (!process._stdstreams[1]) { var net=require('net');process._stdstreams[1]=new net.Socket({fd:1,readable:false,writable:true});process._stdstreams[1]._drain=true;}return process._stdstreams[1];}});"
                        "Object.defineProperty(process,'stderr',{ get : function () {if (!process._stdstreams[2]) { var net=require('net');process._stdstreams[2]=new net.Socket({fd:2,readable:false,writable:true});process._stdstreams[2]._drain=true;}return process._stdstreams[2];}});");
 #endif

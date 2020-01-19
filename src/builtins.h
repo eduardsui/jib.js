@@ -25,6 +25,8 @@ int native_line_number(JS_CONTEXT ctx, int level, char *func_name, int max_len);
 void helper_notify(JS_CONTEXT ctx, const char *object, const char *event_name);
 void duk_eval_file(JS_CONTEXT ctx, const char *path, const char *directory);
 void duk_run_file(JS_CONTEXT ctx, const char *path);
+void js_add_path(const char *path);
+void js_deinit();
 JS_CONTEXT js();
 struct doops_loop *js_loop();
 

@@ -395,7 +395,6 @@ JS_C_FUNCTION(js_read) {
 
     if (offset)
         JS_RETURN_NUMBER(ctx, 0);
-
     ssize_t bytes_read = read(JS_GetIntParameter(ctx, 0), (unsigned char *)buf + offset, nbytes);
     JS_RETURN_NUMBER(ctx, bytes_read);
 }

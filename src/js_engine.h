@@ -10,7 +10,6 @@
 
     #define JS_CONTEXT                                          duk_context *
     #define JS_CreateContext(on_error)                          duk_create_heap(NULL, NULL, NULL, NULL, (on_error))
-    #define JS_CreateContext2(js_alloc, js_realloc, js_free, js_opaque, on_error)   duk_create_heap((js_alloc), (js_realloc), (js_free), (js_opaque), (on_error))
     #define JS_DestroyContext(ctx)                              duk_destroy_heap((ctx))
     #define JS_EvalSimple(ctx, str)                             duk_eval_string_noresult(ctx, str)
     #define JS_Eval(ctx, str, path)                             {                                                               \
@@ -71,6 +70,7 @@
     #define JS_RETURN_NUMBER(ctx, val)                          { duk_push_number((ctx), (val)); return 1; }
     #define JS_RETURN_BOOLEAN(ctx, val)                         { duk_push_boolean((ctx), (val)); return 1; }
     #define JS_RETURN_STRING(ctx, val)                          { duk_push_string((ctx), (val)); return 1; }
+    #define JS_RETURN_STRING_FREE(ctx, val)                     { duk_push_string((ctx), (val)); free(val); return 1; }
     #define JS_RETURN_POINTER(ctx, val)                         { duk_push_pointer((ctx), (val)); return 1; }
     #define JS_RETURN_NULL(ctx)                                 { duk_push_null((ctx)); return 1; }
     #define JS_RETURN_UNDEFINED(ctx)                            { duk_push_undefined((ctx)); return 1; }
@@ -97,17 +97,6 @@
     extern void *js_error_callback;
     static inline JS_CONTEXT JS_CreateContext(void *on_error) {
         JSRuntime *rt = JS_NewRuntime();
-        js_error_callback = on_error;
-        return JS_NewContext(rt);
-    }
-
-    static inline JS_CONTEXT JS_CreateContext2(void *js_malloc, void *js_realloc, void *js_free, void *opaque, void *on_error) {
-        JSMallocFunctions mf;
-        mf.js_malloc = js_malloc;
-        mf.js_free = js_free;
-        mf.js_realloc = js_realloc;
-        mf.js_malloc_usable_size = NULL;
-        JSRuntime *rt = JS_NewRuntime2(&mf, opaque);
         js_error_callback = on_error;
         return JS_NewContext(rt);
     }
@@ -172,6 +161,7 @@
     #define JS_RETURN_NUMBER(ctx, val)                          return JS_NewFloat64((ctx), (val))
     #define JS_RETURN_BOOLEAN(ctx, val)                         return ((val) ? JS_TRUE : JS_FALSE)
     #define JS_RETURN_STRING(ctx, val)                          return JS_NewString((ctx), (val))
+    #define JS_RETURN_STRING_FREE(ctx, val)                     { JSValue ret = JS_NewString((ctx), (val)); free((val)); return (ret); }
 #ifdef ESP32
     #define JS_RETURN_POINTER(ctx, val)                         return JS_NewInt32((ctx), (intptr_t)(val))
 #else

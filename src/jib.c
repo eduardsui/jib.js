@@ -32,6 +32,8 @@ int main(int argc, char *argv[], char *envp[]) {
 
     loop_free(main_loop);
 
+    js_deinit();
+
     return 0;
 }
 

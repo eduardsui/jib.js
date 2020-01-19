@@ -309,7 +309,7 @@ JS_C_FUNCTION(js_settimeout) {
 #ifdef _WIN32
     DWORD timeout = JS_GetIntParameter(ctx, 0);
     setsockopt(JS_GetIntParameter(ctx, 0), SOL_TCP, SO_SNDTIMEO, (const char *)&timeout, sizeof(timeout));
-    int err = setsockopt(JS_GetIntParameter(ctx, 0), SOL_TCP, SO_RCVTIMEO, (void *)&timeout, sizeof(timeout));
+    int err = setsockopt(JS_GetIntParameter(ctx, 0), SOL_TCP, SO_RCVTIMEO, (const char *)&timeout, sizeof(timeout));
 #else
     int timeout_ms = JS_GetIntParameter(ctx, 0);
     struct timeval timeout;      
@@ -402,9 +402,9 @@ JS_C_FUNCTION(js_recv) {
     ssize_t bytes_read;
     int fd = JS_GetIntParameter(ctx, 0);
     if (isSocket(fd))
-        bytes_read = recv(fd, (unsigned char *)buf + offset, nbytes, 0);
+        bytes_read = recv(fd, (char *)buf + offset, nbytes, 0);
     else
-        bytes_read = read(fd, (unsigned char *)buf + offset, nbytes);
+        bytes_read = read(fd, (char *)buf + offset, nbytes);
     JS_RETURN_NUMBER(ctx, bytes_read);
 }
 
@@ -434,7 +434,7 @@ JS_C_FUNCTION(js_recvfrom) {
     struct sockaddr src_addr;
     socklen_t addrlen = sizeof(struct sockaddr);
 
-    ssize_t bytes_read = recvfrom(JS_GetIntParameter(ctx, 0), (unsigned char *)buf + offset, nbytes - offset, 0, &src_addr, &addrlen);
+    ssize_t bytes_read = recvfrom(JS_GetIntParameter(ctx, 0), (char *)buf + offset, nbytes - offset, 0, &src_addr, &addrlen);
 
     if ((bytes_read >= 0) && (JS_ParameterCount(ctx) > 4)) {
         JS_ParameterObject(ctx, 4);
@@ -480,9 +480,9 @@ JS_C_FUNCTION(js_send) {
     ssize_t bytes_written;
     int fd = JS_GetIntParameter(ctx, 0);
     if (isSocket(fd))
-        bytes_written = send(fd, (unsigned char *)buf + offset, nbytes, 0);
+        bytes_written = send(fd, (char *)buf + offset, nbytes, 0);
     else
-        bytes_written = write(fd, (unsigned char *)buf + offset, nbytes);
+        bytes_written = write(fd, (char *)buf + offset, nbytes);
     JS_RETURN_NUMBER(ctx, bytes_written);
 }
 
@@ -537,7 +537,7 @@ JS_C_FUNCTION(js_sendto) {
 
     int err = -1;
     for (res = result; res != NULL; res = res->ai_next) {
-        err = sendto(JS_GetIntParameter(ctx, 0), (unsigned char *)buf + offset, nbytes, 0, res->ai_addr, res->ai_addrlen);
+        err = sendto(JS_GetIntParameter(ctx, 0), (char *)buf + offset, nbytes, 0, res->ai_addr, res->ai_addrlen);
         if (!err)
             break;
     }
@@ -552,11 +552,10 @@ JS_C_FUNCTION(js_socketinfo) {
     JS_ParameterNumber(ctx, 0);
 
     struct sockaddr_storage addr;
-    char        ipstr[INET6_ADDRSTRLEN];
-    int         port     = 0;
-    static char *unknown = "unknown";
+    char ipstr[INET6_ADDRSTRLEN];
+    int port     = 0;
+    static const char *unknown = "unknown";
 #ifdef _WIN32
-
     int peerlen = sizeof(addr);
 #else
     socklen_t peerlen = sizeof(addr);
@@ -766,7 +765,7 @@ JS_C_FUNCTION(js_tls_consume_stream) {
 
     struct TLSContext *context = (struct TLSContext *)JS_GetPointerParameter(ctx, 0);
     js_size_t sz;
-    const unsigned char *buf = JS_GetBufferParameter(ctx, 1, &sz);
+    const unsigned char *buf = (const unsigned char *)JS_GetBufferParameter(ctx, 1, &sz);
 
     int len = sz;
     if (JS_ParameterCount(ctx) > 2) {
@@ -818,7 +817,7 @@ JS_C_FUNCTION(js_tls_get_write_buffer) {
     if ((!outlen) || (!buffer))
         JS_RETURN_NOTHING(ctx);
 #ifdef WITH_DUKTAPE
-    char *js_buf = duk_push_fixed_buffer(ctx, outlen);
+    char *js_buf = (char *)duk_push_fixed_buffer(ctx, outlen);
     if (!js_buf)
         JS_RETURN_NOTHING(ctx);
 

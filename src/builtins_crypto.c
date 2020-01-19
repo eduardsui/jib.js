@@ -73,7 +73,7 @@ JS_C_FUNCTION(js_chacha20) {
         }
         ECRYPT_ivsetup(&x, (const u8 *)iv);
     } else {
-        static const u8 default_iv[8];
+        static const u8 default_iv[8] = {0, 0, 0, 0, 0, 0, 0, 0};
         ECRYPT_ivsetup(&x, default_iv);
     }
 #ifdef WITH_DUKTAPE
