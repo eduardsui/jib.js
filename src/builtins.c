@@ -2219,7 +2219,9 @@ JS_C_FUNCTION(js_normalize_string) {
             continue;
         }
         switch ((unsigned char)str[i]) {
+            // both delete and backspace
             case 0x08:
+            case 0x7F:
                 index -= utf8_last_len;
                 if (str2_utf8_lengths) {
                     if (index > 0)
@@ -2229,9 +2231,6 @@ JS_C_FUNCTION(js_normalize_string) {
                 }
                 if (index < 0)
                     index = 0;
-                break;
-            case 0x7F:
-                skip_next ++;
                 break;
             default:
                 // control char ?
@@ -2285,13 +2284,13 @@ JS_C_FUNCTION(js_normalize_string) {
     JS_RETURN_STRING(ctx, "");
 }
 
-JS_C_FUNCTION(js_make_raw_fd) {
+JS_C_FUNCTION(js_make_echo_fd) {
     JS_ParameterNumber(ctx, 0);
     int fd = JS_GetIntParameter(ctx, 0);
-#if !defined(WIN32) && !defined(ESP32)
+#ifndef WIN32
     struct termios raw;
     tcgetattr(fd, &raw);
-    cfmakeraw(&raw);
+    raw.c_lflag |= ECHO | ECHONL | ICANON | IEXTEN | ISIG;
     tcsetattr(fd, TCSANOW, &raw);
 #endif
     JS_RETURN_NUMBER(ctx, fd);
@@ -2484,7 +2483,7 @@ void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *
     register_object(ctx, "_http_helpers", "parseRequest", parseRequest, "parseResponse", parseResponse, (void *)NULL);
 #endif
     
-    register_object(ctx, "process", "abort", native_quit, "exit", native_exit, "chdir", native_chdir, "cwd", native_cwd, "nextTick", setImmediate, "randomBytes", randomBytes, "cpuUsage", cpuUsage, "mapSignal", js_signal, "kill", js_kill, "makeRawFd", js_make_raw_fd, "normalizeString", js_normalize_string,
+    register_object(ctx, "process", "abort", native_quit, "exit", native_exit, "chdir", native_chdir, "cwd", native_cwd, "nextTick", setImmediate, "randomBytes", randomBytes, "cpuUsage", cpuUsage, "mapSignal", js_signal, "kill", js_kill, "makeEchoFd", js_make_echo_fd, "normalizeString", js_normalize_string,
 #if !defined(NO_IO) && !defined(ESP32)
         "open", js_popen, "close", js_pclose, 
 #endif
@@ -2598,11 +2597,11 @@ void register_builtins(struct doops_loop *loop, JS_CONTEXT ctx, int argc, char *
 #endif
     JS_EvalSimple(ctx, "process._stdstreams=[];"
 #ifdef ESP32
-                       "Object.defineProperty(process,'stdin',{ get : function () {if (!process._stdstreams[0]) { var io=require('io');process._stdstreams[0]=new io(0, true);}return process._stdstreams[0];}});"
+                       "Object.defineProperty(process,'stdin',{ get : function () {if (!process._stdstreams[0]) { var io=require('io');process._stdstreams[0]=new io(process.makeEchoFd(0), true);}return process._stdstreams[0];}});"
                        "Object.defineProperty(process,'stdout',{ get : function () {if (!process._stdstreams[1]) { var io=require('io');process._stdstreams[1]=new io(1);}return process._stdstreams[1];}});"
                        "Object.defineProperty(process,'stderr',{ get : function () {if (!process._stdstreams[2]) { var io=require('io');process._stdstreams[2]=new io(2);}return process._stdstreams[2];}});");
 #else
-                       "Object.defineProperty(process,'stdin',{ get : function () {if (!process._stdstreams[0]) { var net=require('net');process._stdstreams[0]=new net.Socket({fd:0, readable:true,writable:false});}return process._stdstreams[0];}});"
+                       "Object.defineProperty(process,'stdin',{ get : function () {if (!process._stdstreams[0]) { var net=require('net');process._stdstreams[0]=new net.Socket({fd:process.makeEchoFd(0), readable:true,writable:false});}return process._stdstreams[0];}});"
                        "Object.defineProperty(process,'stdout',{ get : function () {if (!process._stdstreams[1]) { var net=require('net');process._stdstreams[1]=new net.Socket({fd:1,readable:false,writable:true});process._stdstreams[1]._drain=true;}return process._stdstreams[1];}});"
                        "Object.defineProperty(process,'stderr',{ get : function () {if (!process._stdstreams[2]) { var net=require('net');process._stdstreams[2]=new net.Socket({fd:2,readable:false,writable:true});process._stdstreams[2]._drain=true;}return process._stdstreams[2];}});");
 #endif

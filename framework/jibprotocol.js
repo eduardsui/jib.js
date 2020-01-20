@@ -171,7 +171,7 @@ var jiblib = {
 			return this._friends ? this._friends : { };
 		}
 
-		function pack(data, msg_type, destination_key, ttl) {
+		function pack(data, msg_type, destination_key, ttl, on_ack) {
 			if (data.length > 44) {
 				console.warn("message to big");
 				if (!self.trimBigMessages)
@@ -247,7 +247,10 @@ var jiblib = {
 				key_seed.set(destination_key);
 				key_seed.set(hash, destination_key.length);
 				console.log("ack message queued");
-				self._acks[md5(key_seed)] = {"ttl": Date.now() + ttl * 1000, "stamp": 0, "sent": 0, "data": header};
+				var obj = {"ttl": Date.now() + ttl * 1000, "stamp": 0, "sent": 0, "data": header};
+				if (on_ack)
+					obj.ack = on_ack;
+				self._acks[md5(key_seed)] = obj
 				return undefined;
 			}
 			return header;
@@ -257,7 +260,11 @@ var jiblib = {
 			var key_seed = new Uint8Array(key.length + hash.length);
 			key_seed.set(key);
 			key_seed.set(hash, key.length);
-			delete this._acks[md5(key_seed)];
+			var msgid = md5(key_seed);
+			var obj = this._acks[msgid];
+			if ((obj) && (obj.ack))
+				obj.ack();
+			delete this._acks[msgid];
 		}
 
 		this.ackSend = function() {
@@ -280,7 +287,7 @@ var jiblib = {
 			}
 		}
 
-		this.send = function(data, destination_key, ttl) {
+		this.send = function(data, destination_key, ttl, on_ack) {
 			if (typeof data === "string") {
 				if (!this.encoder)
 					this.encoder = new TextEncoder(this.encoding);
@@ -292,7 +299,7 @@ var jiblib = {
 			var msg_type = 0;
 			if (ttl)
 				msg_type = 1;
-			var buf = pack(data, msg_type, destination_key, ttl);
+			var buf = pack(data, msg_type, destination_key, ttl, on_ack);
 			if (buf) {
 				this.queue.push(buf);
 				console.log("queued message (" + this.queue.length + " messages)");
