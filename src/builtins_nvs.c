@@ -12,9 +12,18 @@
 #define STR_HELPER(x)   #x
 #define TO_STR(x)       STR_HELPER(x)
 
+#ifdef ESP32
+static int nvs_initialized = 0;
+#endif
+
 JS_C_FUNCTION(js_nvs_flash_init) {
 #ifdef ESP32
+    if (nvs_initialized) {
+        JS_RETURN_NUMBER(ctx, 0);
+    }
     esp_err_t ret = nvs_flash_init();
+    if (!ret)
+        nvs_initialized = 1;
     JS_RETURN_NUMBER(ctx, ret);
 #else
     JS_RETURN_NUMBER(ctx, 0);
@@ -24,6 +33,8 @@ JS_C_FUNCTION(js_nvs_flash_init) {
 JS_C_FUNCTION(js_nvs_flash_deinit) {
 #ifdef ESP32
     esp_err_t ret = nvs_flash_deinit();
+    if (!ret)
+        nvs_initialized = 0;
     JS_RETURN_NUMBER(ctx, ret);
 #else
     JS_RETURN_NUMBER(ctx, 0);
@@ -32,6 +43,8 @@ JS_C_FUNCTION(js_nvs_flash_deinit) {
 
 JS_C_FUNCTION(js_nvs_flash_erase) {
 #ifdef ESP32
+    if ((!nvs_initialized) && (!nvs_flash_init()))
+        nvs_initialized = 1;
     esp_err_t ret = nvs_flash_erase();
     JS_RETURN_NUMBER(ctx, ret);
 #else
@@ -42,6 +55,8 @@ JS_C_FUNCTION(js_nvs_flash_erase) {
 #ifdef ESP32
 JS_C_FUNCTION(js_nvs_flash_erase_partition) {
     JS_ParameterString(ctx, 0);
+    if ((!nvs_initialized) && (!nvs_flash_init()))
+        nvs_initialized = 1;
     const char *partition = JS_GetStringParameter(ctx, 0);
     esp_err_t ret = nvs_flash_erase_partition(partition);
     JS_FreeString(ctx, partition);
@@ -50,6 +65,8 @@ JS_C_FUNCTION(js_nvs_flash_erase_partition) {
 
 JS_C_FUNCTION(js_nvs_flash_init_partition) {
     JS_ParameterString(ctx, 0);
+    if ((!nvs_initialized) && (!nvs_flash_init()))
+        nvs_initialized = 1;
     const char *partition = JS_GetStringParameter(ctx, 0);
     esp_err_t ret = nvs_flash_init_partition(partition);
     JS_FreeString(ctx, partition);
@@ -60,6 +77,8 @@ JS_C_FUNCTION(js_nvs_open_from_partition) {
     JS_ParameterString(ctx, 0);
     JS_ParameterString(ctx, 1);
     JS_ParameterNumber(ctx, 2);
+    if ((!nvs_initialized) && (!nvs_flash_init()))
+        nvs_initialized = 1;
     nvs_handle out_handle = NULL;
     const char *s0 = JS_GetStringParameter(ctx, 0);
     const char *s1 = JS_GetStringParameter(ctx, 1);
@@ -77,6 +96,8 @@ JS_C_FUNCTION(js_nvs_open) {
     JS_ParameterNumber(ctx, 1);
     const char *str = JS_GetStringParameter(ctx, 0);
 #ifdef ESP32
+    if ((!nvs_initialized) && (!nvs_flash_init()))
+        nvs_initialized = 1;
     nvs_handle out_handle = NULL;
     esp_err_t ret = nvs_open(str, JS_GetIntParameter(ctx, 1), &out_handle);
 #else
@@ -95,11 +116,12 @@ JS_C_FUNCTION(js_nvs_open) {
 #endif
             ret = mdb_env_open(out_handle, str, flags, mode);
     }
+    if (ret)
+        mdb_env_close(out_handle);
 #endif
     JS_FreeString(ctx, str);
     if (!ret)
         JS_RETURN_POINTER(ctx, (void *)out_handle);
-    mdb_env_close(out_handle);
     JS_RETURN_NOTHING(ctx);
 }
 
@@ -378,6 +400,7 @@ JS_C_FUNCTION(js_nvs_erase_key) {
 #ifdef ESP32
     esp_err_t ret = nvs_erase_key((nvs_handle)JS_GetPointerParameter(ctx, 0), key);
     JS_FreeString(ctx, key);
+    JS_RETURN_NUMBER(ctx, ret);
 #else
     MDB_txn *txn = NULL;
     MDB_dbi dbi;
