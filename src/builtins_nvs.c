@@ -158,6 +158,114 @@ JS_C_FUNCTION(js_nvs_set_str) {
     JS_RETURN_NUMBER(ctx, ret);
 }
 
+JS_C_FUNCTION(js_nvs_get_str) {
+    JS_ParameterPointer(ctx, 0);
+    JS_ParameterString(ctx, 1);
+    JS_ParameterNumber(ctx, 2);
+    const char *key = JS_GetStringParameter(ctx, 1);
+    size_t required_size = JS_GetIntParameter(ctx, 2);
+    required_size ++;
+    char *buf = (char *)malloc(required_size);
+    esp_err_t ret = nvs_get_str((nvs_handle)JS_GetPointerParameter(ctx, 0), key, buf, &required_size);
+    JS_FreeString(ctx, key);
+    if (ret) {
+        free(buf);
+        JS_RETURN_UNDEFINED(ctx);
+    }
+    JS_RETURN_STRING_FREE(ctx, buf);
+}
+
+JS_C_FUNCTION(js_nvs_get_u8) {
+    JS_ParameterPointer(ctx, 0);
+    JS_ParameterString(ctx, 1);
+    const char *key = JS_GetStringParameter(ctx, 1);
+    uint8_t out_value = 0;
+    esp_err_t ret = nvs_get_u8((nvs_handle)JS_GetPointerParameter(ctx, 0), key, &out_value);
+    JS_FreeString(ctx, key);
+    if (ret)  {
+        JS_RETURN_UNDEFINED(ctx);
+    }
+    JS_RETURN_NUMBER(ctx, out_value);
+}
+
+JS_C_FUNCTION(js_nvs_get_i16) {
+    JS_ParameterPointer(ctx, 0);
+    JS_ParameterString(ctx, 1);
+    const char *key = JS_GetStringParameter(ctx, 1);
+    int16_t out_value = 0;
+    esp_err_t ret = nvs_get_i16((nvs_handle)JS_GetPointerParameter(ctx, 0), key, &out_value);
+    JS_FreeString(ctx, key);
+    if (ret)  {
+        JS_RETURN_UNDEFINED(ctx);
+    }
+    JS_RETURN_NUMBER(ctx, out_value);
+}
+
+JS_C_FUNCTION(js_nvs_get_u16) {
+    JS_ParameterPointer(ctx, 0);
+    JS_ParameterString(ctx, 1);
+    const char *key = JS_GetStringParameter(ctx, 1);
+    uint16_t out_value = 0;
+    esp_err_t ret = nvs_get_u16((nvs_handle)JS_GetPointerParameter(ctx, 0), key, &out_value);
+    JS_FreeString(ctx, key);
+    if (ret)  {
+        JS_RETURN_UNDEFINED(ctx);
+    }
+    JS_RETURN_NUMBER(ctx, out_value);
+}
+
+JS_C_FUNCTION(js_nvs_get_i32) {
+    JS_ParameterPointer(ctx, 0);
+    JS_ParameterString(ctx, 1);
+    const char *key = JS_GetStringParameter(ctx, 1);
+    int32_t out_value = 0;
+    esp_err_t ret = nvs_get_i32((nvs_handle)JS_GetPointerParameter(ctx, 0), key, &out_value);
+    JS_FreeString(ctx, key);
+    if (ret)  {
+        JS_RETURN_UNDEFINED(ctx);
+    }
+    JS_RETURN_NUMBER(ctx, out_value);
+}
+
+JS_C_FUNCTION(js_nvs_get_u32) {
+    JS_ParameterPointer(ctx, 0);
+    JS_ParameterString(ctx, 1);
+    const char *key = JS_GetStringParameter(ctx, 1);
+    uint32_t out_value = 0;
+    esp_err_t ret = nvs_get_u32((nvs_handle)JS_GetPointerParameter(ctx, 0), key, &out_value);
+    JS_FreeString(ctx, key);
+    if (ret)  {
+        JS_RETURN_UNDEFINED(ctx);
+    }
+    JS_RETURN_NUMBER(ctx, out_value);
+}
+
+JS_C_FUNCTION(js_nvs_get_i64) {
+    JS_ParameterPointer(ctx, 0);
+    JS_ParameterString(ctx, 1);
+    const char *key = JS_GetStringParameter(ctx, 1);
+    int64_t out_value = 0;
+    esp_err_t ret = nvs_get_i64((nvs_handle)JS_GetPointerParameter(ctx, 0), key, &out_value);
+    JS_FreeString(ctx, key);
+    if (ret)  {
+        JS_RETURN_UNDEFINED(ctx);
+    }
+    JS_RETURN_NUMBER(ctx, out_value);
+}
+
+JS_C_FUNCTION(js_nvs_get_u64) {
+    JS_ParameterPointer(ctx, 0);
+    JS_ParameterString(ctx, 1);
+    const char *key = JS_GetStringParameter(ctx, 1);
+    uint64_t out_value = 0;
+    esp_err_t ret = nvs_get_u64((nvs_handle)JS_GetPointerParameter(ctx, 0), key, &out_value);
+    JS_FreeString(ctx, key);
+    if (ret)  {
+        JS_RETURN_UNDEFINED(ctx);
+    }
+    JS_RETURN_NUMBER(ctx, out_value);
+}
+
 JS_C_FUNCTION(js_nvs_erase_key) {
     JS_ParameterPointer(ctx, 0);
     JS_ParameterString(ctx, 1);
@@ -192,6 +300,14 @@ void register_nvs_functions(void *main_loop, void *js_ctx) {
         "setInt64", js_nvs_set_i64,
         "setUint64", js_nvs_set_u64,
         "setStr", js_nvs_set_str,
+        "getByte", js_nvs_get_u8,
+        "getInt16", js_nvs_get_i16,
+        "getUint16", js_nvs_get_u16,
+        "getInt32", js_nvs_get_i32,
+        "getUint32", js_nvs_get_u32,
+        "getInt64", js_nvs_get_i64,
+        "getUint64", js_nvs_get_u64,
+        "getStr", js_nvs_get_str,
         "eraseKey", js_nvs_erase_key,
         "eraseAll", js_nvs_erase_all,
         "commit", js_nvs_commit,
