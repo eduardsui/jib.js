@@ -34,7 +34,7 @@ var http = {
 			}
 		});
 		if (timeout)
-			this.socket.setReadTimeout(timeout);
+			this.socket.setTimeout(timeout);
 
 		this.socket.on('data', function(buf) {
 			if (_headers_set) {
@@ -225,7 +225,7 @@ var http = {
 		this._closeHandler = function(arg) { this.emit("end", arg); }
 
 		this.setTimeout = function(timeout) {
-			this.socket.setReadTimeout(timeout);
+			this.socket.setTimeout(timeout);
 			return this;
 		}
 
@@ -288,7 +288,7 @@ var http = {
 						this.write(data, encoding, callback);
 					if (this._headers["Transfer-Encoding"] === "chunked")
 						this.socket.write("0\r\n\r\n", "utf-8");
-					this.socket.setReadTimeout(this._readTimeout);
+					this.socket.setTimeout(this._readTimeout);
 				}
 			} catch (e) {
 				console.warn(e.toString());
@@ -337,7 +337,7 @@ var http = {
 
 		var gc_timestamp = Date.now();
 		var connectionHandler = function(c) {
-			c.setReadTimeout(3000);
+			c.setTimeout(3000);
 			c.on('error', function(e) {
 				console.log(e);
 			});

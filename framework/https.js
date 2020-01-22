@@ -33,7 +33,7 @@ var https = {
 			self.socket.ref();
 		});
 		if (timeout)
-			this.socket.setReadTimeout(timeout);
+			this.socket.setTimeout(timeout);
 
 		this.socket.on('data', function(buf) {
 			if (_headers_set) {
@@ -210,7 +210,7 @@ var https = {
 
 		var gc_timestamp = Date.now();
 		var connectionHandler = function(c) {
-			c.setReadTimeout(3000);
+			c.setTimeout(3000);
 			c.on('error', function(e) {
 				console.log(e);
 			});
