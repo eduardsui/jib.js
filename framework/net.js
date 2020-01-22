@@ -166,14 +166,13 @@ var net = {
 
 		this.setTimeout = function(timeout, callback) {
 			var err = _net_.setTimeout(this._socket, timeout);
-			if (callback)
-				setImmediate(function() { callback(err ? new Error(_net_.strerror(_net_.errno())) : undefined); });
 			if (err)
 				self.emit("error", new Error(_net_.strerror(_net_.errno())));
+			this.setReadTimeout(timeout, callback);
 			return this;
 		}
 
-		this.setReadTimeout = function(timeout) {
+		this.setReadTimeout = function(timeout, callback) {
 			this._readTimeout = timeout;
 			if (this._lastReadInterval)
 			 	clearInterval(this._lastReadInterval);
@@ -181,6 +180,8 @@ var net = {
 			if (timeout > 0) {
 				this._lastReadInterval = setInterval(function() {
 					if (new Date().getTime() - self._lastRead > timeout) {
+						if (callback)
+							callback();
 						clearInterval(self._lastReadInterval);
 						self.close();
 					}
