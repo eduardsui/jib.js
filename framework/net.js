@@ -261,8 +261,8 @@ var net = {
 					clearInterval(this._lastReadInterval);
 					this._lastReadInterval = undefined;
 				}
-				for (var k in this)
-					delete this[k];
+				// for (var k in this)
+				// 	delete this[k];
 				this.destroyed = true;
 			}
 			this.removeAllListeners();
