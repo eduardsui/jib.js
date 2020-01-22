@@ -1321,7 +1321,8 @@ void try_add_path(const char *path, int len) {
         return;
 
     if (len) {
-        for (int i = 0; i < paths_len; i ++) {
+        int i;
+        for (i = 0; i < paths_len; i ++) {
             // already set
             if ((strlen(paths[i]) == len) && (!strncmp(paths[i], path, len)))
                     return;
@@ -2211,7 +2212,8 @@ JS_C_FUNCTION(js_normalize_string) {
     int utf8_len = 0;
     int utf8_last_len = 1;
     int skip_next = 0;
-    for (int i = 0; i < len; i ++) {
+    int i;
+    for (i = 0; i < len; i ++) {
         if (utf8_len) {
             if (str2)
                 str2[index ++] = str[i];

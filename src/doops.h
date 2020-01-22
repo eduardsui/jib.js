@@ -879,7 +879,7 @@ static void _private_sleep(struct doops_loop *loop, int sleep_val) {
         int i;
         for (i = 0; i < nfds; i ++) {
             if (LOOP_IS_WRITABLE(loop)) {
-                if ((events[i].events & EPOLLOUT) {
+                if (events[i].events & EPOLLOUT) {
                     loop->event_fd = events[i].data.fd;
                     loop->event_data = loop->udata ? loop->udata[events[i].data.fd] : NULL;
 #ifdef WITH_BLOCKS
