@@ -278,7 +278,10 @@ var https = {
 					if (request) {
 						if (requestListener) {
 							var message = new https.IncomingMessage(c, request);
-							requestListener(message, new https.ServerResponse(c));
+							var response = new https.ServerResponse(c);
+							if ((request) && (request.Connection) && (request.Connection === "keep-alive"))
+								response.connectionClose = false;
+							requestListener(message, response);
 							var remaining = request.contentLength;
 							if (pending_buffer) {
 								if (remaining > 0) {

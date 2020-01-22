@@ -219,6 +219,7 @@ var http = {
 		this.statusCode = 200;
 		this.statusMessage = "OK";
 		this.writableEnded = false;
+		this.connectionClose = true;
 		this._readTimeout = this.socket._readTimeout;
 		
 		this._errorHandler = function(err) { this.end(); }
@@ -299,6 +300,10 @@ var http = {
 				delete this.socket._processRequest;
 				this.socket.removeListener("close", this._closeHandler);
 				this.socket.removeListener("error", this._errorHandler);
+				if (this.connectionClose) {
+					this.socket.close();
+					this.socket = undefined;
+				}
 			}
 			return this;
 		},
@@ -406,7 +411,10 @@ var http = {
 					if (request) {
 						if (requestListener) {
 							var message = new http.IncomingMessage(c, request);
-							requestListener(message, new http.ServerResponse(c));
+							var response = new http.ServerResponse(c);
+							if ((request) && (request.Connection) && (request.Connection === "keep-alive"))
+								response.connectionClose = false;
+							requestListener(message, response);
 							var remaining = request.contentLength;
 							if (pending_buffer) {
 								if (remaining > 0) {
