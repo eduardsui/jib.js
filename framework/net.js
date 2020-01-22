@@ -75,15 +75,21 @@ var net = {
 
 			this._socket = _net_.socket(net.constants.AF_INET, net.constants.SOCK_STREAM, 0);
 			if (this._socket < 0) {
-				this.emit("error", new Error(_net_.strerror(_net_.errno())));
+				setImmediate(function() {
+					this.emit("error", new Error(_net_.strerror(_net_.errno())));
+				});
 			} else
 			if (_net_.connect(this._socket, host, port)) {
-				this.emit("error", new Error(_net_.strerror(_net_.errno())));
+				setImmediate(function() {
+					this.emit("error", new Error(_net_.strerror(_net_.errno())));
+				});
 			} else {
 				connected = true;
-				this.emit("lookup");
-				this.emit("connect");
-				this.emit("ready");
+				setImmediate(function() {
+					self.emit("lookup");
+					self.emit("connect");
+					self.emit("ready");
+				});
 			}
 
 			if (connectListener)
@@ -164,18 +170,19 @@ var net = {
 			return this;
 		}
 
-		this.setTimeout = function(timeout, callback) {
+		this.setSocketTimeout = function(timeout) {
 			var err = _net_.setTimeout(this._socket, timeout);
 			if (err)
 				self.emit("error", new Error(_net_.strerror(_net_.errno())));
-			this.setReadTimeout(timeout, callback);
 			return this;
 		}
 
-		this.setReadTimeout = function(timeout, callback) {
+		this.setTimeout = function(timeout, callback) {
 			this._readTimeout = timeout;
-			if (this._lastReadInterval)
+			if (this._lastReadInterval) {
 			 	clearInterval(this._lastReadInterval);
+				this._lastReadInterval = undefined;
+			}
 
 			if (timeout > 0) {
 				this._lastReadInterval = setInterval(function() {
