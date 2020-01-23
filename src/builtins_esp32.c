@@ -148,7 +148,7 @@ JS_C_FUNCTION(js_lora_receive_packet) {
 
 JS_C_FUNCTION(js_lora_received) {
     int received = lora_received();
-    JS_RETURN_NUMBER(ctx, received);
+    JS_RETURN_BOOLEAN(ctx, received);
 }
 
 JS_C_FUNCTION(js_lora_packet_rssi) {

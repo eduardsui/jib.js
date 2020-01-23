@@ -363,8 +363,10 @@ lora_init(void)
    /*
     * Configure CPU hardware to communicate with the radio chip
     */
-   gpio_pad_select_gpio(RST_GPIO);
-   gpio_set_direction(RST_GPIO, GPIO_MODE_OUTPUT);
+   if (RST_GPIO >= 0) {
+       gpio_pad_select_gpio(RST_GPIO);
+       gpio_set_direction(RST_GPIO, GPIO_MODE_OUTPUT);
+   }
    gpio_pad_select_gpio(CS_GPIO);
    gpio_set_direction(CS_GPIO, GPIO_MODE_OUTPUT);
 

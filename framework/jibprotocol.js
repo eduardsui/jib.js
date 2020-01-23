@@ -422,7 +422,7 @@ var jiblib = {
 
 								if ((!msg.keyId) || (msg.keyId != self.keyIdCrc) || (msg.relay)) {
 									if (self.queue_repeater.length >= self.maxRelay) {
-										self.queue_repeater.pop();
+										self.queue_repeater.shift();
 										console.warn("dequeued repeater (too many messages)");
 									}
 									self.queue_repeater.push(buf);
@@ -445,10 +445,10 @@ var jiblib = {
 							buf = ack_buf;
 						} else {
 							if (self.queue.length) {
-								buf = self.queue.pop();
+								buf = self.queue.shift();
 								console.log("dequeue own message");
 							} else {
-								buf = self.queue_repeater.pop();
+								buf = self.queue_repeater.shift();
 								console.log("dequeue repeater message");
 							}
 						}
