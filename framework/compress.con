@@ -121,12 +121,22 @@ class Main {
 				filename = StrReplace(filename, ".js", "");
 				if ((filename == "https") || (filename == "tls"))
 					content += "#ifndef NO_TLS\n";
-					
+
+				var file_esp32 = ReadFile("esp32/" + filename + ".js");
 				var size;
 				var plain_data = false;
-				if (orig_size > 30 * 1024) {
+				if ((orig_size > 30 * 1024) || (file_esp32)) {
 					plain_data = true;
-					content += "#ifndef ESP32\n";
+					if (file_esp32) {
+						content += "#ifdef ESP32\n";
+						var file2_esp = line_compress(file_esp32);
+						file2_esp = stringify2(file2_esp);
+						var esp_size = length file2_esp;
+						content += "{\"$filename\",\n${file2_esp},\n$esp_size, $esp_size, 0},\n";
+						content += "#else\n";
+					} else {
+						content += "#ifndef ESP32\n";
+					}
 				}
 
 				content += "#ifdef NO_COMPRESSION\n";

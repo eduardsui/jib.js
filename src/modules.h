@@ -717,6 +717,42 @@ const static struct builtin_module builtin_modules[] = {
         "\t\xe7\x3a\x2a\x6f\x37\xe8\xb8\xb8\xfb\x0f\x14\x3a\xce\x52",
     2119, 7984, 1},
     #endif
+    #ifdef ESP32
+    {"base32",
+        "\"use strict\";var charmap=function(r,t){return t=t||{},r.split(\"\").forEach(fu" \
+        "nction(r,a){r in t||(t[r]=a)}),t},rfc4648={alphabet:\"ABCDEFGHIJKLMNOPQRSTUVWXYZ" \
+        "234567\",charmap:{0:14,1:8}};rfc4648.charmap=charmap(rfc4648.alphabet,rfc4648.ch" \
+        "armap);var crockford={alphabet:\"0123456789ABCDEFGHJKMNPQRSTVWXYZ\",charmap:{O:0" \
+        ",I:1,L:1}};crockford.charmap=charmap(crockford.alphabet,crockford.charmap);var b" \
+        "ase32hex={alphabet:\"0123456789ABCDEFGHIJKLMNOPQRSTUV\",charmap:{}};function Dec" \
+        "oder(r){if(this.buf=[],this.shift=8,this.carry=0,r){switch(r.type){case\"rfc4648" \
+        "\":this.charmap=exports.rfc4648.charmap;break;case\"crockford\":this.charmap=exp" \
+        "orts.crockford.charmap;break;case\"base32hex\":this.charmap=exports.base32hex.ch" \
+        "armap;break;default:throw new Error(\"invalid type\")}r.charmap&&(this.charmap=r" \
+        ".charmap)}}function Encoder(r){if(this.buf=\"\",this.shift=3,this.carry=0,r){swi" \
+        "tch(r.type){case\"rfc4648\":this.alphabet=exports.rfc4648.alphabet;break;case\"c" \
+        "rockford\":this.alphabet=exports.crockford.alphabet;break;case\"base32hex\":this" \
+        ".alphabet=exports.base32hex.alphabet;break;default:throw new Error(\"invalid typ" \
+        "e\")}r.alphabet?this.alphabet=r.alphabet:r.lc&&(this.alphabet=this.alphabet.toLo" \
+        "werCase())}}base32hex.charmap=charmap(base32hex.alphabet,base32hex.charmap),Deco" \
+        "der.prototype.charmap=rfc4648.charmap,Decoder.prototype.write=function(r){var t=" \
+        "this.charmap,e=this.buf,h=this.shift,c=this.carry;return r.toUpperCase().split(\"" \
+        "\").forEach(function(r){if(\"=\"!=r){var a=255&t[r];0<(h-=5)?c|=a<<h:c=h<0?(e.pu" \
+        "sh(c|a>>-h),a<<(h+=8)&255):(e.push(c|a),h=8,0)}}),this.shift=h,this.carry=c,this" \
+        "},Decoder.prototype.finalize=function(r){return r&&this.write(r),8!==this.shift&" \
+        "&0!==this.carry&&(this.buf.push(this.carry),this.shift=8,this.carry=0),this.buf}" \
+        ",Encoder.prototype.alphabet=rfc4648.alphabet,Encoder.prototype.write=function(r)" \
+        "{var a,t,e,h=this.shift,c=this.carry;for(e=0;e<r.length;e++)a=c|(t=r[e])>>h,this" \
+        ".buf+=this.alphabet[31&a],5<h&&(a=t>>(h-=5),this.buf+=this.alphabet[31&a]),c=t<<" \
+        "(h=5-h),h=8-h;return this.shift=h,this.carry=c,this},Encoder.prototype.finalize=" \
+        "function(r){return r&&this.write(r),3!==this.shift&&(this.buf+=this.alphabet[31&" \
+        "this.carry],this.shift=3,this.carry=0),this.buf},exports.encode=function(r,a){re" \
+        "turn new Encoder(a).finalize(r)},exports.decode=function(r,a){return new Decoder" \
+        "(a).finalize(r)},exports.Decoder=Decoder,exports.Encoder=Encoder,exports.charmap" \
+        "=charmap,exports.crockford=crockford,exports.rfc4648=rfc4648,exports.base32hex=b" \
+        "ase32hex;",
+    2775, 2775, 0},
+    #else
     #ifdef NO_COMPRESSION
     {"base32",
         "\"use strict\";\n\nvar charmap = function (alphabet, mappings) {\nmappings || (m" \
@@ -847,6 +883,7 @@ const static struct builtin_module builtin_modules[] = {
         "\xda\x0f\x0b\xa5\xa5\xd2\xcf\x37\x6e\xec\x97\xfd\x2f\x5d\x66\xe4\x97\xca\x3f\x81" \
         "\xb8\xf1\xe0\x5f\x86\xe8\xf7\x03",
     1573, 5371, 1},
+    #endif
     #endif
     #ifdef NO_COMPRESSION
     {"base64-js",
@@ -5082,6 +5119,89 @@ const static struct builtin_module builtin_modules[] = {
         "\x21\xbc\xfc\x07\x70\x2c\x8d\xab",
     4185, 13510, 1},
     #endif
+    #ifdef ESP32
+    {"events",
+        "\"use strict\";var ReflectOwnKeys,R=\"object\"==typeof Reflect?Reflect:null,Refl" \
+        "ectApply=R&&\"function\"==typeof R.apply?R.apply:function(e,t,n){return Function" \
+        ".prototype.apply.call(e,t,n)};function ProcessEmitWarning(e){console&&console.wa" \
+        "rn&&console.warn(e)}ReflectOwnKeys=R&&\"function\"==typeof R.ownKeys?R.ownKeys:O" \
+        "bject.getOwnPropertySymbols?function(e){return Object.getOwnPropertyNames(e).con" \
+        "cat(Object.getOwnPropertySymbols(e))}:function(e){return Object.getOwnPropertyNa" \
+        "mes(e)};var NumberIsNaN=Number.isNaN||function(e){return e!=e};function EventEmi" \
+        "tter(){EventEmitter.init.call(this)}((module.exports=EventEmitter).EventEmitter=" \
+        "EventEmitter).prototype._events=void 0,EventEmitter.prototype._eventsCount=0,Eve" \
+        "ntEmitter.prototype._maxListeners=void 0;var defaultMaxListeners=10;function che" \
+        "ckListener(e){if(\"function\"!=typeof e)throw new TypeError('The \"listener\" ar" \
+        "gument must be of type Function. Received type '+typeof e)}function $getMaxListe" \
+        "ners(e){return void 0===e._maxListeners?EventEmitter.defaultMaxListeners:e._maxL" \
+        "isteners}function _addListener(e,t,n,r){var i,s,o;if(checkListener(n),void 0===(" \
+        "s=e._events)?(s=e._events=Object.create(null),e._eventsCount=0):(void 0!==s.newL" \
+        "istener&&(e.emit(\"newListener\",t,n.listener?n.listener:n),s=e._events),o=s[t])" \
+        ",void 0===o)o=s[t]=n,++e._eventsCount;else if(\"function\"==typeof o?o=s[t]=r?[n" \
+        ",o]:[o,n]:r?o.unshift(n):o.push(n),0<(i=$getMaxListeners(e))&&o.length>i&&!o.war" \
+        "ned){o.warned=!0;var u=new Error(\"Possible EventEmitter memory leak detected. \"" \
+        "+o.length+\" \"+String(t)+\" listeners added. Use emitter.setMaxListeners() to i" \
+        "ncrease limit\");u.name=\"MaxListenersExceededWarning\",u.emitter=e,u.type=t,u.c" \
+        "ount=o.length,ProcessEmitWarning(u)}return e}function onceWrapper(){for(var e=[]" \
+        ",t=0;t<arguments.length;t++)e.push(arguments[t]);this.fired||(this.target.remove" \
+        "Listener(this.type,this.wrapFn),this.fired=!0,ReflectApply(this.listener,this.ta" \
+        "rget,e))}function _onceWrap(e,t,n){var r={fired:!1,wrapFn:void 0,target:e,type:t" \
+        ",listener:n},i=onceWrapper.bind(r);return i.listener=n,r.wrapFn=i}function _list" \
+        "eners(e,t,n){var r=e._events;if(void 0===r)return[];var i=r[t];return void 0===i" \
+        "?[]:\"function\"==typeof i?n?[i.listener||i]:[i]:n?unwrapListeners(i):arrayClone" \
+        "(i,i.length)}function listenerCount(e){var t=this._events;if(void 0!==t){var n=t" \
+        "[e];if(\"function\"==typeof n)return 1;if(void 0!==n)return n.length}return 0}fu" \
+        "nction arrayClone(e,t){for(var n=new Array(t),r=0;r<t;++r)n[r]=e[r];return n}fun" \
+        "ction spliceOne(e,t){for(;t+1<e.length;t++)e[t]=e[t+1];e.pop()}function unwrapLi" \
+        "steners(e){for(var t=new Array(e.length),n=0;n<t.length;++n)t[n]=e[n].listener||" \
+        "e[n];return t}Object.defineProperty(EventEmitter,\"defaultMaxListeners\",{enumer" \
+        "able:!0,get:function(){return defaultMaxListeners},set:function(e){if(\"number\"" \
+        "!=typeof e||e<0||NumberIsNaN(e))throw new RangeError('The value of \"defaultMaxL" \
+        "isteners\" is out of range. It must be a non-negative number. Received '+e+\".\"" \
+        ");defaultMaxListeners=e}}),EventEmitter.init=function(){void 0!==this._events&&t" \
+        "his._events!==Object.getPrototypeOf(this)._events||(this._events=Object.create(n" \
+        "ull),this._eventsCount=0),this._maxListeners=this._maxListeners||void 0},EventEm" \
+        "itter.prototype.setMaxListeners=function(e){if(\"number\"!=typeof e||e<0||Number" \
+        "IsNaN(e))throw new RangeError('The value of \"n\" is out of range. It must be a " \
+        "non-negative number. Received '+e+\".\");return this._maxListeners=e,this},Event" \
+        "Emitter.prototype.getMaxListeners=function(){return $getMaxListeners(this)},Even" \
+        "tEmitter.prototype.emit=function(e){for(var t=[],n=1;n<arguments.length;n++)t.pu" \
+        "sh(arguments[n]);var r=\"error\"===e,i=this._events;if(void 0!==i)r=r&&void 0===" \
+        "i.error;else if(!r)return!1;if(r){var s;if(0<t.length&&(s=t[0]),s instanceof Err" \
+        "or)throw s;var o=new Error(\"Unhandled error.\"+(s?\" (\"+s.message+\")\":\"\"))" \
+        ";throw o.context=s,o}var u=i[e];if(void 0===u)return!1;if(\"function\"==typeof u" \
+        ")ReflectApply(u,this,t);else{var v=u.length,a=arrayClone(u,v);for(n=0;n<v;++n)Re" \
+        "flectApply(a[n],this,t)}return!0},EventEmitter.prototype.addListener=function(e," \
+        "t){return _addListener(this,e,t,!1)},EventEmitter.prototype.on=EventEmitter.prot" \
+        "otype.addListener,EventEmitter.prototype.prependListener=function(e,t){return _a" \
+        "ddListener(this,e,t,!0)},EventEmitter.prototype.once=function(e,t){return checkL" \
+        "istener(t),this.on(e,_onceWrap(this,e,t)),this},EventEmitter.prototype.prependOn" \
+        "ceListener=function(e,t){return checkListener(t),this.prependListener(e,_onceWra" \
+        "p(this,e,t)),this},EventEmitter.prototype.removeListener=function(e,t){var n,r,i" \
+        ",s,o;if(checkListener(t),void 0===(r=this._events))return this;if(void 0===(n=r[" \
+        "e]))return this;if(n===t||n.listener===t)0==--this._eventsCount?this._events=Obj" \
+        "ect.create(null):(delete r[e],r.removeListener&&this.emit(\"removeListener\",e,n" \
+        ".listener||t));else if(\"function\"!=typeof n){for(i=-1,s=n.length-1;0<=s;s--)if" \
+        "(n[s]===t||n[s].listener===t){o=n[s].listener,i=s;break}if(i<0)return this;0===i" \
+        "?n.shift():spliceOne(n,i),1===n.length&&(r[e]=n[0]),void 0!==r.removeListener&&t" \
+        "his.emit(\"removeListener\",e,o||t)}return this},EventEmitter.prototype.off=Even" \
+        "tEmitter.prototype.removeListener,EventEmitter.prototype.removeAllListeners=func" \
+        "tion(e){var t,n,r;if(void 0===(n=this._events))return this;if(void 0===n.removeL" \
+        "istener)return 0===arguments.length?(this._events=Object.create(null),this._even" \
+        "tsCount=0):void 0!==n[e]&&(0==--this._eventsCount?this._events=Object.create(nul" \
+        "l):delete n[e]),this;if(0===arguments.length){var i,s=Object.keys(n);for(r=0;r<s" \
+        ".length;++r)\"removeListener\"!==(i=s[r])&&this.removeAllListeners(i);return thi" \
+        "s.removeAllListeners(\"removeListener\"),this._events=Object.create(null),this._" \
+        "eventsCount=0,this}if(\"function\"==typeof(t=n[e]))this.removeListener(e,t);else" \
+        " if(void 0!==t)for(r=t.length-1;0<=r;r--)this.removeListener(e,t[r]);return this" \
+        "},EventEmitter.prototype.listeners=function(e){return _listeners(this,e,!0)},Eve" \
+        "ntEmitter.prototype.rawListeners=function(e){return _listeners(this,e,!1)},Event" \
+        "Emitter.listenerCount=function(e,t){return\"function\"==typeof e.listenerCount?e" \
+        ".listenerCount(t):listenerCount.call(e,t)},EventEmitter.prototype.listenerCount=" \
+        "listenerCount,EventEmitter.prototype.eventNames=function(){return 0<this._events" \
+        "Count?ReflectOwnKeys(this._events):[]};",
+    6988, 6988, 0},
+    #else
     #ifdef NO_COMPRESSION
     {"events",
         "'use strict';\nvar R = typeof Reflect === 'object' ? Reflect : null\nvar Reflect" \
@@ -5331,6 +5451,7 @@ const static struct builtin_module builtin_modules[] = {
         "\xa8\x1a\x19\x8b\xa5\x50\x76\x72\x56\x83\x21\x3d\xda\x31\xc5\xed\x8f\xca\xa5\x73" \
         "\x89\x87\x01\xfe\xc3\xe8\x6f\x37\x74\xc6\xbe",
     2444, 9358, 1},
+    #endif
     #endif
     #ifndef ESP32
     #ifdef NO_COMPRESSION
@@ -32973,6 +33094,25 @@ const static struct builtin_module builtin_modules[] = {
         "\x5b\x0b\xcc\xb7\x12\x7f\x02\x98\xd1\xd1\xbb",
     458, 1352, 1},
     #endif
+    #ifdef ESP32
+    {"stream",
+        "'use strict';\nvar EE = require('events').EventEmitter;\nmodule.exports = Stream" \
+        ";\nfunction __unsupportedStream() {\n}\nutil.inherits(__unsupportedStream, EE);\n" \
+        "Stream.Readable = __unsupportedStream;\nStream.Writable = __unsupportedStream;\n" \
+        "Stream.Duplex = __unsupportedStream;\nStream.Transform = __unsupportedStream;\nS" \
+        "tream.PassThrough = __unsupportedStream;\nStream.Stream = Stream;\nfunction Stre" \
+        "am() {\nEE.call(this);\n}\nStream.prototype.pipe = function(dest, options) {\nfu" \
+        "nction onerror(er) {\ncleanup();\nif (EE.listenerCount(this, 'error') === 0)\nth" \
+        "row er;\n}\nsource.on('error', onerror);\ndest.on('error', onerror);\nfunction c" \
+        "leanup() {\nsource.removeListener('data', ondata);\ndest.removeListener('drain'," \
+        " ondrain);\nsource.removeListener('end', onend);\nsource.removeListener('close'," \
+        " onclose);\nsource.removeListener('error', onerror);\ndest.removeListener('error" \
+        "', onerror);\nsource.removeListener('end', cleanup);\nsource.removeListener('clo" \
+        "se', cleanup);\ndest.removeListener('close', cleanup);\n}\nsource.on('end', clea" \
+        "nup);\nsource.on('close', cleanup);\ndest.on('close', cleanup);\nreturn dest;\n}" \
+        ";\nutil.inherits(Stream, EE);",
+    1282, 1282, 0},
+    #else
     #ifdef NO_COMPRESSION
     {"stream",
         "'use strict';\nmodule.exports = Stream;\nvar EE = require('events').EventEmitter" \
@@ -33033,6 +33173,7 @@ const static struct builtin_module builtin_modules[] = {
         "\xfc\xf7\xc9\x33\x4a\x06\x62\x51\t\xa1\x98\x76\x0e\x2e\x9a\x6f\x9f\0\xe0\x66\x61" \
         "\x32",
     609, 1770, 1},
+    #endif
     #endif
     #ifdef NO_COMPRESSION
     {"string_decoder",
@@ -34628,6 +34769,39 @@ const static struct builtin_module builtin_modules[] = {
         "\x33\x3a\x24\x52\x6a\xa0\x46\xf4\x1e\xfc\x17\x0f\x6f\x24\xf3",
     3618, 10202, 1},
     #endif
+    #ifdef ESP32
+    {"util",
+        "'use strict';\nvar isArray = module.exports.isArray = Array.isArray;\nfunction i" \
+        "sBoolean(arg) {\nreturn typeof arg === 'boolean';\n}\nmodule.exports.isBoolean =" \
+        " isBoolean;\nfunction isNull(arg) {\nreturn arg === null;\n}\nmodule.exports.isN" \
+        "ull = isNull;\nfunction isNullOrUndefined(arg) {\nreturn arg == null;\n}\nmodule" \
+        ".exports.isNullOrUndefined = isNullOrUndefined;\nfunction isNumber(arg) {\nretur" \
+        "n typeof arg === 'number';\n}\nmodule.exports.isNumber = isNumber;\nfunction isS" \
+        "tring(arg) {\nreturn typeof arg === 'string';\n}\nmodule.exports.isString = isSt" \
+        "ring;\nfunction isSymbol(arg) {\nreturn typeof arg === 'symbol';\n}\nmodule.expo" \
+        "rts.isSymbol = isSymbol;\nfunction isUndefined(arg) {\nreturn arg === void 0;\n}" \
+        "\nmodule.exports.isUndefined = isUndefined;\nfunction isRegExp(re) {\nreturn isO" \
+        "bject(re) && objectToString(re) === '[object RegExp]';\n}\nmodule.exports.isRegE" \
+        "xp = isRegExp;\nfunction isObject(arg) {\nreturn typeof arg === 'object' && arg " \
+        "!== null;\n}\nmodule.exports.isObject = isObject;\nfunction isDate(d) {\nreturn " \
+        "isObject(d) && objectToString(d) === '[object Date]';\n}\nmodule.exports.isDate " \
+        "= isDate;\nfunction isError(e) {\nreturn isObject(e) &&\n(objectToString(e) === " \
+        "'[object Error]' || e instanceof Error);\n}\nmodule.exports.isError = isError;\n" \
+        "function isFunction(arg) {\nreturn typeof arg === 'function';\n}\nmodule.exports" \
+        ".isFunction = isFunction;\nfunction isPrimitive(arg) {\nreturn arg === null ||\n" \
+        "typeof arg === 'boolean' ||\ntypeof arg === 'number' ||\ntypeof arg === 'string'" \
+        " ||\ntypeof arg === 'symbol' ||  // ES6 symbol\ntypeof arg === 'undefined';\n}\n" \
+        "module.exports.isPrimitive = isPrimitive;\nfunction isBuffer(arg) {\nreturn arg " \
+        "instanceof Buffer;\n}\nmodule.exports.isBuffer = isBuffer;\nmodule.exports.inher" \
+        "its = function(ctor, superCtor) {\nctor.super_ = superCtor;\nctor.prototype = Ob" \
+        "ject.create(superCtor.prototype, {\nconstructor: {\nvalue: ctor,\nenumerable: fa" \
+        "lse,\nwritable: true,\nconfigurable: true\n}\n});\n};\nmodule.exports._extend = " \
+        "function(origin, add) {\nif (!add || !isObject(add)) return origin;\nvar keys = " \
+        "Object.keys(add);\nvar i = keys.length;\nwhile (i--) {\norigin[keys[i]] = add[ke" \
+        "ys[i]];\n}\nreturn origin;\n};\nfunction hasOwnProperty(obj, prop) {\nreturn Obj" \
+        "ect.prototype.hasOwnProperty.call(obj, prop);\n}",
+    2546, 2546, 0},
+    #else
     #ifdef NO_COMPRESSION
     {"util",
         "'use strict';\nvar formatRegExp = /%[sdj%]/g;\nmodule.exports.format = function(" \
@@ -35035,6 +35209,7 @@ const static struct builtin_module builtin_modules[] = {
         "\xb0\x33\x4b\x3e\xf3\x73\x31\xe9\x0c\x5e\x74\xfd\x37\xa2\x46\x47\x96\x03\x44\x9a" \
         "\x35\x41\x56\x08\x27\x8e\x5b\xe0\xd1\x04\x3b\xfc\x1f\x99\x3e\xb6\x8e",
     4375, 15028, 1},
+    #endif
     #endif
     #ifndef ESP32
     #ifdef NO_COMPRESSION
