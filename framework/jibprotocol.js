@@ -22,7 +22,7 @@ var jiblib = {
 
 		if (no_encoding)
 			return { "public": mypublic, "private": seed };
-		var base32_encode = require("base32").encode;
+		var base32_encode = _crypto_.b32Encode;
 		var obj = { "public": base32_encode(mypublic), "private": base32_encode(seed) };
 		if (keyval)
 			keyval.setStr("jibkey", JSON.stringify(obj));
@@ -30,11 +30,10 @@ var jiblib = {
 	},
 
 	jibprotocol: function(network_key, keyId, privateKey, lora_options) {
-		var base32_decode = undefined;
-		if (typeof network_key == "string") {
-			base32_decode = require("base32").decode;
+		var base32_decode = _crypto_.b32Decode;
+		if (typeof network_key == "string")
 			network_key = new Uint8Array(base32_decode(network_key));
-		}
+
 		if (!keyId) {
 			var handle;
 			var key_store;
@@ -54,8 +53,6 @@ var jiblib = {
 
 		if ((keyId) && (typeof keyId === "string")) {
 			console.log("Device id is " + keyId);
-			if (!base32_decode)
-				base32_decode = require("base32").decode;
 			this.keyId = new Uint8Array(base32_decode(keyId));
 		} else {
 			this.keyId = keyId;
@@ -145,11 +142,9 @@ var jiblib = {
 		}
 
 		this.addFriend = function(name, key) {
-			if (typeof key === "string") {
-				if (!base32_decode)
-					base32_decode = require("base32").decode;
+			if (typeof key === "string")
 				key = new Uint8Array(base32_decode(key));
-			}
+
 			if (!key)
 				return this;
 
@@ -198,11 +193,9 @@ var jiblib = {
 			header[1] = crc % 0x100;
 
 			var dest_keyId = 0;
-			if (typeof destination_key === "string") {
-				if (!base32_decode)
-					base32_decode = require("base32").decode;
+			if (typeof destination_key === "string")
 				destination_key = new Uint8Array(base32_decode(destination_key));
-			}
+
 			if (destination_key)
 				dest_keyId = _crypto_.crc16(destination_key);
 

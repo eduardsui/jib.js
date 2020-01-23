@@ -11,6 +11,76 @@
 
 #include "misc/chacha20.c"
 
+int base32_decode(const uint8_t *encoded, uint8_t *result, int bufSize) {
+    int buffer = 0;
+    int bitsLeft = 0;
+    int count = 0;
+    for (const uint8_t *ptr = encoded; count < bufSize && *ptr; ++ptr) {
+        uint8_t ch = *ptr;
+        if (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n' || ch == '-')
+            continue;
+        buffer <<= 5;
+
+        if (ch == '0')
+            ch = 'O';
+        else
+        if (ch == '1')
+            ch = 'L';
+        else
+        if (ch == '8')
+            ch = 'B';
+
+        if ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z'))
+            ch = (ch & 0x1F) - 1;
+        else
+        if (ch >= '2' && ch <= '7')
+            ch -= '2' - 26;
+        else
+            return -1;
+
+        buffer |= ch;
+        bitsLeft += 5;
+        if (bitsLeft >= 8) {
+            result[count++] = buffer >> (bitsLeft - 8);
+            bitsLeft -= 8;
+        }
+    }
+    if (count < bufSize)
+        result[count] = '\000';
+    return count;
+}
+
+int base32_encode(const uint8_t *data, int length, uint8_t *result, int bufSize) {
+    if (length < 0 || length > (1 << 28))
+        return -1;
+
+    int count = 0;
+    if (length > 0) {
+        int buffer = data[0];
+        int next = 1;
+        int bitsLeft = 8;
+        while (count < bufSize && (bitsLeft > 0 || next < length)) {
+            if (bitsLeft < 5) {
+                if (next < length) {
+                    buffer <<= 8;
+                    buffer |= data[next++] & 0xFF;
+                    bitsLeft += 8;
+                } else {
+                    int pad = 5 - bitsLeft;
+                    buffer <<= pad;
+                    bitsLeft += pad;
+                }
+            }
+            int index = 0x1F & (buffer >> (bitsLeft - 5));
+            bitsLeft -= 5;
+            result[count++] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"[index];
+        }
+    }
+    if (count < bufSize)
+        result[count] = '\000';
+    return count;
+}
+
 JS_C_FUNCTION(js_x25519) {
     if (JS_ParameterCount(ctx) < 2)
         JS_RETURN_NOTHING(ctx);
@@ -164,6 +234,58 @@ JS_C_FUNCTION(js_crc16) {
     JS_RETURN_NUMBER(ctx, crc);
 }
 
+JS_C_FUNCTION(js_b32_encode) {
+    if (JS_ParameterCount(ctx) < 1)
+        JS_RETURN_NOTHING(ctx);
+
+    js_size_t buffer_sz;
+    unsigned char *buffer = (unsigned char *)JS_GetBufferParameter(ctx, 0, &buffer_sz);
+
+    char *out_buf = (char *)malloc(buffer_sz * 2);
+    if (!out_buf) {
+        JS_RETURN_NOTHING(ctx);
+    }
+    int len = base32_encode(buffer, buffer_sz, (unsigned char *)out_buf, buffer_sz * 2);
+    if (len < 0) {
+        free(out_buf);
+        JS_RETURN_NOTHING(ctx);
+    }
+    JS_RETURN_STRING_FREE(ctx, out_buf);
+}
+
+JS_C_FUNCTION(js_b32_decode) {
+    JS_ParameterString(ctx, 0);
+
+    js_size_t len = 0;
+    const char *str = JS_GetStringParameterLen(ctx, 0, &len);
+#ifdef WITH_DUKTAPE
+    unsigned char *buf = (unsigned char *)duk_push_fixed_buffer(ctx, len);
+    if (!buf) {
+        JS_RETURN_NOTHING(ctx);
+    }
+    int decoded_len = base32_decode((const unsigned char *)str, buf, len);
+    if (decoded_len < 0) {
+        duk_pop(ctx);
+        JS_RETURN_NOTHING(ctx);
+    }
+    duk_push_buffer_object(ctx, -1, 0, decoded_len, DUK_BUFOBJ_UINT8ARRAY);
+    return 1;
+#else
+    unsigned char *buf = (unsigned char *)malloc(len);
+    if (!buf) {
+        JS_RETURN_NOTHING(ctx);
+    }
+    int decoded_len = base32_decode((const unsigned char *)str, buf, len);
+    if (decoded_len < 0) {
+        free(buf);
+        JS_RETURN_NOTHING(ctx);
+    }
+    js_object_type val = JS_NewArrayBufferCopy(ctx, (const uint8_t *)buf, decoded_len);
+    free(buf);
+    return val;
+#endif
+}
+
 void register_crypto_functions(void *main_loop, void *js_ctx) {
     JS_CONTEXT ctx = (JS_CONTEXT )js_ctx;
 
@@ -172,6 +294,8 @@ void register_crypto_functions(void *main_loop, void *js_ctx) {
         "chacha20", js_chacha20,
         "crc8", js_crc8,
         "crc16", js_crc16,
+        "b32Encode", js_b32_encode,
+        "b32Decode", js_b32_decode,
         NULL, NULL
     );
 }
