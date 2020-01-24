@@ -378,6 +378,7 @@ JS_C_FUNCTION(js_nvs_get_str) {
     if (err) {
         mdb_txn_abort(txn);
         mdb_close(env, dbi);
+        JS_RETURN_NOTHING(ctx);
     }
 #ifdef WITH_DUKTAPE
     duk_push_lstring(ctx, (char *)data.mv_data, data.mv_size);

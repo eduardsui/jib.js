@@ -217,8 +217,6 @@
             size_t byte_offset = 0;
             size_t buf_size = 0;
             js_object_type obj = JS_GetTypedArrayBuffer(ctx, v, &byte_offset, sz, NULL);
-            if (byte_offset < 0)
-                byte_offset = 0;
             buf = (char *)JS_GetArrayBuffer(ctx, &buf_size, obj) + byte_offset;
             JS_FreeValue(ctx, obj);
         }

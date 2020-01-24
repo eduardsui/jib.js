@@ -68,12 +68,13 @@ var jiblib = {
 		this._friends = { };
 		this.netKey = network_key;
 		this._sent_cache = { };
+		this.maxCache = 200;
 		this._acks = { };
 
 		lora.init();
 		if (!lora_options)
 			lora_options = { };
-		lora.setFrequency(lora_options.frequency ? lora_options.frequency : 433e6);
+		lora.setFrequency(lora_options.frequency ? lora_options.frequency : 868e6);
 		lora.setTxPower(lora_options.txPower ? lora_options.txPower : 17);
 		lora.setSpreadingFactor(lora_options.spreadingFactor ? lora_options.spreadingFactor : 11);
 		if (lora_options.bandWidth)
@@ -83,6 +84,7 @@ var jiblib = {
 		this.maxRelay = lora_options.maxRelay ? lora_options.maxRelay : 100;
 		this.txInterval =  lora_options.txInterval ? lora_options.txInterval :  10000;
 		this.trimBigMessages = true;
+		this.repeatThreshold = lora_options.repeatThreshold ? lora_options.repeatThreshold : -50;
 	
 		lora.reset();
 		lora.receive();
@@ -290,8 +292,14 @@ var jiblib = {
 				destination_key = this._friends[destination_key];
 
 			var msg_type = 0;
-			if (ttl)
-				msg_type = 1;
+			if (ttl) {
+				if (ttl < 0) {
+					ttl = 0;
+					msg_type = 3;
+				} else {
+					msg_type = 1;
+				}
+			}
 			var buf = pack(data, msg_type, destination_key, ttl, on_ack);
 			if (buf) {
 				this.queue.push(buf);
@@ -353,8 +361,9 @@ var jiblib = {
 						if (payload2[0] == 0x01) {
 							var msg_crc = new Uint8Array(md5(payload_data).match(/.{1,2}/g).map(function(byte) {return parseInt(byte, 16);}));
 							var ack = pack(msg_crc, 0x02, key);
+							// acks are priority messages
 							if (ack)
-								self.queue.push(ack);
+								self.queue.unshift(ack);
 						} else
 						if (payload2[0] == 0x02) {
 							console.log("received ack message");
@@ -385,12 +394,12 @@ var jiblib = {
 					delete self._sent_cache[k];
 			}
 			var keys = Object.keys(self._sent_cache);
-			if (keys.length > 200) {
+			if (keys.length > self.maxCache) {
 				var len = keys.length;
 				for (k in self._sent_cache) {
 					delete self._sent_cache[k];
 					len --;
-					if (len <= 200)
+					if (len <= self.maxCache)
 						break;
 				}
 			}
@@ -399,9 +408,12 @@ var jiblib = {
 		this.start = function(timeout) {
 			timeout = timeout ? timeout : 200;
 			lora.receive();
+			// dummy send (some bug with lora module, doesn't receive until send is called)
+			this.send("(o)(o)", undefined, -1);
 			this.send_interval = setInterval(function() {
 				if (lora.received()) {
 					buf = lora.recv();
+					var rssi = lora.rssi();
 					lora.receive();
 					if (buf) {
 						var msg = unpack(buf);
@@ -413,7 +425,8 @@ var jiblib = {
 								if (((!msg.keyId) || (msg.keyId == self.keyIdCrc)) && (self.onmessage) && (!msg.relay))
 									self.onmessage(msg);
 
-								if ((!msg.keyId) || (msg.keyId != self.keyIdCrc) || (msg.relay)) {
+								// msg type 3 => no repeat
+								if (((!msg.keyId) || (msg.keyId != self.keyIdCrc) || (msg.relay)) && (rssi < self.repeatThreshold) && (msg.type !== 3)) {
 									if (self.queue_repeater.length >= self.maxRelay) {
 										self.queue_repeater.shift();
 										console.warn("dequeued repeater (too many messages)");
@@ -427,7 +440,7 @@ var jiblib = {
 						}
 					}
 					lora.receive();
-					clean(120000);
+					clean(1800000);
 				}
 				var ack_buf = self.ackSend();
 				if ((self.queue.length) || (self.queue_repeater.length) || (ack_buf)) {
@@ -437,13 +450,7 @@ var jiblib = {
 						if (ack_buf) {
 							buf = ack_buf;
 						} else {
-							if (self.queue.length) {
-								buf = self.queue.shift();
-								console.log("dequeue own message");
-							} else {
-								buf = self.queue_repeater.shift();
-								console.log("dequeue repeater message");
-							}
+							buf = self.queue.length ? self.queue.shift() : self.queue_repeater.shift();
 						}
 						lora.send(buf);
 						lora.receive();
