@@ -421,9 +421,11 @@ var jiblib = {
 							var k = md5(buf);
 							if (!self._sent_cache[k]) {
 								self._sent_cache[k] = Date.now();
-								console.log("received message");
-								if (((!msg.keyId) || (msg.keyId == self.keyIdCrc)) && (self.onmessage) && (!msg.relay))
+								console.log("received message (rssi " + rssi + " )");
+								if (((!msg.keyId) || (msg.keyId == self.keyIdCrc)) && (self.onmessage) && (!msg.relay)) {
+									msg.rssi = rssi;
 									self.onmessage(msg);
+								}
 
 								// msg type 3 => no repeat
 								if (((!msg.keyId) || (msg.keyId != self.keyIdCrc) || (msg.relay)) && (rssi < self.repeatThreshold) && (msg.type !== 3)) {
