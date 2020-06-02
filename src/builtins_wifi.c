@@ -5,6 +5,7 @@
 #include <esp_wifi.h>
 #include <tcpip_adapter.h>
 #include <esp_event_loop.h>
+#include <nvs_flash.h>
 #include <freertos/event_groups.h>
 
 static unsigned char wifi_initialized = 0;
@@ -352,8 +353,9 @@ JS_C_FUNCTION(js_esp_wifi_scan_start) {
     scan_config.ssid = (uint8_t *) ssid;
 
     esp_err_t err = esp_wifi_scan_start(&scan_config, 0);
-    if (ssid)
+    if (ssid) {
         JS_FreeString(ctx, ssid);
+    }
     JS_RETURN_NUMBER(ctx, err);
 }
 
@@ -483,6 +485,152 @@ JS_C_FUNCTION(js_esp_err_to_name) {
     JS_RETURN_STRING(ctx, esp_err_to_name(JS_GetIntParameter(ctx, 0)));
 }
 
+JS_C_FUNCTION(js_lazy_ap_wifi) {
+    JS_ParameterObject(ctx, 0);
+    
+#ifdef WITH_DUKTAPE
+    wifi_config_t wifi_config = {
+        .ap = {
+            .ssid = "hello",
+            .ssid_len = strlen("hello"),
+            .password = "helloworld",
+            .max_connection = 4,
+            .authmode = WIFI_AUTH_WPA_WPA2_PSK,
+        },
+    };
+    duk_get_prop_string(ctx, 0, "ssid");
+    if (duk_is_string(ctx,-1)) {
+        strncpy((char *)wifi_config.ap.ssid, duk_safe_to_string(ctx, -1), 32);
+        wifi_config.ap.ssid_len = strlen((char *)wifi_config.ap.ssid);
+    }
+
+    duk_get_prop_string(ctx, 0, "password");
+    if (duk_is_string(ctx, -1))
+        strncpy((char *)wifi_config.ap.password, duk_safe_to_string(ctx, -1), 64);
+
+    duk_get_prop_string(ctx, 0, "authmode");
+    if (duk_is_number(ctx, -1))
+        wifi_config.ap.authmode = (wifi_auth_mode_t)duk_get_int(ctx, -1);
+
+    duk_get_prop_string(ctx, 0, "max_connection");
+    if (duk_is_number(ctx, -1))
+        wifi_config.ap.max_connection = duk_get_int(ctx, -1);
+
+    duk_get_prop_string(ctx, 0, "beacon_interval");
+    if (duk_is_number(ctx, -1))
+        wifi_config.ap.beacon_interval = duk_get_int(ctx, -1);
+
+    duk_get_prop_string(ctx, 0, "channel");
+    if (duk_is_number(ctx, -1))
+        wifi_config.ap.channel = duk_get_int(ctx, -1);
+#else
+    wifi_config_t wifi_config = {
+        .ap = {
+            .ssid = "hello",
+            .ssid_len = strlen("hello"),
+            .password = "helloworld",
+            .max_connection = 4,
+            .authmode = WIFI_AUTH_WPA_WPA2_PSK,
+        },
+    };
+    JSValueConst val = JS_GetPropertyStr(ctx, argv[0], "ssid");
+    if (JS_IsString(val)) {
+        const char *str = JS_ToCString(ctx, val);
+        strncpy((char *)wifi_config.ap.ssid, str, 32);
+        wifi_config.ap.ssid_len = strlen((char *)wifi_config.ap.ssid);
+        JS_FreeString(ctx, str);
+    }
+    JS_FreeValue(ctx, val);
+
+    val = JS_GetPropertyStr(ctx, argv[0], "password");
+    if (JS_IsString(val)) {
+        const char *str = JS_ToCString(ctx, val);
+        strncpy((char *)wifi_config.ap.password, str, 64);
+        JS_FreeString(ctx, str);
+    }
+    JS_FreeValue(ctx, val);
+
+    val = JS_GetPropertyStr(ctx, argv[0], "authmode");
+    if (JS_IsNumber(val))
+        wifi_config.ap.authmode = (wifi_auth_mode_t)_JS_GetIntParameter(ctx, val);
+    JS_FreeValue(ctx, val);
+
+    val = JS_GetPropertyStr(ctx, argv[0], "max_connection");
+    if (JS_IsNumber(val))
+        wifi_config.ap.max_connection = _JS_GetIntParameter(ctx, val);
+    JS_FreeValue(ctx, val);
+
+    val = JS_GetPropertyStr(ctx, argv[0], "beacon_interval");
+    if (JS_IsNumber(val))
+        wifi_config.ap.beacon_interval = _JS_GetIntParameter(ctx, val);
+    JS_FreeValue(ctx, val);
+
+    val = JS_GetPropertyStr(ctx, argv[0], "channel");
+    if (JS_IsNumber(val))
+        wifi_config.ap.channel = _JS_GetIntParameter(ctx, val);
+    JS_FreeValue(ctx, val);
+#endif
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+      ESP_ERROR_CHECK(nvs_flash_erase());
+      ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
+
+    tcpip_adapter_init();
+
+    tcpip_adapter_dhcps_stop(TCPIP_ADAPTER_IF_AP);
+
+    tcpip_adapter_ip_info_t ip_info;
+    ip_info.ip.addr = ipaddr_addr("192.168.48.1");
+    ip_info.gw.addr = ipaddr_addr("0.0.0.0");
+    ip_info.netmask.addr = ipaddr_addr("255.255.255.0");
+    ESP_ERROR_CHECK(tcpip_adapter_set_ip_info(TCPIP_ADAPTER_IF_AP, &ip_info));
+
+    tcpip_adapter_dhcps_start(TCPIP_ADAPTER_IF_AP);
+
+    ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL));
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+    ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_FLASH));
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
+    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config));
+    ESP_ERROR_CHECK(esp_wifi_start());
+
+    JS_RETURN_NOTHING(ctx);
+}
+
+JS_C_FUNCTION(js_lazy_sta_wifi) {
+    JS_ParameterString(ctx, 0);
+    JS_ParameterString(ctx, 1);
+
+    const char *ssid = JS_GetStringParameter(ctx, 0);
+    const char *pass = JS_GetStringParameter(ctx, 1);
+
+    tcpip_adapter_init();
+    ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL));
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+    ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
+    wifi_config_t wifi_config = {
+        .sta = {
+            .ssid = "",
+            .password = "",
+        },
+    };
+    strncpy((char *)wifi_config.sta.ssid, ssid, 32);
+    strncpy((char *)wifi_config.sta.password, pass, 64);
+
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
+    ESP_ERROR_CHECK(esp_wifi_start());
+
+    JS_FreeString(ctx, ssid);
+    JS_FreeString(ctx, pass);
+
+    JS_RETURN_NOTHING(ctx);
+}
+
 void register_wifi_functions(void *main_loop, void *js_ctx) {
     JS_CONTEXT ctx = (JS_CONTEXT )js_ctx;
 
@@ -507,8 +655,11 @@ void register_wifi_functions(void *main_loop, void *js_ctx) {
         "stopDhcpc", js_esp_wifi_stop_dhcpc,
         "setIp", js_esp_wifi_set_ip_info,
         "strerror", js_esp_err_to_name,
+        "ap", js_lazy_ap_wifi,
+        "station", js_lazy_sta_wifi,
         NULL, NULL
     );
+
     JS_EvalSimple(ctx, "wifi.constants = { ESP_IF_WIFI_STA: 0"
                                         ", ESP_IF_WIFI_AP: 1"
                                         ", ESP_IF_ETH: 2"

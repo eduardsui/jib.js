@@ -243,6 +243,18 @@ JS_C_FUNCTION(js_esp_get_minimum_free_heap_size) {
     JS_RETURN_NUMBER(ctx, size);
 }
 
+JS_C_FUNCTION(js_esp_heap_caps_get_free_size) {
+    JS_ParameterNumber(ctx, 0);
+    uint32_t size = heap_caps_get_free_size(JS_GetIntParameter(ctx, 0));
+    JS_RETURN_NUMBER(ctx, size);
+}
+
+JS_C_FUNCTION(js_esp_heap_caps_get_minimum_free_size) {
+    JS_ParameterNumber(ctx, 0);
+    uint32_t size = heap_caps_get_minimum_free_size(JS_GetIntParameter(ctx, 0));
+    JS_RETURN_NUMBER(ctx, size);
+}
+
 JS_C_FUNCTION(js_esp_random) {
     uint32_t rand = esp_random();
     JS_RETURN_NUMBER(ctx, rand);
@@ -326,6 +338,8 @@ void register_esp32_functions(void *main_loop, void *js_ctx) {
         "restart", js_esp_restart,
         "freeHeapSize", js_esp_get_free_heap_size,
         "freeMinimumHeapSize", js_esp_get_minimum_free_heap_size,
+        "heapCapsFreeSize", js_esp_heap_caps_get_free_size,
+        "heapCapsMinimumFreeSize", js_esp_heap_caps_get_minimum_free_size,
         "random", js_esp_random,
         "enableWatchdog", js_esp_wdt,
         "random", js_esp_random,

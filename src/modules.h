@@ -30461,249 +30461,249 @@ const static struct builtin_module builtin_modules[] = {
         "net_.recv(self._socket, buf, buf.byteLength);\nif (nbytes < 0) {\nself.emit(\"er" \
         "ror\", new Error(_net_.strerror(_net_.errno())));\n} else\nif (nbytes) {\nself._" \
         "lastRead = new Date().getTime();\nself.bytesRead += nbytes;\nif (nbytes != read_" \
-        "size)\nbuf = buf.subarray(0, nbytes);\nif (self._readableState.decoder)\nself.em" \
-        "it(\"data\", self._readableState.decoder.write(buf));\nelse\nself.emit(\"data\"," \
-        " new Buffer(buf, 0, nbytes));\n} else {\nself.close();\n}\n};\n}\nif (writable) " \
-        "{\nif (readable)\nread_write = 1;\nelse\nread_write = 2;\nobj.write = function()" \
-        " {\nif (self.destroyed)\nreturn;\nself._drain = true;\nself.emit(\"drain\");\nif" \
-        " ((!self._buffer) || (!self._buffer.length))\n_net_.pollPauseWrite(self._socket)" \
-        ";\nself.flush();\n};\n}\n_net_.poll(this._socket, read_write, obj);\n}\nthis.add" \
-        "ress = function() {\nif (!this._info)\nthis._info = _net_.info(this._socket);\ni" \
-        "f (this._info)\nreturn {\"port\": this._info[\"local_port\"], \"family\": this._" \
-        "info[\"local_family\"] === net.constants.AF_INET6 ? \"IPv6\" : \"IPv4\" , \"addr" \
-        "ess\": this._info[\"local_address\"]};\n}\nObject.defineProperty(this, \"localAd" \
-        "dress\", {  get: function() { if (!this._info) this._info = _net_.info(this._soc" \
-        "ket); if (this._info) return this._info[\"local_address\"]; } } );\nObject.defin" \
-        "eProperty(this, \"localPort\", {  get: function() { if (!this._info) this._info " \
-        "= _net_.info(this._socket); if (this._info) return this._info[\"local_port\"]; }" \
-        " } );\nObject.defineProperty(this, \"remoteAddress\", {  get: function() { if (!" \
-        "this._info) this._info = _net_.info(this._socket); if (this._info) return this._" \
-        "info[\"remote_address\"]; } } );\nObject.defineProperty(this, \"remoteFamily\", " \
+        "size)\nbuf = buf.subarray(0, nbytes);\nif ((self._readableState) && (self._reada" \
+        "bleState.decoder))\nself.emit(\"data\", self._readableState.decoder.write(buf));" \
+        "\nelse\nself.emit(\"data\", new Buffer(buf, 0, nbytes));\n} else {\nself.close()" \
+        ";\n}\n};\n}\nif (writable) {\nif (readable)\nread_write = 1;\nelse\nread_write =" \
+        " 2;\nobj.write = function() {\nif (self.destroyed)\nreturn;\nself._drain = true;" \
+        "\nself.emit(\"drain\");\nif ((!self._buffer) || (!self._buffer.length))\n_net_.p" \
+        "ollPauseWrite(self._socket);\nself.flush();\n};\n}\n_net_.poll(this._socket, rea" \
+        "d_write, obj);\n}\nthis.address = function() {\nif (!this._info)\nthis._info = _" \
+        "net_.info(this._socket);\nif (this._info)\nreturn {\"port\": this._info[\"local_" \
+        "port\"], \"family\": this._info[\"local_family\"] === net.constants.AF_INET6 ? \"" \
+        "IPv6\" : \"IPv4\" , \"address\": this._info[\"local_address\"]};\n}\nObject.defi" \
+        "neProperty(this, \"localAddress\", {  get: function() { if (!this._info) this._i" \
+        "nfo = _net_.info(this._socket); if (this._info) return this._info[\"local_addres" \
+        "s\"]; } } );\nObject.defineProperty(this, \"localPort\", {  get: function() { if" \
+        " (!this._info) this._info = _net_.info(this._socket); if (this._info) return thi" \
+        "s._info[\"local_port\"]; } } );\nObject.defineProperty(this, \"remoteAddress\", " \
         "{  get: function() { if (!this._info) this._info = _net_.info(this._socket); if " \
-        "(this._info) return this._info[\"remote_family\"] === net.constants.AF_INET6 ? \"" \
-        "IPv6\" : \"IPv4\"; } } );\nObject.defineProperty(this, \"remotePort\", {  get: f" \
-        "unction() { if (!this._info) this._info = _net_.info(this._socket); if (this._in" \
-        "fo) return this._info[\"remote_port\"]; } } );\nthis.setNoDelay = function(noDel" \
-        "ay) {\nif (noDelay === undefined)\nnoDelay = true;\nif (_net_.setNoDelay(this._s" \
-        "ocket, noDelay))\nself.emit(\"error\", new Error(_net_.strerror(_net_.errno())))" \
-        ";\nreturn this;\n}\nthis.setKeepAlive = function(enabled) {\nif (enabled === und" \
-        "efined)\nenabled = true;\nif (_net_.setKeepAlive(this._socket, enabled))\nself.e" \
-        "mit(\"error\", new Error(_net_.strerror(_net_.errno())));\nreturn this;\n}\nthis" \
-        ".setSocketTimeout = function(timeout) {\nvar err = _net_.setTimeout(this._socket" \
-        ", timeout);\nif (err)\nself.emit(\"error\", new Error(_net_.strerror(_net_.errno" \
-        "())));\nreturn this;\n}\nthis.setTimeout = function(timeout, callback) {\nthis._" \
-        "readTimeout = timeout;\nif (this._lastReadInterval) {\nclearInterval(this._lastR" \
-        "eadInterval);\nthis._lastReadInterval = undefined;\n}\nif (timeout > 0) {\nthis." \
-        "_lastReadInterval = setInterval(function() {\nif (new Date().getTime() - self._l" \
-        "astRead > timeout) {\nif (callback)\ncallback();\nclearInterval(self._lastReadIn" \
-        "terval);\nself.close();\n}\n}, timeout / 2);\n}\nreturn this;\n}\nthis.flush = f" \
-        "unction() {\nif ((this._drain) && (this._socket !== undefined) && (!this.destroy" \
-        "ed) && (this._buffer) && (this._buffer.length)) {\n_net_.pollResumeWrite(this._s" \
-        "ocket);\nvar sent = _net_.send(this._socket, this._buffer, this._buffer.length);" \
-        "\nif (sent > 0) {\nthis._lastRead = new Date().getTime();\nthis.bytesWritten += " \
-        "sent;\nif (sent == this._buffer.length) {\nthis._buffer = undefined;\nif (this._" \
-        "half_closed) {\nthis._half_closed = false;\nthis.close();\n}\n} else\nthis._buff" \
-        "er = this._buffer.slice(sent);\n} else\nif (sent < 0) {\nself.emit(\"error\", ne" \
-        "w Error(_net_.strerror(_net_.errno())));\nthis.close();\n}\n}\nreturn false;\n}\n" \
-        "this.write = function(data, encoding, callback) {\nif ((this.destroyed) || (this" \
-        "._socket === undefined))\nthrow new Error(\"socket is closed\");\nvar buf = data" \
-        ";\nif (typeof data === \"string\") {\nif (!encoding)\nencoding = \"utf-8\";\nbuf" \
-        " = new TextEncoder(encoding).encode(data);\n}\nif (this._buffer) {\nvar buf2 = n" \
-        "ew Uint8Array(this._buffer.length + buf.length);\nbuf2.set(this._buffer);\nbuf2." \
-        "set(buf, this._buffer.length);\nthis._buffer = buf2;\n} else\nthis._buffer = buf" \
-        ";\nreturn this.flush();\n}\nthis._read = function(n) {\nreturn 0;\n}\nthis.close" \
-        " = function() {\nif ((this._socket !== undefined) && (this._socket >= 0)) {\nthi" \
-        "s.emit(\"close\");\n_net_.unpoll(this._socket);\n_net_.close(this._socket);\nthi" \
-        "s._socket = undefined;\nthis._buffer = undefined;\nif (server) {\nserver.connect" \
-        "ions --;\nserver = undefined;\n}\nif (this._lastReadInterval) {\nclearInterval(t" \
-        "his._lastReadInterval);\nthis._lastReadInterval = undefined;\n}\nthis.destroyed " \
-        "= true;\n}\nthis.removeAllListeners();\n}\nthis.end = function(data, encoding, c" \
-        "allback) {\nif (data)\nthis.write(data, encoding, callback);\nthis.emit(\"end\"," \
-        " false);\nif (this._buffer) {\nthis._half_closed = true;\nreturn false;\n}\nthis" \
-        ".close();\nreturn true;\n}\nthis.destroy = function() {\nthis.destroyed = true;\n" \
-        "this.close();\n}\nthis.finalize = function(self) {\nif ((self._socket !== undefi" \
-        "ned) && (self._socket >= 0))\nself.close();\n}\nthis.__refHandler = undefined;\n" \
-        "this.ref = function() {\nif (!this.__refHandler)\nthis.__refHandler = new Array(" \
-        ");\nthis.__refHandler.push(setInterval(function() { }, 3600000));\n}\nthis.unref" \
-        " = function() {\nif ((this.__refHandler) && (this.__refHandler.length)) {\nvar h" \
-        "andler = this.__refHandler.pop();\nif (handler)\nclearInterval(handler);\n}\n}\n" \
-        "global.__destructor(this, this.finalize);\n},\nServer: function(connectionListen" \
-        "er) {\nthis.listening = false;\nthis.maxConnections = 0;\nthis.connections = 0;\n" \
-        "this.connectionListener = connectionListener;\nthis._info = undefined;\nthis._so" \
-        "cket = _net_.socket(net.constants.AF_INET, net.constants.SOCK_STREAM, 0);\nthis." \
-        "listen = function(port, host, backlog, callback) {\nif (!callback) {\ncallback =" \
-        " backlog;\nbacklog = 1024;\n}\nif (!callback) {\ncallback = host;\nhost = \"0.0." \
-        "0.0\";\n}\nif (!host)\nhost = \"0.0.0.0\";\nif (this.listening) {\nif (callback)" \
-        "\ncallback(new Error(\"already listening\"));\nthis.emit(\"error\", new Error(\"" \
-        "already listening\"));\nreturn this;\n}\nvar ipv6_only = false;\nif (typeof port" \
-        " == \"object\") {\nvar options = port;\nhost = options.host ? options.host : \"0" \
-        ".0.0.0\";\nport = options.port;\nbacklog = options.backlog ? options.backlog : 1" \
-        "024;\nipv6_only = options.ipv6Only ? options.ipv6Only : false;\nif (!options.exc" \
-        "lusive)\n_net_.setReuseAddr(this._socket, true);\n}\nthis.listening = true;\n_ne" \
-        "t_.bind(this._socket, host, port)\nvar self = this;\nif (_net_.listen(this._sock" \
-        "et, backlog)) {\nif (callback)\nsetImmediate(function() { callback(new Error(_ne" \
-        "t_.strerror(_net_.errno()))); });\nthis.emit(\"error\", new Error(_net_.strerror" \
-        "(_net_.errno())));\n} else {\nthis.ref();\n_net_.poll(this._socket, 0, {\"read\"" \
-        ": function() {\nvar sock = _net_.accept(self._socket);\nif (sock < 0) {\nself.em" \
-        "it(\"error\", new Error(_net_.strerror(_net_.errno())));\n} else {\n_net_.setKee" \
-        "pAlive(sock, true);\nvar sock_obj = new net.Socket({ \"fd\": sock, \"readable\":" \
-        " true, \"writable\": true, \"_server\": self });\nself.emit(\"connection\", sock" \
-        "_obj);\nself.connections ++;\nif (self.connectionListener)\nself.connectionListe" \
-        "ner(sock_obj);\n}\n}});\nif (callback)\nsetImmediate(callback);\nthis.emit(\"lis" \
-        "tening\");\n}\nreturn this;\n}\nthis.close = function() {\nif ((this._socket !==" \
-        " undefined) && (this._socket >= 0)) {\nthis.emit(\"close\");\n_net_.unpoll(this." \
-        "_socket);\n_net_.close(this._socket);\nthis._socket = undefined;\n}\nthis.unref(" \
-        ");\nthis.removeAllListeners();\n}\nthis.getConnections = function(callback) {\nv" \
-        "ar self = this;\nsetImmediate(callback(undefined, self.connections));\n}\nthis.a" \
-        "ddress = function() {\nif (!this._info)\nthis._info = _net_.info(this._socket);\n" \
-        "if (this._info)\nreturn {\"port\": this._info[\"local_port\"], \"family\": this." \
-        "_info[\"local_family\"] === net.constants.AF_INET6 ? \"IPv6\" : \"IPv4\" , \"add" \
-        "ress\": this._info[\"local_address\"]};\n}\nthis.__refHandler = undefined;\nthis" \
-        ".ref = function() {\nif (!this.__refHandler)\nthis.__refHandler = new Array();\n" \
-        "this.__refHandler.push(setInterval(function() { }, 3600000));\n}\nthis.unref = f" \
-        "unction() {\nif ((this.__refHandler) && (this.__refHandler.length)) {\nvar handl" \
-        "er = this.__refHandler.pop();\nif (handler)\nclearInterval(handler);\n}\n}\nthis" \
-        ".finalize = function(self) {\nself.close();\n}\nglobal.__destructor(this, this.f" \
-        "inalize);\n},\ncreateServer(options, connectionListener) {\nif (connectionListen" \
-        "er === undefined)\nconnectionListener = options;\nreturn new this.Server(connect" \
-        "ionListener);\n},\ncreateConnection(options, connectionListener) {\nreturn new t" \
-        "his.Socket(options, connectionListener);\n},\nconnect(options, connectionListene" \
-        "r) {\nreturn createConnection(options, connectionListener);\n}\n}\nutil.inherits" \
-        "(net.Socket, Stream.Duplex);\nutil.inherits(net.Server, EventEmitter);\nmodule.e" \
-        "xports = net;",
-    12574, 12574, 0},
+        "(this._info) return this._info[\"remote_address\"]; } } );\nObject.definePropert" \
+        "y(this, \"remoteFamily\", {  get: function() { if (!this._info) this._info = _ne" \
+        "t_.info(this._socket); if (this._info) return this._info[\"remote_family\"] === " \
+        "net.constants.AF_INET6 ? \"IPv6\" : \"IPv4\"; } } );\nObject.defineProperty(this" \
+        ", \"remotePort\", {  get: function() { if (!this._info) this._info = _net_.info(" \
+        "this._socket); if (this._info) return this._info[\"remote_port\"]; } } );\nthis." \
+        "setNoDelay = function(noDelay) {\nif (noDelay === undefined)\nnoDelay = true;\ni" \
+        "f (_net_.setNoDelay(this._socket, noDelay))\nself.emit(\"error\", new Error(_net" \
+        "_.strerror(_net_.errno())));\nreturn this;\n}\nthis.setKeepAlive = function(enab" \
+        "led) {\nif (enabled === undefined)\nenabled = true;\nif (_net_.setKeepAlive(this" \
+        "._socket, enabled))\nself.emit(\"error\", new Error(_net_.strerror(_net_.errno()" \
+        ")));\nreturn this;\n}\nthis.setSocketTimeout = function(timeout) {\nvar err = _n" \
+        "et_.setTimeout(this._socket, timeout);\nif (err)\nself.emit(\"error\", new Error" \
+        "(_net_.strerror(_net_.errno())));\nreturn this;\n}\nthis.setTimeout = function(t" \
+        "imeout, callback) {\nthis._readTimeout = timeout;\nif (this._lastReadInterval) {" \
+        "\nclearInterval(this._lastReadInterval);\nthis._lastReadInterval = undefined;\n}" \
+        "\nif (timeout > 0) {\nthis._lastReadInterval = setInterval(function() {\nif (new" \
+        " Date().getTime() - self._lastRead > timeout) {\nif (callback)\ncallback();\ncle" \
+        "arInterval(self._lastReadInterval);\nself.close();\n}\n}, timeout / 2);\n}\nretu" \
+        "rn this;\n}\nthis.flush = function() {\nif ((this._drain) && (this._socket !== u" \
+        "ndefined) && (!this.destroyed) && (this._buffer) && (this._buffer.length)) {\n_n" \
+        "et_.pollResumeWrite(this._socket);\nvar sent = _net_.send(this._socket, this._bu" \
+        "ffer, this._buffer.length);\nif (sent > 0) {\nthis._lastRead = new Date().getTim" \
+        "e();\nthis.bytesWritten += sent;\nif (sent == this._buffer.length) {\nthis._buff" \
+        "er = undefined;\nif (this._half_closed) {\nthis._half_closed = false;\nthis.clos" \
+        "e();\n}\n} else\nthis._buffer = this._buffer.slice(sent);\n} else\nif (sent < 0)" \
+        " {\nself.emit(\"error\", new Error(_net_.strerror(_net_.errno())));\nthis.close(" \
+        ");\n}\n}\nreturn false;\n}\nthis.write = function(data, encoding, callback) {\ni" \
+        "f ((this.destroyed) || (this._socket === undefined))\nthrow new Error(\"socket i" \
+        "s closed\");\nvar buf = data;\nif (typeof data === \"string\") {\nif (!encoding)" \
+        "\nencoding = \"utf-8\";\nbuf = new TextEncoder(encoding).encode(data);\n}\nif (t" \
+        "his._buffer) {\nvar buf2 = new Uint8Array(this._buffer.length + buf.length);\nbu" \
+        "f2.set(this._buffer);\nbuf2.set(buf, this._buffer.length);\nthis._buffer = buf2;" \
+        "\n} else\nthis._buffer = buf;\nreturn this.flush();\n}\nthis._read = function(n)" \
+        " {\nreturn 0;\n}\nthis.close = function() {\nif ((this._socket !== undefined) &&" \
+        " (this._socket >= 0)) {\nthis.emit(\"close\");\n_net_.unpoll(this._socket);\n_ne" \
+        "t_.close(this._socket);\nthis._socket = undefined;\nthis._buffer = undefined;\ni" \
+        "f (server) {\nserver.connections --;\nserver = undefined;\n}\nif (this._lastRead" \
+        "Interval) {\nclearInterval(this._lastReadInterval);\nthis._lastReadInterval = un" \
+        "defined;\n}\nthis.destroyed = true;\n}\nthis.removeAllListeners();\n}\nthis.end " \
+        "= function(data, encoding, callback) {\nif (data)\nthis.write(data, encoding, ca" \
+        "llback);\nthis.emit(\"end\", false);\nif (this._buffer) {\nthis._half_closed = t" \
+        "rue;\nreturn false;\n}\nthis.close();\nreturn true;\n}\nthis.destroy = function(" \
+        ") {\nthis.destroyed = true;\nthis.close();\n}\nthis.finalize = function(self) {\n" \
+        "if ((self._socket !== undefined) && (self._socket >= 0))\nself.close();\n}\nthis" \
+        ".__refHandler = undefined;\nthis.ref = function() {\nif (!this.__refHandler)\nth" \
+        "is.__refHandler = new Array();\nthis.__refHandler.push(setInterval(function() { " \
+        "}, 3600000));\n}\nthis.unref = function() {\nif ((this.__refHandler) && (this.__" \
+        "refHandler.length)) {\nvar handler = this.__refHandler.pop();\nif (handler)\ncle" \
+        "arInterval(handler);\n}\n}\nglobal.__destructor(this, this.finalize);\n},\nServe" \
+        "r: function(connectionListener) {\nthis.listening = false;\nthis.maxConnections " \
+        "= 0;\nthis.connections = 0;\nthis.connectionListener = connectionListener;\nthis" \
+        "._info = undefined;\nthis._socket = _net_.socket(net.constants.AF_INET, net.cons" \
+        "tants.SOCK_STREAM, 0);\nthis.listen = function(port, host, backlog, callback) {\n" \
+        "if (!callback) {\ncallback = backlog;\nbacklog = 1024;\n}\nif (!callback) {\ncal" \
+        "lback = host;\nhost = \"0.0.0.0\";\n}\nif (!host)\nhost = \"0.0.0.0\";\nif (this" \
+        ".listening) {\nif (callback)\ncallback(new Error(\"already listening\"));\nthis." \
+        "emit(\"error\", new Error(\"already listening\"));\nreturn this;\n}\nvar ipv6_on" \
+        "ly = false;\nif (typeof port == \"object\") {\nvar options = port;\nhost = optio" \
+        "ns.host ? options.host : \"0.0.0.0\";\nport = options.port;\nbacklog = options.b" \
+        "acklog ? options.backlog : 1024;\nipv6_only = options.ipv6Only ? options.ipv6Onl" \
+        "y : false;\nif (!options.exclusive)\n_net_.setReuseAddr(this._socket, true);\n}\n" \
+        "this.listening = true;\n_net_.bind(this._socket, host, port)\nvar self = this;\n" \
+        "if (_net_.listen(this._socket, backlog)) {\nif (callback)\nsetImmediate(function" \
+        "() { callback(new Error(_net_.strerror(_net_.errno()))); });\nthis.emit(\"error\"" \
+        ", new Error(_net_.strerror(_net_.errno())));\n} else {\nthis.ref();\n_net_.poll(" \
+        "this._socket, 0, {\"read\": function() {\nvar sock = _net_.accept(self._socket);" \
+        "\nif (sock < 0) {\nself.emit(\"error\", new Error(_net_.strerror(_net_.errno()))" \
+        ");\n} else {\n_net_.setKeepAlive(sock, true);\nvar sock_obj = new net.Socket({ \"" \
+        "fd\": sock, \"readable\": true, \"writable\": true, \"_server\": self });\nself." \
+        "emit(\"connection\", sock_obj);\nself.connections ++;\nif (self.connectionListen" \
+        "er)\nself.connectionListener(sock_obj);\n}\n}});\nif (callback)\nsetImmediate(ca" \
+        "llback);\nthis.emit(\"listening\");\n}\nreturn this;\n}\nthis.close = function()" \
+        " {\nif ((this._socket !== undefined) && (this._socket >= 0)) {\nthis.emit(\"clos" \
+        "e\");\n_net_.unpoll(this._socket);\n_net_.close(this._socket);\nthis._socket = u" \
+        "ndefined;\n}\nthis.unref();\nthis.removeAllListeners();\n}\nthis.getConnections " \
+        "= function(callback) {\nvar self = this;\nsetImmediate(callback(undefined, self." \
+        "connections));\n}\nthis.address = function() {\nif (!this._info)\nthis._info = _" \
+        "net_.info(this._socket);\nif (this._info)\nreturn {\"port\": this._info[\"local_" \
+        "port\"], \"family\": this._info[\"local_family\"] === net.constants.AF_INET6 ? \"" \
+        "IPv6\" : \"IPv4\" , \"address\": this._info[\"local_address\"]};\n}\nthis.__refH" \
+        "andler = undefined;\nthis.ref = function() {\nif (!this.__refHandler)\nthis.__re" \
+        "fHandler = new Array();\nthis.__refHandler.push(setInterval(function() { }, 3600" \
+        "000));\n}\nthis.unref = function() {\nif ((this.__refHandler) && (this.__refHand" \
+        "ler.length)) {\nvar handler = this.__refHandler.pop();\nif (handler)\nclearInter" \
+        "val(handler);\n}\n}\nthis.finalize = function(self) {\nself.close();\n}\nglobal." \
+        "__destructor(this, this.finalize);\n},\ncreateServer(options, connectionListener" \
+        ") {\nif (connectionListener === undefined)\nconnectionListener = options;\nretur" \
+        "n new this.Server(connectionListener);\n},\ncreateConnection(options, connection" \
+        "Listener) {\nreturn new this.Socket(options, connectionListener);\n},\nconnect(o" \
+        "ptions, connectionListener) {\nreturn createConnection(options, connectionListen" \
+        "er);\n}\n}\nutil.inherits(net.Socket, Stream.Duplex);\nutil.inherits(net.Server," \
+        " EventEmitter);\nmodule.exports = net;",
+    12601, 12601, 0},
     #else
     {"net",
         "\x78\x01\xed\x1a\x6b\x6f\x13\x47\xf0\xbb\x7f\xc5\xe5\x3e\x14\x5b\x18\x37\xa4\x34" \
         "\xa5\x4e\xa1\x72\x89\xdb\x46\xa4\xe0\x26\xa9\x5a\xa9\x42\xd6\xd9\x5e\x93\x83\xf3" \
         "\x9d\x7b\x0f\x43\x1a\xf2\xdf\x3b\x8f\xdd\xbd\xd9\x7b\x38\t\xe2\xa1\x4a\x80\x40\xb7" \
-        "\xb3\xf3\xde\xd9\xd9\xd9\x59\x6f\x82\xd4\x1b\x6f\x54\x9c\x8f\x57\x61\x9e\xab\xd4" \
-        "\x7b\xe4\xa5\xea\x9f\x22\x4c\x55\xf7\x8e\x42\x78\x76\xa7\x37\x90\x08\x07\x9d\r\x90" \
-        "\x14\x79\x18\x49\x54\x1c\xdf\xe9\xf1\xdc\x69\x9e\xaa\x60\x25\x67\x33\x82\0\x23\x9e" \
-        "\x62\xb4\x9f\x8a\xe5\x92\xe4\xbd\x8c\x92\x59\x10\r\x78\x7c\xd0\t\x97\x5e\x77\x87" \
-        "\x07\xbd\x8e\x45\xb2\xbc\x66\x04\x01\x5e\x06\x1f\x79\xc5\x2a\x07\x9c\xcb\xce\x3c" \
-        "\x89\xb3\x3c\0\xa5\x87\x30\x38\x7d\xfe\xe4\xe9\xf4\xf4\xec\x64\x3c\xfa\x6d\xe8\xdd" \
-        "\xef\xf3\xf8\xf0\x97\x13\x1c\xee\xe9\xe1\xc9\xe8\xcf\xa1\xf7\x8d\x19\x1c\xc2\xcc" \
-        "\x03\x3d\x38\x1d\xff\x3e\x19\x3d\x79\x3a\x3e\x1b\x7a\xdf\x6a\x90\x19\xdf\xdf\xed" \
-        "\x77\x46\x3f\x4f\xff\x78\x76\x3a\x19\x3f\x19\x7a\x66\x74\xf4\x17\x89\x81\xef\xa3" \
-        "\x67\x88\x06\x32\xe0\x7b\xf4\xd7\xde\xb7\x24\x02\xe1\x13\x40\x01\x01\x08\x9e\x4c" \
-        "\x8e\xc7\x67\xa3\xe3\xa7\xc4\x1e\0\x40\x72\xf2\x1c\xe4\xef\xd3\xe8\xa7\x93\xa3\xc3" \
-        "\x5f\xc6\x43\xef\x3b\x46\x1e\x1d\x03\x8f\x87\xf4\x4d\xec\xbe\xb7\x62\xf6\xad\x3a" \
-        "\xbf\x8d\x50\xfe\x5e\xe7\n\xb4\x4d\xe6\xaf\x55\x3e\xf4\x96\x45\x3c\xcf\xc3\x24\xee" \
-        "\x16\x99\x9a\xae\x93\x34\xef\x7b\xf8\x75\x9e\x64\xf0\x05\xbe\x8a\xd5\x3c\x3f\x0e" \
-        "\xb3\x5c\xc5\xe0\x6b\xf0\x18\xba\x32\x59\x23\x45\xc6\xeb\x90\x5f\xac\x55\xb2\x24" \
-        "\x22\x24\xf7\x1e\x3d\xf2\xfc\x64\xf6\n\xc8\x7c\xc4\xd7\xb8\xe0\x7a\x83\x71\x80\x4b" \
-        "\x20\xd9\xea\x39\x14\x79\xd0\xb9\xf2\x54\x94\x29\x87\xf0\xd2\xc3\xa9\xa1\xd0\x0b" \
-        "\xd9\xf0\x98\x44\x5e\x75\xae\x38\x24\x34\x4d\xcf\x21\xbe\x3a\xe8\x70\x4c\r\x0e\x8b" \
-        "\x75\xa4\xde\x0e\xe6\x41\x14\x75\xf3\xf3\x30\xeb\x1b\x4b\x20\x2a\x71\x3c\x98\x66" \
-        "\xe4\x15\x54\x28\x5e\xa8\x65\x18\xab\x85\x9e\x99\x5d\xe4\x2a\x3b\x51\xc1\x02\xe6" \
-        "\x76\x25\xec\xcf\x14\x43\x3e\x16\x60\x6d\x5d\x18\xbf\x04\xe0\x32\0\x6b\xf4\xc4\x42" \
-        "\x41\x90\x27\x17\n\x79\x48\xf8\x74\x91\x06\x21\x72\x70\x80\x1c\xc4\r\xaa\x4c\xcf" \
-        "\x83\x68\x39\x9d\x47\x49\x56\xe7\x14\xc6\xcb\x04\x60\x71\x11\x45\x46\x49\x62\x73" \
-        "\x1a\xfe\xab\x84\x8a\xd3\x28\xc8\x72\x6d\x4d\xac\xde\x78\x87\x41\xae\xba\xbd\xc1" \
-        "\x4b\x95\x9f\x85\x2b\xf8\xe2\x1d\x03\x3e\x5b\x04\xb3\x08\t\xf3\xb4\0\x19\x08\x7c" \
-        "\x03\xf6\xd6\x80\x99\x8a\x96\x08\0\xde\x06\x90\x6e\xaa\xca\xe3\n\x19\x7f\xc3\xfa" \
-        "\x56\x1c\xae\x67\x06\x4b\x17\x73\x60\x95\xd8\x81\xc0\xb2\xdc\x7a\x1d\xa1\x5c\x15" \
-        "\xd5\x65\x60\x15\xae\x30\x10\x86\x54\x51\x0f\x3a\x56\x7f\x33\x35\x65\x08\xc4\x27" \
-        "\x07\xbd\xa3\xbc\xe4\xab\xb7\x08\xc6\xa9\x20\xa7\xe1\x8f\xee\x70\xe8\xf9\x51\x02" \
-        "\xb1\x88\x03\x9f\xdd\xc6\x1b\xc8\xa2\xf1\x6e\xc1\t\x1d\x53\xf5\x05\xb7\xfe\x9b\x42" \
-        "\x7e\x9b\x0e\x78\xd8\x85\x6f\x0c\x43\xce\x73\x03\x9d\x06\xfa\x98\x02\x05\x58\xe4" \
-        "\xbe\xbe\xb7\x0b\x6b\x5e\x33\xec\x07\0\x83\x3d\x99\xca\x8f\x56\x2b\xb5\x08\x31\x4a" \
-        "\x6c\xbe\xb0\x6b\xa8\x20\xe9\x77\x7d\x95\xa6\x49\xea\xa3\x8c\x37\xde\x18\xbf\xbb" \
-        "\x5a\x23\xd8\x7a\x62\x08\xdf\x71\xd2\xed\xc1\x1f\x70\x25\xfe\xa3\xed\x4e\xa2\x19" \
-        "\x41\x5b\xea\x28\xd2\x27\x77\xf2\xb6\xef\x7d\x1a\x8d\xf8\xa0\xb0\x3e\xe7\x50\x6f" \
-        "\x17\x8b\x1b\x40\x8b\x8d\x92\xe4\x75\xb1\xf6\x81\x93\0\x6a\x5e\x15\x28\x06\xec\x05" \
-        "\xc2\x48\x2e\x39\xa1\x9a\x71\xdb\x65\x56\x93\xb3\x21\x05\x7d\x7f\x2c\xe3\x11\xa2" \
-        "\xec\xe6\xf6\x7b\xa5\x1e\x4e\x1c\xb8\x3b\x47\x47\x38\x2a\x3f\xc5\x1d\xa3\x13\x0b" \
-        "\x1d\x0c\xb3\x57\x26\xe5\x22\x13\xb3\x21\xe9\x1c\x98\xbd\xa2\r\x8a\x01\x2c\x3d\x67" \
-        "\x59\x65\x9c\xa2\x1e\xec\x7e\xbf\xcf\xcc\x20\x73\xe9\xf4\xf4\x47\x18\xe7\x0f\x47" \
-        "\x69\x1a\x5c\x10\x4b\x42\xd5\x39\x2a\xa6\x24\x6c\xe3\x3f\x55\xf3\x4d\x97\x3c\x6c" \
-        "\x43\x07\xd8\xd0\x7f\x94\xae\x8f\x55\xfc\x32\x3f\xd7\xb1\xae\x69\x6d\x94\xdb\x75" \
-        "\x79\x9f\xc8\x29\xe3\x98\xd9\x5a\x96\xd7\xe7\x5a\x42\x2b\x0f\x98\xbb\x80\x47\x23" \
-        "\x47\xcb\x1d\xac\x6f\x8c\xed\x1d\xf6\r\x5a\x95\x15\xb3\x80\x3c\xb3\x0b\xfa\xb2\x64" \
-        "\xa6\x63\xe1\x66\t\x4e\x73\x10\x0b\x27\xd0\x3c\x59\x70\x54\x59\x63\x17\x41\x1e\x80" \
-        "\xad\x5b\xd0\x29\x2f\xaa\x2e\x48\x43\x4b\xc9\xce\x3a\x3d\x9a\xc6\xe5\x16\x22\x42" \
-        "\x42\xb1\xea\xc8\x3d\x45\x74\x74\x74\xa1\xe1\x70\x6e\x9b\x78\x33\xa9\x17\xdd\xe6" \
-        "\x84\x0e\x25\x7a\x1b\x67\xf7\xb5\x7c\x07\xb8\x77\x40\xd1\x65\x86\x4e\x78\x59\x4f" \
-        "\xd8\xc3\x17\x39\xe6\x45\x1a\x6b\xbf\xdb\xc3\xd7\x6c\xf1\xd2\x30\x9c\xc0\xdd\x89" \
-        "\x3c\xba\x3b\x8c\xcd\xc7\x69\xcf\x7b\xf7\x0e\xca\r\t\x1a\x44\x1c\x5a\xbd\x0e\x07" \
-        "\xc7\x3a\x89\xa2\x49\0\x25\n\x16\x08\xca\x89\x49\xb3\xe4\xcb\xa8\xc8\xce\xc9\x0f" \
-        "\xe8\x85\x92\xac\x92\xfb\x4a\x5b\xa1\x5e\x99\xbd\x22\xbf\x11\x46\xb0\x58\xa4\x2a" \
-        "\xc3\xe0\xaf\x99\xbc\x53\x96\x03\x3d\xb7\x34\x60\x31\x38\x70\xc4\x38\xe9\x9f\xc9" \
-        "\xd8\x4d\xde\xa5\x8f\x69\xd7\x1f\xd2\xe9\xce\x73\x7f\xf3\xc1\x45\xc5\x97\xff\xa2" \
-        "\xef\xf9\xcb\x60\x15\x46\x17\x8d\x38\x7a\xea\x05\x9c\x92\x18\xff\r\xe7\xd2\x3e\xe4" \
-        "\x2b\xff\x68\xb2\xd9\xf7\xf1\x48\x84\x8f\x07\xbe\x07\x3c\xb5\x75\x8d\x4c\xcd\xdc" \
-        "\x0b\xf2\xdc\x73\xaa\x36\x61\x85\x31\x3f\x4d\xd2\x64\xad\xd2\xfc\x42\x17\x78\x4c" \
-        "\x30\xd2\xf8\x7d\xc8\x4d\x1e\xec\x3c\x51\xf6\x62\x26\xad\x7a\x4c\x48\xdc\xe6\x31" \
-        "\xa2\x93\x64\xda\x63\x5b\xf4\x85\x14\x0b\x7f\xc1\xd9\xd7\xeb\x3c\x41\xe7\x7e\x2e" \
-        "\x85\x79\x65\x6f\xa6\x6d\xaa\x56\x49\xae\x3e\x9f\x8b\x59\xfe\x6d\x7d\xcc\x54\x3f" \
-        "\x73\x74\x7e\x36\xa5\xdf\x6b\x77\xdc\xc6\xc0\xcf\x14\x45\xda\xbc\x4a\x18\x11\x06" \
-        "\x14\x34\xcf\x92\x43\x15\x05\x17\x32\x71\xc5\x0c\x32\xf9\x4b\x0f\xc9\x2d\xa2\x66" \
-        "\xb7\x60\x9d\xad\xcb\xb2\xb1\xe4\x5a\xc9\x9e\x86\xb1\x73\xe6\xbd\xc7\x01\x2f\x8c" \
-        "\xb4\t\x18\x84\x3e\x55\x6a\x3d\x8a\xc2\x8d\x73\xf0\xa8\x18\x8f\x2e\xaa\x94\x50\x43" \
-        "\x3d\xac\x1a\x63\xc1\x4d\xc6\x58\xbe\x15\x73\x0c\xeb\x8f\x64\x0e\x77\x05\xb0\x30" \
-        "\x49\n\xbc\x55\x58\x93\x72\x06\x99\x8a\r\x58\x95\x77\x0e\x4b\x50\xd1\xd5\xd0\xb0" \
-        "\x69\x40\xf2\x91\x94\x6e\x57\x17\x3a\x18\x70\xd7\x9f\x05\xf3\xd7\xe5\x8d\x13\x8f" \
-        "\xd3\x92\x42\x23\xca\xd3\xcf\xd4\x6b\x47\x31\xb4\xb2\x36\x41\x84\xa4\xf3\x48\x05" \
-        "\xa9\x01\xb4\xe1\x55\x2f\xd7\x66\xc2\xbd\x06\xeb\xfa\x5a\x6b\xf0\x98\x8b\xcf\x56" \
-        "\x42\x2c\xff\x8d\xd8\xda\x29\xdf\x54\x4e\x7a\xf7\x74\x29\x67\xcb\xce\xc7\x76\x21" \
-        "\x34\x99\xf5\x49\xc7\x7c\x61\x11\xe2\x9a\xe8\xf2\x10\x26\xd6\x2a\x38\xbb\xce\xde" \
-        "\xd7\xde\x1e\x81\x9a\x96\x89\x6a\x9d\xa6\x4a\x45\x3b\x93\x8a\xad\x9e\xf7\xd5\x57" \
-        "\xdb\xaf\x1e\x38\xcf\x29\xab\xac\xe7\x04\x91\xa9\xce\xaa\x10\x5b\x9c\x81\xd0\xb2" \
-        "\xce\x3a\x51\x59\xb1\xd2\xf5\x59\xa5\x16\xe2\x1e\x46\x2c\x2e\xd6\x2a\x5e\x54\xc3" \
-        "\x5b\x08\x70\x47\x46\x9c\x29\xc4\x81\x4f\xe3\x3a\xb7\xde\x08\xea\xed\x25\xb8\x14" \
-        "\x20\x1f\xc1\x11\x1c\xd3\x24\xd3\n\x69\xea\x1f\x95\x41\x2e\x7a\x48\x25\x49\x7b\x63" \
-        "\x49\x2e\x38\xdf\x74\x2a\x42\x1c\x55\xb2\x28\x9c\x63\xc9\x1b\xa3\x2b\xc5\xcd\x88" \
-        "\xf4\xfe\x20\xd7\xad\x9a\x52\x26\xe8\xb4\xd2\x3a\xea\x6a\x57\x02\xbc\xac\x60\x12" \
-        "\x85\x7b\r\xf4\xe7\xdc\xf4\x50\x46\xa3\x88\x2d\xac\xf3\x2b\xcd\x1e\x19\x90\x58\x5c" \
-        "\xa7\xc9\x1b\xa1\xba\xaf\xf1\xc2\xcc\x63\x4f\xe2\r\xa2\xbc\xce\xa2\x02\x4e\xdf\x14" \
-        "\x01\xc4\xd4\x07\x99\xa0\x13\x35\x4d\xe9\x64\x36\x5a\xe2\x49\xc1\x5f\x40\xef\x17" \
-        "\xf9\xf2\xde\x43\x68\x17\x95\xb7\xe3\x33\xf5\x36\x1f\x23\x06\x5c\xbd\x2c\xcd\x80" \
-        "\xbe\x14\x19\x5c\xb9\xd4\x9b\x4d\xc2\x99\x1c\x46\x7b\xf5\x6b\x76\x43\x64\x79\x77" \
-        "\xe9\xbe\x69\x43\x1b\t\x31\xfb\xba\x5c\x05\x9c\xae\x81\xcd\xdb\xa2\x12\x3c\x48\x62" \
-        "\x03\xa5\x3e\xe7\x24\x7e\x71\x6b\x12\t\xdd\x29\x25\xd0\x34\x4d\x01\x7d\t\x8d\x46" \
-        "\x8b\xb1\x25\x01\xb5\xe7\x1b\x67\xfe\x31\xf4\x3a\x28\x8d\x88\x46\x13\xb1\xc6\x65" \
-        "\xe6\x38\x2d\xe2\xda\x25\xce\xce\x71\xc8\x56\xa6\xae\x69\x3d\xb7\xee\x64\x6e\x49" \
-        "\xf2\x66\xc2\x2f\xdb\x79\xc6\xce\xf7\xbd\x7b\xa2\x8b\x59\x3f\x7e\x3e\xcd\x49\x57" \
-        "\x6b\x7b\x73\xa5\xa3\x27\xb0\x48\xdc\xa8\x51\x14\x99\x16\x56\x26\x96\x15\xf2\xed" \
-        "\x6d\x36\x2e\xc5\xb9\xd8\xf4\xed\x04\x5a\x77\x9d\x7a\xe2\x05\x24\x1e\x4a\x1a\xce" \
-        "\r\xb8\xdc\x23\x4d\x99\x91\xad\x68\xcc\x38\x36\x27\x99\x90\x95\x06\x6b\x4f\x54\xa3" \
-        "\xb0\xc5\x4b\xd5\x1c\xc7\xd1\x1f\xc6\x41\xc4\x9d\x32\xcb\x03\x53\xa9\x8d\x66\xd9" \
-        "\x68\x68\x8a\x66\x67\x9e\xa3\xb9\x76\xa6\xb3\xcd\xb0\xb1\x96\xbf\x06\xf1\x22\x6a" \
-        "\x7c\x85\x80\xc9\x2d\x8d\x07\x41\x6b\xfa\x0f\x2e\x3b\xcc\x37\x9c\x6a\x6c\x30\t\x84" \
-        "\xc1\x1a\xf7\x78\x5b\xed\xe3\x41\xcd\xf1\xcd\xfe\x2e\xfe\xa1\xe6\x12\xd3\x17\x71" \
-        "\x8b\x4a\x7a\x49\xa5\x4a\x62\x5f\x4b\xa9\xa2\x4a\xa0\x1e\xbe\xd5\xb6\x41\xc1\x64" \
-        "\x8d\x9a\x23\x7f\x8d\x06\xd5\x94\xb3\x75\x0c\x98\x8f\x27\xfd\x80\x39\x9d\xd2\x3a" \
-        "\x17\xf3\x1c\x8e\n\xbe\xa8\x39\xcb\x8a\xd8\xf0\x36\x47\xfb\x56\xdc\xd6\xca\x8d\x2d" \
-        "\x9f\xe2\x88\x32\x22\x40\xfd\xb1\x69\x15\xbc\x7d\x22\xd2\x41\xfd\x79\xaa\r\x2a\x5e" \
-        "\xe5\xea\xc0\xca\x3b\x53\x2d\x55\x7d\xc8\xe7\x08\x61\x9e\x5c\x56\x7e\xa3\xe4\x07" \
-        "\x01\xdc\xd0\x51\xd2\x90\x0e\x76\x24\xc0\x7c\xe3\x69\xc2\x04\x70\x4a\xf1\x07\xb6" \
-        "\x14\x77\xf7\x1e\x98\xb4\xd8\x46\xc6\x4f\x93\xfa\x4d\xc7\xdf\x1d\xd0\x5f\x38\x84" \
-        "\x35\x15\x4e\xf4\x1a\xa6\x6d\x3e\xb1\x8b\xb4\xa5\x04\x17\x25\x44\x10\xd1\xcb\x80" \
-        "\x67\xc9\x7c\x5b\xf3\xb4\x55\x4c\x2d\x34\x95\x52\x1c\xa3\x3a\x5c\x6f\xf6\xa7\x49" \
-        "\x1c\x51\x1a\xe2\x80\x11\xe5\x48\xd3\x13\xae\x78\xf2\x05\x1a\x7e\x94\xba\xd9\xfb" \
-        "\x56\xe9\x8a\xc6\x97\xad\x72\x11\x0c\xdc\x40\x4a\x56\x06\x82\x6f\xd8\xb8\x50\x52" \
-        "\x7d\x83\x83\xb0\xe7\x08\x2a\xc9\x2c\x08\x76\x51\x69\xa4\x79\x20\x1e\xa8\xb7\x73" \
-        "\x28\x23\xe0\x7a\x6d\xda\xb5\x90\x6b\x4e\x14\x74\x6b\xb1\x8d\x55\xad\xf3\x21\x1b" \
-        "\x97\x69\x46\xee\x37\xce\xd3\xcc\x60\x16\xd6\x2e\x08\xe2\xd1\xaa\xfe\x4a\x5a\xde" \
-        "\xf6\x99\x63\x85\x56\x9b\x4d\xb9\xc8\r\x98\x2d\x0f\x42\xf5\x50\xba\xd1\x8b\xcf\xd6" \
-        "\xc0\xba\xe1\xcb\x87\x49\x47\x90\x22\x31\x2f\xb6\x36\xb3\xe1\x59\xe0\x92\xde\xbd" \
-        "\xa0\xaf\x5b\x7b\x07\x42\x24\x9b\x3b\x82\xf9\x5c\xad\xf3\x6a\xe3\x9c\xea\x1e\x44" \
-        "\xfb\x80\xaf\x36\xf6\x52\xe8\xf4\x5d\x50\x8a\x5d\x7c\xa3\xdd\x94\x5f\xb8\x50\x04" \
-        "\x66\x2f\x6e\x97\x74\x2f\xa1\x03\x8e\x06\x31\t\x99\x87\x5d\x1a\x6c\x5d\x03\x39\x40" \
-        "\xcc\xeb\x46\t\xd1\xef\xc9\x48\x84\x51\x81\xcb\x50\x7f\x2e\x04\xdf\xe0\xcb\x8c\x96" \
-        "\x6b\x2f\xdf\x22\x81\xdf\xbd\x2b\x1e\x7b\x1a\x4e\x89\x2a\x85\x7d\x2c\x14\x4c\xe1" \
-        "\x78\x42\xf1\x5b\xa2\xac\xb9\x76\x12\x99\xa6\xed\xd6\xff\xbf\x2c\xba\x65\x3d\x61" \
-        "\xab\x93\xad\xb5\x2a\xdc\xdc\xdd\xb3\xb6\x3c\xb8\xc5\x79\x52\x4b\x01\x8d\x3e\xee" \
-        "\x5a\x4d\xf4\x9b\x9c\x58\x6e\x51\xed\x7c\x79\xfb\xe1\xb7\x9f\x2f\xa5\xea\x07\x2f" \
-        "\x55\xaf\xbd\x67\x54\xaf\x0b\xb7\xaa\x6d\xe7\x90\x1d\x73\xc5\x15\xae\xf9\x8d\x8e" \
-        "\xfd\xa1\x59\xa5\xc0\x15\x3f\x88\x70\n\x53\xb7\x8f\xde\x58\xba\xda\x9f\xa8\xe9\x48" \
-        "\xc6\x45\x24\x6d\xb4\xe4\x06\x81\x42\xbd\x72\x37\x5f\xa7\x62\x8d\x3d\x9f\x08\xdb" \
-        "\xa8\x58\x8e\xfe\x99\xcb\xcd\xd8\xdf\x4a\x2b\x5e\x45\xfc\xb5\x25\x6c\xf5\x73\x05" \
-        "\x47\x4f\x46\x15\x38\xab\xd6\xd7\xbf\xbd\xd4\x3f\x86\x03\xec\x06\x4c\xf2\x51\xdf" \
-        "\xf9\xd1\x27\x20\xae\x92\x45\x11\x29\xa8\x9d\x70\xef\x63\xea\x01\xdc\x83\xff\0\xb0" \
-        "\x7e\x52\x58",
-    2601, 10781, 1},
+        "\xb3\xf3\xda\xd9\xd9\x99\xd9\x59\x6f\x82\xd4\x1b\x6f\x54\x9c\x8f\x57\x61\x9e\xab" \
+        "\xd4\x7b\xe4\xa5\xea\x9f\x22\x4c\x55\xf7\x8e\x42\x78\x76\xa7\x37\x90\x08\x07\x9d" \
+        "\r\x90\x14\x79\x18\x49\x54\x1c\xdf\xe9\xf1\xdc\x69\x9e\xaa\x60\x25\x67\x33\x82\0" \
+        "\x23\x9e\x62\xb4\x9f\x8a\xe5\x92\xe4\xbd\x8c\x92\x59\x10\r\x78\x7c\xd0\t\x97\x5e" \
+        "\x77\x87\x07\xbd\x8e\x45\xb2\xbc\x66\x04\x01\x5e\x06\x1f\x79\xc5\x2a\x07\x9c\xcb" \
+        "\xce\x3c\x89\xb3\x3c\0\xa5\x87\x30\x38\x7d\xfe\xe4\xe9\xf4\xf4\xec\x64\x3c\xfa\x6d" \
+        "\xe8\xdd\xef\xf3\xf8\xf0\x97\x13\x1c\xee\xe9\xe1\xc9\xe8\xcf\xa1\xf7\x8d\x19\x1c" \
+        "\xc2\xcc\x03\x3d\x38\x1d\xff\x3e\x19\x3d\x79\x3a\x3e\x1b\x7a\xdf\x6a\x90\x19\xdf" \
+        "\xdf\xed\x77\x46\x3f\x4f\xff\x78\x76\x3a\x19\x3f\x19\x7a\x66\x74\xf4\x17\x89\x81" \
+        "\xef\xa3\x67\x88\x06\x32\xe0\x7b\xf4\xd7\xde\xb7\x24\x02\xe1\x13\x40\x01\x01\x08" \
+        "\x9e\x4c\x8e\xc7\x67\xa3\xe3\xa7\xc4\x1e\0\x40\x72\xf2\x1c\xe4\xef\xd3\xe8\xa7\x93" \
+        "\xa3\xc3\x5f\xc6\x43\xef\x3b\x46\x1e\x1d\x03\x8f\x87\xf4\x4d\xec\xbe\xb7\x62\xf6" \
+        "\xad\x3a\xbf\x8d\x50\xfe\x5e\xe7\n\xb4\x4d\xe6\xaf\x55\x3e\xf4\x96\x45\x3c\xcf\xc3" \
+        "\x24\xee\x16\x99\x9a\xae\x93\x34\xef\x7b\xf8\x75\x9e\x64\xf0\x05\xb6\x8a\xd5\x3c" \
+        "\x3f\x0e\xb3\x5c\xc5\x60\x6b\xb0\x18\x9a\x32\x59\x23\x45\xc6\xfb\x90\x5f\xac\x55" \
+        "\xb2\x24\x22\x24\xf7\x1e\x3d\xf2\xfc\x64\xf6\n\xc8\x7c\xc4\xd7\xb8\x60\x7a\x83\x71" \
+        "\x80\x5b\x20\xd9\xea\x39\x14\x79\xd0\xb9\xf2\x54\x94\x29\x87\xf0\xd2\xc3\xa9\xa1" \
+        "\xd0\x0b\xd9\xf0\x98\x44\x5e\x75\xae\xd8\x25\x34\x4d\xcf\x21\xbe\x3a\xe8\xb0\x4f" \
+        "\r\x0e\x8b\x75\xa4\xde\x0e\xe6\x41\x14\x75\xf3\xf3\x30\xeb\x9b\x95\x80\x57\xe2\x78" \
+        "\x30\xcd\xc8\x2a\xa8\x50\xbc\x50\xcb\x30\x56\x0b\x3d\x33\xbb\xc8\x55\x76\xa2\x82" \
+        "\x05\xcc\xed\x4a\xd8\x9f\x29\xba\x7c\x2c\xc0\x7a\x75\x61\xfc\x12\x80\xcb\0\x56\xa3" \
+        "\x27\x16\n\x9c\x3c\xb9\x50\xc8\x43\xc2\xa7\x8b\x34\x08\x91\x83\x03\x64\x27\x6e\x50" \
+        "\x65\x7a\x1e\x44\xcb\xe9\x3c\x4a\xb2\x3a\xa7\x30\x5e\x26\0\x8b\x8b\x28\x32\x4a\x12" \
+        "\x9b\xd3\xf0\x5f\x25\x54\x9c\x46\x41\x96\xeb\xd5\xc4\xea\x8d\x77\x18\xe4\xaa\xdb" \
+        "\x1b\xbc\x54\xf9\x59\xb8\x82\x2f\x3e\x31\x60\xb3\x45\x30\x8b\x90\x30\x4f\x0b\x90" \
+        "\x81\xc0\x37\xb0\xde\x1a\x30\x53\xd1\x12\x01\xc0\xdb\0\xd2\x4d\x55\x79\xdc\x21\x63" \
+        "\x6f\xd8\xdf\x8a\xc1\xf5\xcc\x60\xe9\x62\x0e\xac\x12\x3b\xe0\x58\x96\x5b\xaf\x23" \
+        "\x94\xab\xa2\xba\x0c\xac\xc2\x15\x06\x62\x21\x55\xd4\x83\x8e\xd5\xdf\x4c\x4d\x19" \
+        "\x02\xfe\xc9\x4e\xef\x28\x2f\xf9\xea\x23\x82\x7e\x2a\xc8\x69\xf8\xa3\x3b\x1c\x7a" \
+        "\x7e\x94\x80\x2f\xe2\xc0\x67\xb3\xf1\x01\xb2\x68\x7c\x5a\x70\x42\xfb\x54\x7d\xc3" \
+        "\xad\xfd\xa6\x10\xdf\xa6\x03\x1e\x76\xe1\x1b\xdd\x90\xe3\xdc\x40\x87\x81\x3e\x86" \
+        "\x40\x01\x16\xb1\xaf\xef\xed\xc2\x9e\xd7\x16\xf6\x03\x80\x61\x3d\x99\xca\x8f\x56" \
+        "\x2b\xb5\x08\xd1\x4b\x6c\xbc\xb0\x7b\xa8\x20\xe8\x77\x7d\x95\xa6\x49\xea\xa3\x8c" \
+        "\x37\xde\x18\xbf\xbb\x5a\x23\x38\x7a\x62\x08\xdf\x71\xd2\xed\xc1\x1f\x30\x25\xfe" \
+        "\xa3\xe3\x4e\xa2\x19\x41\xaf\xd4\x51\xa4\x4f\xe6\xe4\x63\xdf\xfb\x34\x1a\x71\xa2" \
+        "\xb0\x36\x67\x57\x6f\x17\x8b\x07\x40\x8b\x8d\x92\xe4\x75\xb1\xf6\x81\x93\0\x6a\x5e" \
+        "\x15\x28\x3a\xec\x05\xc2\x48\x2e\x19\xa1\x1a\x71\xdb\x65\x56\x83\xb3\x21\x05\x7d" \
+        "\x7f\x2c\xfd\x11\xbc\xec\xe6\xeb\xf7\x4a\x3d\x1c\x3f\x70\x4f\x8e\xf6\x70\x54\x7e" \
+        "\x8a\x27\x46\x07\x16\x4a\x0c\xb3\x57\x26\xe4\x22\x13\x73\x20\x29\x0f\xcc\x5e\xd1" \
+        "\x01\x45\x07\x96\x96\xb3\xac\x32\x0e\x51\x0f\x76\xbf\xdf\x67\x66\x10\xb9\x74\x78" \
+        "\xfa\x23\x8c\xf3\x87\xa3\x34\r\x2e\x88\x25\xa1\xea\x18\x15\x53\x10\xb6\xfe\x9f\xaa" \
+        "\xf9\xa6\x4b\x16\xb6\xae\x03\x6c\xe8\x3f\n\xd7\xc7\x2a\x7e\x99\x9f\x6b\x5f\xd7\xb4" \
+        "\xd6\xcb\xed\xbe\xbc\x8f\xe7\x94\x7e\xcc\x6c\x2d\xcb\xeb\x63\x2d\xa1\x95\t\xe6\x2e" \
+        "\xe0\xd1\xc8\xd1\x72\x07\xeb\x1b\xb3\xf6\x0e\xdb\x06\x57\x95\x15\xb3\x80\x2c\xb3" \
+        "\x0b\xfa\xb2\x64\xa6\xd3\x66\x30\x7b\x70\x9a\x83\xdc\x9e\xf7\xd5\x57\x5e\xd3\x04" \
+        "\xe4\xa6\x79\xb2\0\x7f\x43\x87\xb3\x76\x58\x04\x79\0\x66\xd8\x82\x4f\x21\x53\x75" \
+        "\x41\x11\x34\x02\x99\xa0\x4e\x8f\xab\xe6\x4a\x0c\x11\x21\xd6\x58\x4d\xe5\x71\x23" \
+        "\x3a\xca\x6a\x68\x13\x48\xe9\xc6\x15\x4d\x54\x46\x8b\x3a\x5e\x45\x39\xc0\xba\xe0" \
+        "\x7d\x2d\xdf\x01\xee\x1d\x90\xe3\x99\xa1\xe3\x79\xc8\x8b\x84\xda\xbc\x8c\x1c\xf3" \
+        "\x22\x8d\xf5\x96\xd8\xbc\x6c\x4e\x7f\xb9\x30\x9c\xc0\x83\x4b\x86\xde\x61\x6c\xce" \
+        "\xb4\x3d\xef\xdd\x3b\xa8\x44\x24\x68\x10\xb1\xd7\xf5\x3a\xec\x37\xeb\x24\x8a\x26" \
+        "\x01\x54\x2f\x58\x3b\x28\xc7\x5d\x8d\x37\x2c\xa3\x22\x3b\x27\x3b\xa0\x15\x4a\xb2" \
+        "\x4a\x58\x2c\xd7\n\xa5\xcc\xec\x15\xd9\x8d\x30\x82\xc5\x22\x55\x19\x9e\x8b\xda\x92" \
+        "\x77\xca\x4a\xa1\xe7\x56\r\x2c\x06\x07\x8e\x18\x27\x33\x30\x19\x9b\xc9\xbb\xf4\x31" \
+        "\x22\xfb\x43\x4a\xfc\x3c\xf7\x37\xe7\x34\xaa\xcb\xfc\x17\x7d\xcf\x5f\x06\xab\x30" \
+        "\xba\x68\xc4\xd1\x53\x2f\x20\x81\xe2\xd1\x68\x48\x59\xfb\x10\xca\xfc\xa3\xc9\x66" \
+        "\xdf\xc7\x6c\t\x1f\x0f\x7c\x0f\x78\xea\xd5\x35\x32\x35\x73\x2f\xc8\x72\xcf\xa9\x10" \
+        "\x85\x1d\xc6\xd0\x35\x49\x93\xb5\x4a\xf3\x0b\x5d\xfb\x31\xc1\x48\xe3\xf7\x21\x6c" \
+        "\x79\x70\x28\x45\x45\x8c\x41\xb6\x6a\x31\x21\x71\x9b\xc5\x88\x4e\x92\x69\x8b\x6d" \
+        "\xd1\x17\xa2\x2f\xfc\x05\x63\x5f\xaf\xf3\x04\x8d\xfb\xb9\x14\xe6\x9d\xbd\x99\xb6" \
+        "\xa9\x5a\x25\xb9\xfa\x7c\x26\x66\xf9\xb7\xb5\x31\x53\xfd\xcc\xde\xf9\xd9\x94\x7e" \
+        "\xaf\xd3\x71\x9b\x05\x7e\x26\x2f\xd2\xcb\xab\xb8\x11\x61\x40\xad\xf3\x2c\x39\x54" \
+        "\x51\x70\x21\x03\x57\xcc\x20\x13\xbf\xf4\x90\xcc\x22\xca\x79\x0b\xd6\xd1\xba\xac" \
+        "\x28\x4b\xae\x95\xe8\x69\x18\x3b\x39\xef\x3d\x72\xbf\x58\xa4\r\xc0\x20\xf4\xa9\x52" \
+        "\xeb\x51\x14\x6e\x9c\xc4\xa3\x62\x4c\x5d\x54\x44\xa1\x86\x7a\x58\x5d\x8c\x05\x37" \
+        "\x2d\xc6\xf2\xad\x2c\xc7\xb0\xfe\x48\xcb\xe1\x86\x01\xd6\x2c\x49\x81\x17\x0e\xbb" \
+        "\xa4\x9c\x41\xa6\x98\x03\x56\xe5\x75\xc4\x12\x54\x74\x35\x34\xbc\x34\x20\xf9\x48" \
+        "\x4a\xb7\xab\x0b\xcd\r\x68\x03\xcc\x82\xf9\xeb\xf2\x32\x8a\xe9\xb4\xa4\xd0\x88\x32" \
+        "\xfb\x99\x52\xee\x28\x86\x2e\xd7\x26\x88\x90\x74\x1e\xa9\x20\x35\x80\x36\xbc\xea" \
+        "\xbd\xdb\x4c\xb8\x37\x64\x5d\x7a\x6b\r\x1e\x73\x5d\xda\x4a\x88\x37\x03\x23\xb6\x96" \
+        "\xe5\x9b\x2a\x4d\xef\x9e\x2e\xe5\x6c\x45\xfa\xd8\x6e\x84\x26\xb3\x36\xe9\x98\x2f" \
+        "\x2c\x42\xdc\x25\xba\x3c\xc4\x12\x6b\x15\x9c\xdd\x67\xef\x6b\x6f\x8f\x40\x4d\xdb" \
+        "\x44\xb5\x4e\x53\xa5\xa2\x8d\x49\xc5\x16\x57\xae\xdb\x6e\x25\x38\xcf\x21\xab\xac" \
+        "\xe7\x04\x91\xa9\xce\xaa\x10\x5b\x9c\x81\xd0\xb2\xce\x3a\x51\x59\xb1\xd2\xf5\x59" \
+        "\xa5\x16\xe2\xf6\x46\x2c\xee\xdc\x2a\x5e\x54\xdd\x5b\x08\x70\x47\x46\x1c\x7b\x15" \
+        "\xf1\x69\xdc\xe7\xd6\xcb\x42\xbd\xf3\x04\xf7\x05\xe4\x23\x38\x82\x61\x9a\x64\x5a" \
+        "\x21\x4d\xad\xa5\xd2\xc9\x45\x7b\xa9\x24\x69\xef\x39\xc9\r\xe7\x4b\x50\x45\x88\xa3" \
+        "\x4a\x16\x85\x73\x2c\x79\x63\x34\xa5\xb8\x34\x91\xde\x1f\xe4\x26\x56\x53\xca\x38" \
+        "\x9d\x56\x5a\x7b\x5d\xed\x4a\x80\x97\x15\x0c\xa2\x70\xaf\x81\xd6\x9d\x1b\x1e\x4a" \
+        "\x6f\x14\xbe\x85\x75\x7e\xa5\x0f\x24\x1d\x12\x8b\xeb\x34\x79\x23\x54\xf7\x35\x5e" \
+        "\x98\x79\x6c\x49\xbc\x41\x94\x37\x5d\x54\xc0\x69\xa9\x22\x80\x98\xfa\x20\x13\x74" \
+        "\xa2\x7e\x2a\x65\x66\xa3\x25\x66\n\xfe\x02\x7a\xbf\xc8\x97\xf7\x1e\x42\x27\xa9\xbc" \
+        "\x38\x9f\xa9\xb7\xf9\x18\x31\xe0\xea\x65\x69\x06\xf4\xa5\x68\xc1\x95\xfb\xbe\x39" \
+        "\x24\x1c\xc9\x61\xb4\x57\xbf\x81\x37\x78\x96\x77\x97\xae\xa2\xd6\xb5\x91\x10\xa3" \
+        "\xaf\xcb\x55\xc0\xe9\x1a\xd8\x7c\x2c\x2a\xce\x83\x24\xd6\x51\xea\x73\x4e\xe0\x17" \
+        "\xb7\x26\x11\xd0\x9d\x52\x02\x97\xa6\x29\xa0\x65\xa1\xd1\x68\x33\xb6\x04\xa0\xf6" \
+        "\x78\xe3\xcc\x3f\x86\x36\x08\x85\x11\xd1\x83\x22\xd6\xb8\xcd\xec\xa7\x45\x5c\xbb" \
+        "\xc4\xd9\x39\x76\xd9\xca\xd4\x35\x5d\xe9\xd6\x93\xcc\xdd\x4a\x3e\x4c\xf8\x65\x9b" \
+        "\xd2\xd8\x14\xbf\x77\x4f\x34\x38\xeb\xe9\xe7\xd3\x64\xba\x5a\x47\x9c\x2b\x1d\x3d" \
+        "\x81\x45\xe2\x46\x8d\xa2\xc8\x74\xb7\x32\xb1\xad\x10\x6f\x6f\x73\x70\xc9\xcf\xc5" \
+        "\xa1\x6f\x27\xd0\xba\xeb\xd0\x13\x2f\x20\xf0\x50\xd0\x70\x6e\xc0\xe5\x19\x69\x8a" \
+        "\x8c\xbc\x8a\xc6\x88\x63\x63\x92\x71\x59\xb9\x60\x6d\x89\xaa\x17\xb6\x58\xa9\x1a" \
+        "\xe3\xd8\xfb\xc3\x38\x88\xb8\x89\x66\x79\x60\x28\xb5\xde\x2c\x1b\r\x4d\xde\xec\xcc" \
+        "\xb3\x37\xd7\x72\x3a\xaf\x19\x0e\xd6\xf2\xd7\x20\x5e\x44\x8d\x0f\x14\x30\xb9\xa5" \
+        "\xf1\x20\x68\x4d\xff\xc1\x65\x87\xf1\x86\x43\x8d\x75\x26\x81\x30\x58\xe3\x19\x6f" \
+        "\xab\x7d\x3c\xa8\x39\xbe\xd9\xdf\xc5\x3f\xd4\x5c\x62\xfa\x22\x6e\x51\x49\x6f\xa9" \
+        "\x54\x49\x9c\x6b\x29\x55\x54\t\xd4\xde\xb7\xda\x36\x28\x98\xac\x51\x73\xe4\xaf\xd1" \
+        "\xa0\x9a\x72\x8e\x8e\x01\x73\x7a\xd2\x6f\x9b\xd3\x29\xed\x73\x31\xcf\x21\x55\xf0" \
+        "\x45\xcd\xd9\x56\xc4\x86\x67\x3b\x3a\xb7\xe2\xb6\x56\x1e\x6c\xf9\x4a\x47\x94\x11" \
+        "\x01\xea\xef\x50\xab\xe0\xed\x13\x11\x0e\xea\x2f\x57\x6d\x50\xf1\x60\x57\x07\x56" \
+        "\x9e\xa0\x6a\xa1\xea\x43\xbe\x54\x88\xe5\xc9\x6d\xe5\xe7\x4b\x7e\x2b\xc0\x03\x1d" \
+        "\x25\r\xe1\x60\x47\x02\xcc\x37\x66\x13\x26\x80\x2c\xc5\x1f\xd8\x52\xdc\xdd\x7b\x60" \
+        "\xc2\x62\x1b\x19\xbf\x5a\xea\xe7\x1e\x7f\x77\x40\x7f\x21\t\x6b\x2a\x9c\xe8\x35\x4c" \
+        "\xdb\x78\x62\x37\x69\x4b\t\x2e\x4a\x88\x20\xa2\x47\x03\xcf\x92\xf9\xb6\xe6\x69\xab" \
+        "\x98\x5a\x68\x2a\xa5\x38\x7a\x75\xb8\xde\xec\x4f\x93\x38\xa2\x30\xc4\x0e\x23\xca" \
+        "\x91\xa6\xd7\x5d\xf1\x1a\x0c\x34\xfc\x5e\x75\xb3\xa7\xaf\xd2\x14\x8d\x8f\x5e\xe5" \
+        "\x26\x18\xb8\x81\x94\xac\x0c\x04\x9f\xb7\x71\xa3\xa4\xfa\x06\x07\x61\xcf\x11\x54" \
+        "\x92\x59\x10\x9c\xa2\x72\x91\xe6\xed\x78\xa0\xde\xce\xa1\x8c\x80\xeb\xb5\x69\xd7" \
+        "\x42\xac\x39\x51\xd0\xad\xc5\x36\x56\xb5\xce\x87\x68\x5c\x86\x19\x79\xde\x38\x4e" \
+        "\x33\x83\x59\x58\xbb\x20\x88\xf7\xac\xfa\x03\x6a\x79\xdb\x67\x8e\x15\x5a\xbd\x6c" \
+        "\x8a\x45\xae\xc3\x6c\x79\x2b\xaa\xbb\xd2\x8d\x1e\x83\xb6\x3a\xd6\r\x1f\x45\x4c\x38" \
+        "\x82\x10\x89\x71\xb1\xb5\x99\r\xcf\x02\x97\xf4\x24\x06\x7d\xdd\xda\x13\x11\x22\xd9" \
+        "\xd8\x11\xcc\xe7\x6a\x9d\x57\x1b\xe7\x54\xf7\x20\xda\x07\x7c\xd0\xb1\x97\x42\xa7" \
+        "\xef\x82\x52\xec\xe6\x1b\xed\xa6\xfc\xf8\x85\x22\x30\x7a\x71\xbb\xa4\x7b\t\x1d\x70" \
+        "\x5c\x10\x93\xd0\xf2\xb0\x4b\x83\xad\x6b\x20\x07\x88\x79\xdd\x28\x21\xfa\xa9\x19" \
+        "\x89\xd0\x2b\x70\x1b\xea\x2f\x89\x60\x1b\x7c\x99\xd1\x72\xed\xe5\x5b\x04\xf0\xbb" \
+        "\x77\x4d\x29\xe8\x4c\xc8\x97\xc5\xc6\t\x5a\x9d\x66\n\xe9\t\xc5\x6f\xf1\xb2\xe6\xda" \
+        "\x49\x44\x9a\xb6\x5b\xff\xff\xb2\xe8\x96\xf5\x84\xad\x4e\xb6\xd6\xaa\x70\x73\x77" \
+        "\x73\x6d\x99\xb8\x45\x3e\xa9\x85\x80\x46\x1b\x77\xad\x26\xfa\x4d\x4e\x6c\xb7\xa8" \
+        "\x76\xbe\xbc\xfd\xf0\xdb\xcf\x97\x52\xf5\x83\x97\xaa\xd7\xde\x33\xaa\xd7\x85\x5b" \
+        "\xd5\xb6\x73\x88\x8e\xb9\xe2\n\xd7\xfc\x7c\xc7\xfe\x06\xad\x52\xe0\x8a\xdf\x4a\x38" \
+        "\x85\xa9\xdb\x47\x6f\x2c\x5d\xed\xaf\xd7\xb4\x27\xe3\x26\x92\x36\x5a\x72\x83\x40" \
+        "\xa1\x5e\x79\x9a\xaf\x53\xb1\xc6\x9e\x33\xc2\x36\x2a\x96\xa3\x7f\x01\x73\x33\xf6" \
+        "\xb7\xd2\x8a\x77\x11\x7f\x88\t\x47\xfd\x5c\x41\xea\xc9\xa8\x02\x67\xd5\xfa\xfa\x67" \
+        "\x99\xfa\x77\x72\x80\xdd\x80\x49\x36\xea\x3b\xbf\x07\x05\xc4\x55\xb2\x28\x22\x05" \
+        "\xb5\x13\x9e\x7d\x0c\x3d\x80\x7b\xf0\x1f\x93\x12\x5a\xee",
+    2611, 10808, 1},
     #endif
     #ifndef ESP32
     #ifdef NO_COMPRESSION
@@ -33970,57 +33970,57 @@ const static struct builtin_module builtin_modules[] = {
         "reak;\nnbytes = _tls_.read(self.tls_context, buf, buf.byteLength);\nif (nbytes <" \
         " 0) {\nself.emit(\"error\", new Error(_C_library.strerror(_C_library.errno())));" \
         "\nbreak;\n}\nif (nbytes == 0)\nbreak;\nvar buf2 = buf;\nif (nbytes != 8192)\nbuf" \
-        "2 = buf2.subarray(0, nbytes);\nif (self._readableState.decoder)\nself.emit(\"dat" \
-        "a\", self._readableState.decoder.write(buf2));\nelse\nself.emit(\"data\", buf2);" \
-        "\n} while (nbytes > 0);\n} else\n_net_.pollResumeWrite(self._socket);\n} else {\n" \
-        "self.close();\n}\n}\nobj.write = function() {\nif (self.destroyed)\nreturn;\nsel" \
-        "f._drain = true;\nself.emit(\"drain\");\nif ((!self._buffer) || (!self._buffer.l" \
-        "ength))\n_net_.pollPauseWrite(self._socket);\nself.flush();\n}\n_net_.poll(this." \
-        "_socket, 1, obj);\nthis.write = function(data, encoding, callback) {\nif ((this." \
-        "destroyed) || (this._socket === undefined) || (!this.tls_context))\nthrow new Er" \
-        "ror(\"socket is closed\");\nif (!_tls_.established(this.tls_context))\nthrow new" \
-        " Error(\"tls connection is not established yet\");\nvar buf = data;\nif (typeof " \
-        "data === \"string\") {\nif (!encoding)\nencoding = \"utf-8\";\nbuf = new TextEnc" \
-        "oder(encoding).encode(data);\n}\nvar sent = 0;\nvar tls_write = 0;\ndo {\ntls_wr" \
-        "ite = _tls_.write(this.tls_context, buf, buf.length - sent, sent);\nsent += tls_" \
-        "write;\n} while (tls_write > 0);\nreturn this.flush();\n}\nthis.close = function" \
-        "() {\nif (this.tls_context) {\n_tls_.destroy(this.tls_context);\nthis.tls_contex" \
-        "t = undefined;\n}\nif ((this._socket !== undefined) && (this._socket >= 0)) {\nt" \
-        "his.emit(\"close\");\n_net_.unpoll(this._socket);\n_net_.close(this._socket);\nt" \
-        "his._socket = undefined;\nthis._buffer = undefined;\nif (server) {\nserver.conne" \
-        "ctions --;\nserver = undefined;\n}\nif (this._lastReadInterval) {\nclearInterval" \
-        "(this._lastReadInterval);\nthis._lastReadInterval = undefined;\n}\nfor (var k in" \
-        " this)\ndelete this[k];\nthis.destroyed = true;\n}\nthis.removeAllListeners();\n" \
-        "}\nthis.flush = function() {\nvar buf = _tls_.getWriteBuffer(this.tls_context);\n" \
-        "if ((buf) && (buf.length === undefined) && (buf.byteLength))\nbuf = new Uint8Arr" \
-        "ay(buf);\nif ((buf) && (buf.length)) {\nif (this._buffer) {\nvar buf2 = new Uint" \
-        "8Array(this._buffer.length + buf.length);\nbuf2.set(this._buffer);\nbuf2.set(buf" \
-        ", this._buffer.length);\nthis._buffer = buf2;\n} else\nthis._buffer = buf;\n}\ni" \
-        "f ((this._drain) && (this._socket !== undefined) && (!this.destroyed) && (this._" \
-        "buffer) && (this._buffer.length)) {\n_net_.pollResumeWrite(this._socket);\nvar s" \
-        "ent = _net_.send(this._socket, this._buffer, this._buffer.length);\nif (sent > 0" \
-        ") {\nthis._lastRead = new Date().getTime();\nthis.bytesWritten += sent;\nif (sen" \
-        "t == this._buffer.length) {\nthis._buffer = undefined;\nif (this._half_closed) {" \
-        "\nthis._half_closed = false;\nthis.close();\n}\n} else\nthis._buffer = this._buf" \
-        "fer.slice(sent);\n} else\nif (sent < 0) {\nself.emit(\"error\", new Error(_net_." \
-        "strerror(_net_.errno())));\nthis.close();\n}\n}\nreturn false;\n}\nthis.getCiphe" \
-        "r = function() {\nif (this.tls_context)\nreturn { \"standardName\": _tls_.cipher" \
-        "(this.tls_context) };\n}\n},\nServer: function(options, connectionListener) {\ni" \
-        "f (options) {\nvar cert = options.cert;\nvar key = options.key;\nif (typeof cert" \
-        " != \"string\")\ncert = new TextDecoder(\"utf8\").decode(cert);\nif (typeof key " \
-        "!= \"string\")\nkey = new TextDecoder(\"utf8\").decode(key);\nthis.tls_context =" \
-        " _tls_.create(true, cert, key);\n} else\nthis.tls_context = _tls_.create(true);\n" \
-        "var self = this;\n_net_server.call(this, function(socket) {\ntls.Socket.call(soc" \
-        "ket, {\"tls_context\": _tls_.accept(self.tls_context), \"_server\": self }, conn" \
-        "ectionListener);\nsocket.on(\"error\", function(err) { socket.close(); });\n});\n" \
-        "},\ncreateServer(options, connectionListener) {\nif (connectionListener === unde" \
-        "fined)\nconnectionListener = options;\nreturn new this.Server(options, connectio" \
-        "nListener);\n},\ncreateConnection(options, connectionListener) {\nreturn new thi" \
-        "s.Socket(options, connectionListener);\n},\nconnect(options, connectionListener)" \
-        " {\nreturn createConnection(options, connectionListener);\n}\n}\nutil.inherits(t" \
-        "ls.Socket, net.Socket);\nutil.inherits(tls.Server, net.Server);\nmodule.exports " \
-        "= tls;",
-    6515, 6515, 0},
+        "2 = buf2.subarray(0, nbytes);\nif ((self._readableState) && (self._readableState" \
+        ".decoder))\nself.emit(\"data\", self._readableState.decoder.write(buf2));\nelse\n" \
+        "self.emit(\"data\", buf2);\n} while (nbytes > 0);\n} else\n_net_.pollResumeWrite" \
+        "(self._socket);\n} else {\nself.close();\n}\n}\nobj.write = function() {\nif (se" \
+        "lf.destroyed)\nreturn;\nself._drain = true;\nself.emit(\"drain\");\nif ((!self._" \
+        "buffer) || (!self._buffer.length))\n_net_.pollPauseWrite(self._socket);\nself.fl" \
+        "ush();\n}\n_net_.poll(this._socket, 1, obj);\nthis.write = function(data, encodi" \
+        "ng, callback) {\nif ((this.destroyed) || (this._socket === undefined) || (!this." \
+        "tls_context))\nthrow new Error(\"socket is closed\");\nif (!_tls_.established(th" \
+        "is.tls_context))\nthrow new Error(\"tls connection is not established yet\");\nv" \
+        "ar buf = data;\nif (typeof data === \"string\") {\nif (!encoding)\nencoding = \"" \
+        "utf-8\";\nbuf = new TextEncoder(encoding).encode(data);\n}\nvar sent = 0;\nvar t" \
+        "ls_write = 0;\ndo {\ntls_write = _tls_.write(this.tls_context, buf, buf.length -" \
+        " sent, sent);\nsent += tls_write;\n} while (tls_write > 0);\nreturn this.flush()" \
+        ";\n}\nthis.close = function() {\nif (this.tls_context) {\n_tls_.destroy(this.tls" \
+        "_context);\nthis.tls_context = undefined;\n}\nif ((this._socket !== undefined) &" \
+        "& (this._socket >= 0)) {\nthis.emit(\"close\");\n_net_.unpoll(this._socket);\n_n" \
+        "et_.close(this._socket);\nthis._socket = undefined;\nthis._buffer = undefined;\n" \
+        "if (server) {\nserver.connections --;\nserver = undefined;\n}\nif (this._lastRea" \
+        "dInterval) {\nclearInterval(this._lastReadInterval);\nthis._lastReadInterval = u" \
+        "ndefined;\n}\nfor (var k in this)\ndelete this[k];\nthis.destroyed = true;\n}\nt" \
+        "his.removeAllListeners();\n}\nthis.flush = function() {\nvar buf = _tls_.getWrit" \
+        "eBuffer(this.tls_context);\nif ((buf) && (buf.length === undefined) && (buf.byte" \
+        "Length))\nbuf = new Uint8Array(buf);\nif ((buf) && (buf.length)) {\nif (this._bu" \
+        "ffer) {\nvar buf2 = new Uint8Array(this._buffer.length + buf.length);\nbuf2.set(" \
+        "this._buffer);\nbuf2.set(buf, this._buffer.length);\nthis._buffer = buf2;\n} els" \
+        "e\nthis._buffer = buf;\n}\nif ((this._drain) && (this._socket !== undefined) && " \
+        "(!this.destroyed) && (this._buffer) && (this._buffer.length)) {\n_net_.pollResum" \
+        "eWrite(this._socket);\nvar sent = _net_.send(this._socket, this._buffer, this._b" \
+        "uffer.length);\nif (sent > 0) {\nthis._lastRead = new Date().getTime();\nthis.by" \
+        "tesWritten += sent;\nif (sent == this._buffer.length) {\nthis._buffer = undefine" \
+        "d;\nif (this._half_closed) {\nthis._half_closed = false;\nthis.close();\n}\n} el" \
+        "se\nthis._buffer = this._buffer.slice(sent);\n} else\nif (sent < 0) {\nself.emit" \
+        "(\"error\", new Error(_net_.strerror(_net_.errno())));\nthis.close();\n}\n}\nret" \
+        "urn false;\n}\nthis.getCipher = function() {\nif (this.tls_context)\nreturn { \"" \
+        "standardName\": _tls_.cipher(this.tls_context) };\n}\n},\nServer: function(optio" \
+        "ns, connectionListener) {\nif (options) {\nvar cert = options.cert;\nvar key = o" \
+        "ptions.key;\nif (typeof cert != \"string\")\ncert = new TextDecoder(\"utf8\").de" \
+        "code(cert);\nif (typeof key != \"string\")\nkey = new TextDecoder(\"utf8\").deco" \
+        "de(key);\nthis.tls_context = _tls_.create(true, cert, key);\n} else\nthis.tls_co" \
+        "ntext = _tls_.create(true);\nvar self = this;\n_net_server.call(this, function(s" \
+        "ocket) {\ntls.Socket.call(socket, {\"tls_context\": _tls_.accept(self.tls_contex" \
+        "t), \"_server\": self }, connectionListener);\nsocket.on(\"error\", function(err" \
+        ") { socket.close(); });\n});\n},\ncreateServer(options, connectionListener) {\ni" \
+        "f (connectionListener === undefined)\nconnectionListener = options;\nreturn new " \
+        "this.Server(options, connectionListener);\n},\ncreateConnection(options, connect" \
+        "ionListener) {\nreturn new this.Socket(options, connectionListener);\n},\nconnec" \
+        "t(options, connectionListener) {\nreturn createConnection(options, connectionLis" \
+        "tener);\n}\n}\nutil.inherits(tls.Socket, net.Socket);\nutil.inherits(tls.Server," \
+        " net.Server);\nmodule.exports = tls;",
+    6542, 6542, 0},
     #else
     {"tls",
         "\x78\x01\xad\x58\x5b\x6f\xdb\x36\x14\x7e\xd7\xaf\x50\xf4\xd0\xca\x88\x23\xa4\x79" \
@@ -34057,56 +34057,57 @@ const static struct builtin_module builtin_modules[] = {
         "\x6b\x7b\xaf\x3e\x8e\x32\x0f\x6f\x13\xe0\xf2\xba\x27\xa4\x67\xd5\n\x20\xb7\x5d\x04" \
         "\x1d\x80\x48\x65\xc4\xe1\xa1\0\xfc\x6f\x10\xbd\x5d\x96\xc5\x4a\xa7\x7a\x2f\x90\xd4" \
         "\xed\x49\x38\x59\xe5\x1e\xa5\x88\xeb\x6b\x0c\xb5\x3d\xb1\xb9\x71\x01\x8a\xc3\x9f" \
-        "\x9e\x2a\x27\xd7\x21\x25\x48\xd0\x9d\x5f\x24\x4d\xbb\x4a\x29\x77\xce\x07\x40\xe2" \
-        "\xa0\xa2\xd9\xe0\x6b\xf5\xd1\x40\x38\x93\x5c\x65\x75\x8e\x8e\x15\xe6\xe4\xa9\x49" \
-        "\xc1\x9a\x27\xc8\x93\x7b\x5d\0\x16\x50\x1c\x9a\x40\xf9\x30\x66\x40\xc7\x98\x2f\xf7" \
-        "\x9b\xa2\x54\x5e\xe9\xd7\x60\x9b\xcf\x22\x4e\x2f\x2c\x79\x1f\x14\xe2\xf5\x4f\x62" \
-        "\x2c\xd3\xda\xd3\x3a\x9f\xcb\x2a\x43\x05\x85\x94\x19\x56\x14\x6f\x70\x0e\xd8\xd2" \
-        "\xf5\x1e\xc0\x36\x40\x77\xae\x53\xc8\x0b\x87\x36\xa9\x3e\x1e\x44\xd6\x69\x16\x4f" \
-        "\x4b\x30\x66\x8d\r\xfa\xdb\x37\x07\x31\xbb\x95\x94\x8c\x91\x99\xb0\xe5\xf7\xb4\x6d" \
-        "\xa6\x4d\xa1\xe5\xba\x6c\x9b\r\x5b\xd0\xdd\xe9\x95\xfc\x79\xf8\n\x3a\xd1\xea\x0b" \
-        "\xd0\xd0\xf6\xc8\x44\x74\xf1\x3c\x54\x15\x84\xa3\xa8\x3e\xc3\x20\x01\r\x6c\x95\x66" \
-        "\x5b\xdf\x05\xe8\x5a\x67\x3b\xe9\x2d\x25\0\xc6\xc4\xcc\x60\xed\x1a\xf5\xa5\x19\x88" \
-        "\xd7\xf5\xbd\x2c\x31\xf6\x7a\xd1\x84\x14\x88\xdc\x39\x6a\xa2\xc1\x1c\xc3\x0e\xeb" \
-        "\x92\x4d\x6a\xb0\x0b\xd9\x56\xb5\t\x65\x3d\xd8\x63\xc9\xf2\x69\0\x4e\x40\xdb\x59" \
-        "\xa6\xd9\xdf\xa9\x7a\x4d\x1b\x64\x4f\x04\xe6\x82\x3b\x22\x5f\x70\x9c\x83\x66\x81" \
-        "\xfb\x05\xf7\xa3\xd6\xac\xcf\x2e\x23\x48\x3d\xdf\x71\x3e\x81\x76\x37\x48\x81\xcd" \
-        "\xdc\xdd\x49\xe8\x97\x22\x5f\x53\xb0\x78\xde\xaa\x70\xa2\x80\x31\xca\xce\x7e\x4b" \
-        "\x17\x1b\xd8\xa2\x22\x24\xf7\xd8\x27\x9c\x2d\x43\x6f\x88\x52\xc3\x10\n\xcf\x88\x3b" \
-        "\x66\x5e\xc5\x58\x01\x51\xd0\x49\x3c\x43\x91\x4b\x9d\x10\x4e\x27\x86\x36\x4d\x8c" \
-        "\x12\x5e\xb4\xa6\x38\x4d\xe5\xc7\x28\x3e\xb0\xcf\x1a\x5b\xe0\x4c\r\x2a\x13\xe3\x95" \
-        "\x18\x3d\xb9\x8c\xf5\x91\x76\xd2\x47\x1a\x4e\x23\xbd\xf3\xd7\x58\xed\x50\x36\x4f" \
-        "\xba\x94\x83\xa4\x33\x86\xfd\xa9\xa9\x88\xcf\xb8\x1e\x0c\x8e\xfa\x50\x97\x1a\xf2" \
-        "\t\xe7\x6e\xff\x84\x4b\x06\x4e\x9d\xdd\x44\xea\x46\x36\x1c\t\xc3\xb3\x33\x0c\xca" \
-        "\x78\xde\x66\xa3\x99\xb1\xeb\x99\xbf\x82\x73\xf4\x2e\x2d\x69\x5c\x2c\x55\xaa\xdd" \
-        "\xc6\x21\x3a\xa7\xd9\xf0\x60\x28\x6a\r\r\x3e\x46\xec\x6d\xa9\xad\xc3\x9d\x59\x90" \
-        "\xab\x52\x01\x14\x70\xf1\xd7\xf6\x6f\xcb\xc9\x27\xbf\xaf\x71\x16\x0f\x5a\xdd\xd6" \
-        "\x3b\xf5\xa6\x2c\x5d\x17\x6d\x04\x58\x08\x3c\x87\xc7\x33\x86\x07\x8c\0\x54\xdd\x7e" \
-        "\x26\x2f\x4e\xa1\x84\x50\0\x57\x38\xdc\x02\xe3\x83\xb2\xe3\x4e\x45\xb3\xa5\x6e\x36" \
-        "\x9e\x04\x91\xd9\x61\xbe\x7e\xc6\x90\xe1\x15\xaa\x63\x77\x1c\x30\x94\x94\x4e\xbb" \
-        "\x53\x91\x8e\xd8\x9b\xa9\x9f\x2a\x3b\xb0\x3b\xae\x62\x9f\x32\x78\x82\x91\x8f\xa6" \
-        "\xc7\x19\x5e\xf1\x5d\x6f\x7c\x36\xc8\x1c\x6a\x41\x13\xa9\x32\x91\x4a\x5c\xb4\x45" \
-        "\xa5\xef\x2e\x39\x2f\x0c\x77\xa4\xcf\xa6\x1b\xf0\xc4\xe7\x87\x2d\x7c\x76\x3c\x56" \
-        "\x95\x2d\xef\xbe\x61\x49\x01\x87\x7c\xc2\x19\x06\x7c\xb0\x68\xb9\x84\x7f\x7e\xcc" \
-        "\x24\x32\x1a\x1e\x50\x3b\x80\x2c\x56\x45\xe4\x23\x38\x82\x63\xa6\x64\x7a\x21\x87" \
-        "\x12\x9e\x4f\x37\x69\xb9\x5e\x72\x3f\xeb\xae\x88\xcd\xee\x9b\xbb\xab\xa8\x76\x04" \
-        "\x99\x8c\x68\x4f\x95\xa6\x2c\x32\x1c\x04\xa8\xa8\x8b\xaf\x07\xd2\xfb\xbb\x7c\x92" \
-        "\x8c\x94\x72\xfd\xc0\x2a\x6d\x73\x1b\x5c\xfa\xb6\xb8\xdb\x90\x86\xcf\x37\x03\xc7" \
-        "\xe3\x01\xdb\x2a\x7c\xcb\xa5\x3a\xff\x2d\xbd\x55\xd1\x95\xfb\x86\x21\x56\x13\x4d" \
-        "\x04\x3e\x50\xf1\x03\x30\xe0\x47\x92\x27\x9e\x3d\x60\x21\x5f\x3e\xe4\xbb\x84\xcd" \
-        "\xdc\x4c\x69\xf9\xc1\x8f\x4b\x46\xe3\x56\xed\xc5\x3e\xac\x7a\x03\x01\x5d\x83\xe1" \
-        "\xd8\xcf\x03\x81\x65\xe4\x7a\xfd\x3b\x9e\x63\x63\x1c\x05\x2e\xa3\x99\x9d\x6b\x63" \
-        "\xa4\xb2\x30\xb5\x9c\x50\x4e\x8f\x11\x0b\x7e\x86\x0f\x10\x4d\x77\xca\xde\x43\x04" \
-        "\x16\x65\xf0\x05\xc8\x9c\xa3\x9c\x0e\x1c\xc7\x5c\xf4\x59\x29\x5e\x8a\xc4\x3b\x95" \
-        "\x7c\xd1\xf0\xfe\xb7\xf9\xcc\x33\x8a\x7d\xe1\x62\x42\x97\xc4\x0f\x38\x8f\x39\xb1" \
-        "\x3e\xd2\x69\x96\xa9\x3b\x33\xfe\xae\x9b\x87\x91\x15\x07\xa4\xa4\t\x7c\xf6\x4f\xc4" \
-        "\x16\xba\x26\xcb\x02\x1d\x3c\xbc\x07\xcf\x2b\xf6\xe3\xd4\xa3\x38\xc4\x57\x13\xfa" \
-        "\x37\x0f\xd8\x6c\x86\xd3\x31\x20\x1a\x9f\x0c\xda\x8e\xfb\x8c\xec\x51\x38\x34\xf9" \
-        "\x61\n\x83\x4c\xa1\x38\x42\xb2\xd0\xf3\xad\x3f\x7d\x4e\xd7\x91\x1c\x72\xc1\x11\x72" \
-        "\xec\x33\xd2\x71\xec\xff\x93\x56\x5c\x3d\xf0\xd1\x34\x29\x2a\x48\xef\xc2\x34\x38" \
-        "\x6b\x5a\xd5\xb0\x28\xb9\xa7\x51\x20\x9d\x20\x23\x4f\x59\x32\x1e\xa5\x16\xc1\x6d" \
-        "\x9d\xb7\xa5\x4a\xd4\xd7\xbb\x5a\x1b\xfc\xfe\x06\xca\xc5\xbf\xa9\x4e\x8a\xcb",
-    1681, 5599, 1},
+        "\x9e\x2a\x27\xd7\x21\x25\x48\xd0\x9d\x5f\x24\x4d\xbb\x4a\x29\x77\xce\x07\x40\xb2" \
+        "\xd9\x82\x76\x83\xb3\xd5\x47\x03\xf1\xe4\xe2\x30\x71\x90\xe4\x2a\xab\x73\x70\x79" \
+        "\x0f\x72\x79\x6a\x52\x30\xf4\t\xfa\xe4\x5e\x17\0\x13\xd4\x04\xad\xa3\x54\x19\x33" \
+        "\xa0\x63\x4c\xa5\xfb\x4d\x51\x2a\x6f\xcf\x6b\x30\xdb\x27\x18\x67\x1e\x56\xc3\x0f" \
+        "\n\xa1\xfc\x27\x31\x96\x19\xef\x69\x5d\x38\x64\x01\xa2\x5a\x43\xca\x0c\x8b\r\xfa" \
+        "\x82\xc8\x73\x80\x9d\xae\xf7\x80\xc3\x01\xf0\x73\x9d\x42\xca\x38\x20\x4a\xf5\xf1" \
+        "\x20\x72\xfe\x64\xa8\x2d\xc1\x98\x35\xf6\xee\x6f\xdf\x1c\xfa\xec\x56\x52\x32\x7c" \
+        "\x66\xc2\x96\xdf\xd3\xb6\x99\x36\x85\x96\xeb\xb2\x6d\x36\x6c\x41\x77\xa7\xd7\r\xe6" \
+        "\xe1\x2b\x68\x52\xab\x2f\x40\x43\xdb\x23\x13\xd1\xc5\xf3\x50\x55\x10\x8e\xa2\xfa" \
+        "\x0c\x33\x06\xf4\xb6\x55\x9a\x6d\x7d\x83\xa0\x6b\x9d\xed\xa4\xb7\x94\0\xf0\x13\xe3" \
+        "\x84\xb5\x6b\xd4\xb2\x66\x20\x5e\xd7\xf7\xb2\xfa\xd8\xeb\x45\x13\x52\x20\x72\xe7" \
+        "\xa8\x89\xde\x73\x0c\x3b\x2c\x59\x36\xdf\xc1\x2e\x64\x5b\xd5\x26\x94\xa5\x62\x8f" \
+        "\xd5\xcc\x67\x08\x38\x01\x6d\x67\x99\x66\x7f\xa7\xea\x35\x6d\x90\x3d\x11\x98\x0b" \
+        "\xee\x88\x7c\x2d\x72\x0e\x9a\x05\xee\x17\xdc\x8f\x5a\xb3\x3e\xbb\x8c\x20\x2b\x7d" \
+        "\x33\xfa\x04\xda\xdd\x20\x05\xf6\x79\x77\x27\xa1\x5f\x8a\x7c\x4d\xc1\xe2\x51\xac" \
+        "\xc2\x61\x03\x26\x2c\x3b\x16\x2e\x5d\x6c\x60\x8b\xea\x93\xdc\x63\x9f\x70\xb6\x0c" \
+        "\xbd\x21\xaa\x10\x43\x28\x3c\x23\xee\x98\x79\x15\x63\x05\x44\x41\x93\xf1\x0c\x45" \
+        "\x2e\x75\x42\x38\x9d\x18\xda\x34\x4c\x4a\x78\xd1\x9a\xe2\x34\x95\x1f\xa3\xf8\xc0" \
+        "\x3e\x6b\x6c\x81\x33\x35\xc3\x4c\x4c\x5e\x62\x2a\xe5\n\xd7\x47\xda\x49\x1f\x69\x58" \
+        "\x8b\x7a\xe7\xaf\xb1\x10\xa2\x6c\x1e\x82\x29\x07\x49\x67\x0c\xfb\x53\x03\x13\x9f" \
+        "\x71\x3d\x18\x1c\xf5\xa1\x2e\x35\xe4\x13\xce\xdd\xfe\t\x97\x0c\x1c\x48\xbb\x61\xd5" \
+        "\x4d\x73\x38\x2d\x86\x67\x67\x18\x94\xf1\x28\xce\x46\x33\x63\xd7\x4e\x7f\x05\xe7" \
+        "\xe8\x5d\x5a\xd2\x24\x59\xaa\x54\xbb\x8d\x43\x74\x4e\xb3\xe1\xc1\x50\xd4\x1a\x7a" \
+        "\x7f\x8c\xd8\xdb\x52\xc7\x87\x3b\xb3\x20\x57\xa5\x02\x28\xe0\xe2\xaf\xed\xdf\x96" \
+        "\x93\x4f\x7e\x5f\xe3\x2c\x1e\xb4\xba\xad\x77\xea\x4d\x59\xba\x06\xdb\x08\xb0\x10" \
+        "\x78\x0e\x4f\x6e\x0c\x0f\x98\x0e\xa8\xba\xfd\x4c\x5e\x9c\x42\t\xa1\0\xae\x70\xb8" \
+        "\x05\xc6\x07\x65\xc7\x9d\x8a\x3e\x4c\x8d\x6e\x3c\x24\x22\xb3\xc3\x7c\xfd\xf8\x21" \
+        "\xc3\x2b\x54\xc7\xc6\x39\x60\x28\x29\x9d\x76\xa7\x22\x1d\xb1\x6d\x53\xab\x55\x76" \
+        "\x96\x77\x5c\xc5\x3e\x65\xf0\x04\x23\x1f\x4d\x8f\x33\xbc\xe2\xbb\xde\xf8\x6c\x90" \
+        "\x39\xd4\x82\x26\x52\x65\x22\x95\xb8\x68\x8b\x4a\xdf\x5d\x72\x5e\x18\xee\x48\x9f" \
+        "\x4d\x37\xe0\x89\x2f\x13\x5b\xf8\xec\xe4\xac\x2a\x5b\xde\x7d\xc3\x92\x02\x0e\xf9" \
+        "\x84\x33\x0c\xf8\x60\xd1\x72\t\xff\xfc\x04\x4a\x64\x34\x3c\xa0\x76\0\x59\xac\x8a" \
+        "\xc8\x47\x70\x04\xc7\x4c\xc9\xf4\x42\x0e\x25\x3c\x9f\x6e\xd2\x72\xbd\xe4\x7e\xd6" \
+        "\x5d\x11\x9b\xdd\xe7\x78\x57\x51\xed\x08\x32\x19\xd1\x9e\x2a\x4d\x59\x64\x38\x08" \
+        "\x50\x51\x17\x1f\x16\xa4\xf7\x77\xf9\x5a\x19\x29\xe5\xfa\x81\x55\xda\xe6\x36\xb8" \
+        "\xf4\x6d\x71\xb7\x21\r\x9f\x6f\x06\x8e\xc7\x03\xb6\x55\xf8\xcc\x4b\x75\xfe\x5b\x7a" \
+        "\xab\xa2\x2b\xf7\x79\x43\xac\x26\x9a\x08\x7c\xbb\xe2\xb7\x61\xc0\xef\x27\x4f\xbc" \
+        "\x88\xc0\x42\x3e\x8a\xc8\x27\x0b\x9b\xb9\x99\xd2\xf2\x2d\0\x97\x8c\xc6\xad\xda\x8b" \
+        "\x7d\x58\xf5\x06\x02\xba\x06\x73\xb3\x9f\x07\x02\xcb\xc8\xf5\xfa\x77\x3c\xc7\xc6" \
+        "\x38\n\x5c\x46\x33\x3b\xd7\xc6\x48\x65\x61\x6a\x39\xa1\x9c\x1e\x23\x16\xfc\x0c\x1f" \
+        "\x20\x9a\xee\x94\xbd\x37\n\x2c\xca\xe0\x0b\x90\x39\x47\x39\x1d\x38\x8e\xb9\xe8\xb3" \
+        "\x52\x3c\x22\x89\x27\x2c\xf9\xd8\xe1\xfd\x6f\xf3\x99\x67\x14\xfb\xf8\xc5\x84\x2e" \
+        "\x89\x1f\x70\x1e\x73\x62\x7d\xa4\xd3\x2c\x53\x77\x66\xfc\xc9\x37\x0f\x23\x2b\x0e" \
+        "\x48\x49\x13\x78\x11\x98\x88\x2d\x74\x4d\x96\x05\x3a\x78\x78\x0f\x5e\x5e\xec\x77" \
+        "\xab\x47\x71\x88\x0f\x2a\xf4\x6f\x1e\xb0\xd9\x0c\xa7\x63\x40\x34\x3e\x19\xb4\x1d" \
+        "\xf7\x85\xd9\xa3\x70\x68\xf2\xc3\x14\x06\x99\x42\x71\x84\x64\xa1\xe7\x5b\x7f\xfa" \
+        "\x9c\xae\x23\x39\xe4\x82\x23\xe4\xd8\x17\xa6\xe3\xd8\xff\x27\xad\xb8\x7a\xe0\x7b" \
+        "\x6a\x52\x54\x90\xde\x85\x69\x70\xd6\xb4\xaa\x61\x51\x72\xaf\xa6\x40\x3a\x41\x46" \
+        "\x9e\xb2\x64\x3c\x4a\x2d\x82\xdb\x3a\x6f\x4b\x95\xa8\xaf\x77\xb5\x36\xf8\x69\x0e" \
+        "\x94\x8b\x7f\x01\x22\x6f\x93\x61",
+    1688, 5626, 1},
     #endif
     #endif
     #ifdef NO_COMPRESSION
@@ -36943,7 +36944,7 @@ const static struct builtin_module builtin_modules[] = {
 #endif
 #ifdef ESP32
     {"::esp32",
-    "if(global.esp){if(nvs.init()){nvs.erase();nvs.init()}\r\nconsole.log('esp memory available',esp.freeHeapSize(),esp.freeMinimumHeapSize());console.log(wifi.strerror(wifi.stopDhcpc(wifi.constants.TCPIP_ADAPTER_IF_STA)));console.log(wifi.strerror(wifi.stopDhcps(wifi.constants.TCPIP_ADAPTER_IF_AP)));console.log(wifi.strerror(wifi.setIp(wifi.constants.TCPIP_ADAPTER_IF_AP)));console.log(wifi.strerror(wifi.startDhcps(wifi.constants.TCPIP_ADAPTER_IF_AP)));wifi.setMode(wifi.constants.WIFI_MODE_AP);wifi.onip=function(){console.log('connected',wifi.getIp())};wifi.onstart=function(){console.log('started');wifi.connect()};wifi.ondisconnect=function(){console.log('disconnected');wifi.connect()};wifi.setConfig(wifi.constants.ESP_IF_WIFI_AP,{});wifi.start()}\r\nif(global.esp)\r\nconsole.log('esp memory available',esp.freeHeapSize(),esp.freeMinimumHeapSize());const http=require('http');if(global.esp)\r\nconsole.log('esp memory available',esp.freeHeapSize(),esp.freeMinimumHeapSize());const hostname='0.0.0.0';const port=8080;const template1='<html><head><meta name=\\'viewport\\' content=\\'width=device-width, initial-scale=1,maximum-scale=1\\'><meta http-equiv=\\'Content-Type\\' content=\\'text/html;charset=UTF-8\\'/><meta charset=utf-8/><title>Code editor</title><style>textarea {font-size: 16px;padding-left: 35px;padding-top: 10px;border-color:#ccc;width: 100%;height: 24010px;border: none;font-family: Courier New, Courier, Lucida Sans Typewriter, Lucida Typewriter, monospace;}body {padding: 0px;margin: 0px;}#header {width: 100%;background: black;display: block;border-bottom: 2px solid olive;padding: 10px;color: white;font-family: Arial, Helvetica, sans-serif;}#error {width: 100%;background: black;display: block;border-bottom: 2px solid olive;padding: 10px;color: white;font-family: Arial, Helvetica, sans-serif;}#run {border: 1px solid red;background: white;padding: 5px 30px 5px 30px;font-family: Arial, Helvetica, sans-serif;border-radius: 15px;}#container {overflow: auto;height: 100%;}pre {background-color: #FFE4B5;font-size: 16px;margin: 0px;padding: 20px;border-bottom: 1px solid olive;}body, html {height: 100%;overflow: hidden;}</style></head><body><form method = \\'post\\'><div id=\\'header\\'><input id=\\'run\\' type=\\'submit\\' value=\\'&#9654; Run\\'></div>';const template2='<div id=\\'container\\'><textarea name=\\'code\\' onkeydown=\\'if(event.keyCode===9){var v=this.value,s=this.selectionStart,e=this.selectionEnd;this.value=v.substring(0, s)+\\'\\\\t\\'+v.substring(e);this.selectionStart=this.selectionEnd=s+1;return false;}\\'>';const template3='</textarea></div></form></body></html>';if(global.esp)\r\nconsole.log('esp memory available',esp.freeHeapSize(),esp.freeMinimumHeapSize());const default_code='console.log(\\'hello world\\');\\n';const server=http.createServer(function(req,res){console.log(server.connections,'connections');res.statusCode=200;res.setHeader('Connection','keep-alive');res.setHeader('Content-type','text/html');if(req.url!='/'){res.statusCode=404;res.end('not found');return}\r\nif(req.method=='POST'){var buffer;req.on('data',function(data){if(!buffer)\r\nbuffer=data;else buffer=buffer+data});req.on('end',function(){var str='';var error='';try{if(buffer){for(var i=0;i<buffer.length;i ++){if(buffer[i]==0x2b)\r\nbuffer[i]=0x20}\r\nstr=decodeURIComponent(new TextDecoder('utf-8').decode(buffer.subarray(5)))}\r\nvar val=eval(str);if(val)\r\nerror='<pre>returned '+val.toString()+'</pre>'}catch(e){console.log(e);error='<pre>'+e.toString()+'</pre>'}\r\nres.write(template1);res.write(error);res.write(template2);res.write(str);res.end(template3)})}else{res.write(template1);res.write(template2);res.write(default_code);res.end(template3)}});server.listen(port,hostname,function(){console.log('Server running at http://'+hostname+':'+port)})",
+    "if(global.esp){console.log('esp memory available',esp.freeHeapSize(),esp.freeMinimumHeapSize());wifi.ap({})}\r\nif(global.esp)\r\nconsole.log('esp memory available',esp.freeHeapSize(),esp.freeMinimumHeapSize());const http=require('http');if(global.esp)\r\nconsole.log('esp memory available',esp.freeHeapSize(),esp.freeMinimumHeapSize());const hostname='0.0.0.0';const port=80;const template1='<html><head><meta name=\\'viewport\\' content=\\'width=device-width, initial-scale=1,maximum-scale=1\\'><meta http-equiv=\\'Content-Type\\' content=\\'text/html;charset=UTF-8\\'/><meta charset=utf-8/><title>Code editor</title><style>textarea {font-size: 16px;padding-left: 35px;padding-top: 10px;border-color:#ccc;width: 100%;height: 24010px;border: none;font-family: Courier New, Courier, Lucida Sans Typewriter, Lucida Typewriter, monospace;}body {padding: 0px;margin: 0px;}#header {width: 100%;background: black;display: block;border-bottom: 2px solid olive;padding: 10px;color: white;font-family: Arial, Helvetica, sans-serif;}#error {width: 100%;background: black;display: block;border-bottom: 2px solid olive;padding: 10px;color: white;font-family: Arial, Helvetica, sans-serif;}#run {border: 1px solid red;background: white;padding: 5px 30px 5px 30px;font-family: Arial, Helvetica, sans-serif;border-radius: 15px;}#container {overflow: auto;height: 100%;}pre {background-color: #FFE4B5;font-size: 16px;margin: 0px;padding: 20px;border-bottom: 1px solid olive;}body, html {height: 100%;overflow: hidden;}</style></head><body><form method = \\'post\\'><div id=\\'header\\'><input id=\\'run\\' type=\\'submit\\' value=\\'&#9654; Run\\'></div>';const template2='<div id=\\'container\\'><textarea name=\\'code\\' onkeydown=\\'if(event.keyCode===9){var v=this.value,s=this.selectionStart,e=this.selectionEnd;this.value=v.substring(0, s)+\\'\\\\t\\'+v.substring(e);this.selectionStart=this.selectionEnd=s+1;return false;}\\'>';const template3='</textarea></div></form></body></html>';if(global.esp)\r\nconsole.log('esp memory available',esp.freeHeapSize(),esp.freeMinimumHeapSize());const default_code='console.log(\\'hello world\\');\\n';const server=http.createServer(function(req,res){console.log(server.connections,'connections');res.statusCode=200;res.setHeader('Connection','keep-alive');res.setHeader('Content-type','text/html');if(req.url!='/'){res.statusCode=404;res.end('not found');return}\r\nif(req.method=='POST'){var buffer;req.on('data',function(data){if(!buffer)\r\nbuffer=data;else buffer=buffer+data});req.on('end',function(){var str='';var error='';try{if(buffer){for(var i=0;i<buffer.length;i ++){if(buffer[i]==0x2b)\r\nbuffer[i]=0x20}\r\nstr=decodeURIComponent(new TextDecoder('utf-8').decode(buffer.subarray(5)))}\r\nvar val=eval(str);if(val)\r\nerror='<pre>returned '+val.toString()+'</pre>'}catch(e){console.log(e);error='<pre>'+e.toString()+'</pre>'}\r\nres.write(template1);res.write(error);res.write(template2);res.write(str);res.end(template3)})}else{res.write(template1);res.write(template2);res.write(default_code);res.end(template3)}});server.listen(port,hostname,function(){console.log('Server running at http://'+hostname+':'+port)})",
     0, 0, 0},
     {"::esp32_gpio_test", 
         "var pin = 2;\n" \
@@ -36988,6 +36989,11 @@ const static struct builtin_module builtin_modules[] = {
         "process.stdin.setEncoding('utf8');\n"
         "process.stdout.write('jib v1.0\\nWaiting for code (empty line for run, or end line by \\';\\')\\n\\n');\n"
             "var data_buffer = '';\n"
+#ifdef WITH_GEORGE_CLOCK_EXAMPLE
+            "i2c.paramConfig({sda_pin: 21, scl_pin: 22, port: 0});i2c.driverInstall({port: 0}); global.decToBcd = function(val) { return ((Math.floor(val/10)*16) + (val%10)); }; global.bcdToDec = function(val) { return ((Math.floor(val/16)*10) + (val%16) ); }; global.leadingzero = function(val) { return (val < 10) ? (\"0\" + val) : (\"\" + val); }; global.getTimeString = function(obj) { var cmd = i2c.cmdLinkCreate();i2c.masterStart(cmd);i2c.masterWriteByte(cmd, (0x68 << 1) | 0, true);i2c.masterWriteByte(cmd, 0x00, true);i2c.masterStart(cmd);i2c.masterWriteByte(cmd, (0x68 << 1) | 1, true);var data = new Uint8Array(7);i2c.masterRead(cmd, data, true);i2c.masterStop(cmd);i2c.masterCmdBegin(0, cmd, 1000);i2c.cmdLinkDelete(cmd); if (obj) obj.seconds = global.bcdToDec(data[0]); var hour = global.bcdToDec(data[2]); if (obj) obj.hour = hour; if (hour > 12) hour -= 12; return \"\" + hour + ((hour < 10) ? \":\" : \"\") + global.leadingzero(global.bcdToDec(data[1]));};global.setDate = function(year, month, day, hour, min, sec) { var cmd = i2c.cmdLinkCreate();i2c.masterStart(cmd);i2c.masterWriteByte(cmd, (0x68 << 1) | 0, true);i2c.masterWriteByte(cmd, 0x00, true);i2c.masterWriteByte(cmd, global.decToBcd(sec), true);i2c.masterWriteByte(cmd, global.decToBcd(min), true);i2c.masterWriteByte(cmd, global.decToBcd(hour), true);i2c.masterWriteByte(cmd, global.decToBcd(day), true);i2c.masterWriteByte(cmd, global.decToBcd(month), true);i2c.masterWriteByte(cmd, global.decToBcd(year - 2000), true);i2c.masterStop(cmd);i2c.masterCmdBegin(0, cmd, 1000);i2c.cmdLinkDelete(cmd); };\n"
+            "tft.init();tft.fillScreen(255,255,255);tft.setBgColor(255,255,255); tft.setColor(255 - 186, 255 - 184, 255 - 108);tft.setFont(\"7seg\"); tft.rotate(false);function leadingzero(val) { return (val < 10) ? (\"0\" + val) : (\"\" + val); } function update() { var sec = { }; var time_str = global.getTimeString(sec); if (global.time_str !== time_str) { tft.fillScreen(255, 255, 255); tft.print(time_str, 40, 60); } global.time_str = time_str; tft.rect(100, 150, 120, 10, 255 - 186, 255 - 184, 255 - 108); tft.fillRect(100, 150, sec.seconds * 2, 10, 255 - 186, 255 - 184, 255 - 108); }; setInterval(function() { update(); }, 1000);\n"
+            "setTimeout(function() {tft.fillScreen(255,255,255); tft.setFont(\"tooney32\"); var obj = { }; global.getTimeString(obj); if ((obj.hour >= 3) && (obj.hour <= 10)) tft.print(\"'neata,\", 40, 70); else if ((obj.hour > 10) && (obj.hour <= 16)) tft.print(\"Buna ziua,\", 40, 70); else tft.print(\"Buna seara,\", 40, 70); tft.print(\"George!\", 40, 100); tft.setFont(\"7seg\"); setTimeout(function() {tft.fillScreen(255,255,255); tft.setFont(\"tooney32\"); tft.print(\"Ce facem\", 40, 70); tft.print(\"astazi?\", 40, 100); tft.setFont(\"7seg\"); }, 10000);}, 1000);\n"
+#endif
             "process.stdin.on('data', function(data) {\n"
 	        "try {\n"
                 "data = process.normalizeString(data);\n"
