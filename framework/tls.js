@@ -73,7 +73,7 @@ var tls = {
 						var buf2 = buf;
 						if (nbytes != 8192)
 							buf2 = buf2.subarray(0, nbytes);
-						if (self._readableState.decoder)
+						if ((self._readableState) && (self._readableState.decoder))
 							self.emit("data", self._readableState.decoder.write(buf2));
 						else
 							self.emit("data", buf2);
