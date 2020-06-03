@@ -488,6 +488,16 @@ JS_C_FUNCTION(js_esp_err_to_name) {
 JS_C_FUNCTION(js_lazy_ap_wifi) {
     JS_ParameterObject(ctx, 0);
     
+    uint8_t a[6];
+    esp_efuse_mac_get_default(a);
+    uint64_t mac_addr =  ((uint64_t)(a[0])) << 40 |
+                ((uint64_t)(a[1])) << 32 | ( 
+                    ((uint32_t)(a[2])) << 24 | 
+                    ((uint32_t)(a[3])) << 16 |
+                    ((uint32_t)(a[4])) << 8 |
+                    ((uint32_t)(a[5]))
+                );
+
 #ifdef WITH_DUKTAPE
     wifi_config_t wifi_config = {
         .ap = {
@@ -501,6 +511,9 @@ JS_C_FUNCTION(js_lazy_ap_wifi) {
     duk_get_prop_string(ctx, 0, "ssid");
     if (duk_is_string(ctx,-1)) {
         strncpy((char *)wifi_config.ap.ssid, duk_safe_to_string(ctx, -1), 32);
+        wifi_config.ap.ssid_len = strlen((char *)wifi_config.ap.ssid);
+    } else {
+        snprintf((char *)wifi_config.ap.ssid, 32, "hello_%" PRIx64, mac_addr);
         wifi_config.ap.ssid_len = strlen((char *)wifi_config.ap.ssid);
     }
 
@@ -539,6 +552,9 @@ JS_C_FUNCTION(js_lazy_ap_wifi) {
         strncpy((char *)wifi_config.ap.ssid, str, 32);
         wifi_config.ap.ssid_len = strlen((char *)wifi_config.ap.ssid);
         JS_FreeString(ctx, str);
+    } else {
+        snprintf((char *)wifi_config.ap.ssid, 32, "hello_%" PRIx64, mac_addr);
+        wifi_config.ap.ssid_len = strlen((char *)wifi_config.ap.ssid);
     }
     JS_FreeValue(ctx, val);
 
@@ -577,21 +593,25 @@ JS_C_FUNCTION(js_lazy_ap_wifi) {
     }
     ESP_ERROR_CHECK(ret);
 
-    tcpip_adapter_init();
+    if (!wifi_initialized) {
+        tcpip_adapter_init();
 
-    tcpip_adapter_dhcps_stop(TCPIP_ADAPTER_IF_AP);
+        tcpip_adapter_dhcps_stop(TCPIP_ADAPTER_IF_AP);
 
-    tcpip_adapter_ip_info_t ip_info;
-    ip_info.ip.addr = ipaddr_addr("192.168.48.1");
-    ip_info.gw.addr = ipaddr_addr("0.0.0.0");
-    ip_info.netmask.addr = ipaddr_addr("255.255.255.0");
-    ESP_ERROR_CHECK(tcpip_adapter_set_ip_info(TCPIP_ADAPTER_IF_AP, &ip_info));
+        tcpip_adapter_ip_info_t ip_info;
+        ip_info.ip.addr = ipaddr_addr("192.168.48.1");
+        ip_info.gw.addr = ipaddr_addr("0.0.0.0");
+        ip_info.netmask.addr = ipaddr_addr("255.255.255.0");
+        ESP_ERROR_CHECK(tcpip_adapter_set_ip_info(TCPIP_ADAPTER_IF_AP, &ip_info));
 
-    tcpip_adapter_dhcps_start(TCPIP_ADAPTER_IF_AP);
+        tcpip_adapter_dhcps_start(TCPIP_ADAPTER_IF_AP);
 
-    ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL));
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+        ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL));
+        wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+        ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+
+        wifi_initialized = 1;
+    }
     ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_FLASH));
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config));
@@ -607,10 +627,13 @@ JS_C_FUNCTION(js_lazy_sta_wifi) {
     const char *ssid = JS_GetStringParameter(ctx, 0);
     const char *pass = JS_GetStringParameter(ctx, 1);
 
-    tcpip_adapter_init();
-    ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL));
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+    if (!wifi_initialized) {
+        tcpip_adapter_init();
+        ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL));
+        wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+        ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+        wifi_initialized = 1;
+    }
     ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
     wifi_config_t wifi_config = {
         .sta = {

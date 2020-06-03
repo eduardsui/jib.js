@@ -36985,6 +36985,97 @@ const static struct builtin_module builtin_modules[] = {
         "global.jib.onmessage = function(msg) { console.log(msg.from, msg.rssi, new TextDecoder('utf8').decode(msg.message)); };\n"
         "global.jib;\n",
     0, 0, 0},
+    {"::pager",
+        "wifi.ap({ });\nconst http = require('http');\nconst URL = require('url');\nconst" \
+        " QueryString = require('querystring');\nvar jibprotocol = require('jibprotocol')" \
+        ";\nconst hostname = '0.0.0.0';\nconst port = 80;\nvar template = \"<!DOCTYPE htm" \
+        "l>\\n<html>\\n<head>\\n<meta name=\\\"viewport\\\" content=\\\"width=device-widt" \
+        "h, initial-scale=1\\\">\\n<title>LoRa pager<\\/title>\\n<style>\\nbody {\\n  mar" \
+        "gin: 0 auto;\\n  max-width: 800px;\\n  font-family: Arial, Helvetica, sans-serif" \
+        ";\\n  font-size: 20px;\\n  color: #444;\\n  background-color:#fff;\\n}\\n.contai" \
+        "ner {\\n  border: 2px solid #dedede;\\n  background-color: #f1f1f1;\\n  border-r" \
+        "adius: 5px;\\n  padding: 10px;\\n  margin: 10px;\\n}\\n.darker {\\n  border-colo" \
+        "r: #ccc;\\n  background-color: #ddd;\\n}\\n.container::after {\\n  content: \\\"" \
+        "\\\";\\n  clear: both;\\n  display: table;\\n}\\n.container img {\\n  float: lef" \
+        "t;\\n  max-width: 60px;\\n  width: 100%;\\n  margin-right: 20px;\\n  border-radi" \
+        "us: 50%;\\n}\\n.container img.right {\\n  float: right;\\n  margin-left: 20px;\\" \
+        "n  margin-right:0;\\n}\\n.time-right {\\n  float: right;\\n  width: 100%;\\n  te" \
+        "xt-align: right;\\n  color: #aaa;\\n}\\n.time-left {\\n  float: left;\\n  color:" \
+        " #999;\\n}\\n.list {\\n  overflow: auto;\\n  padding-bottom: 100px;\\n}\\n.foote" \
+        "r {\\n  position: fixed;\\n  bottom: 0;\\n  max-width: 800px;\\n  width: 100%;\\" \
+        "n}\\n.footercontainer {\\n  display: flex;\\n  padding: 10px;\\n  background-col" \
+        "or: #444;\\n}\\n.message {\\n  flex-grow:1;\\n  padding: 10px;\\n  margin: 10px;" \
+        "\\n}\\n.btn {\\n  padding: 10px;\\n  margin: 10px;\\nbackground-color: #484;colo" \
+        "r: #fff;border: 1px solid;min-height: 35px;}\\n.avatar {\\n  background-color: #" \
+        "448;\\n  border-radius: 50%;\\n  height: 50px;\\n  width: 50px;\\n  margin: 10px" \
+        ";\\n  font-size: 24px;\\n  font-weight: bold;\\n  display: flex;\\n  align-items" \
+        ": center;\\n  color: #eee;\\n  text-align: center;\\n}\\n.avname {\\n  width: 10" \
+        "0%;\\n  text-align: center;\\n}\\n.row {\\n  display: flex;\\n  flex-direction: " \
+        "row;\\n}\\n<\\/style>\\n<script>\\nlet context = null;\\nconst beep = (freq = 24" \
+        "0, duration = 50, vol = 20) => {\\n  if (!context)\\n    context = new AudioCont" \
+        "ext();\\n  const oscillator = context.createOscillator();\\n  const gain = conte" \
+        "xt.createGain();\\n  oscillator.connect(gain);\\n  oscillator.frequency.value = " \
+        "freq;\\n  oscillator.type = \\\"square\\\";\\n  gain.connect(context.destination" \
+        ");\\n  gain.gain.value = vol * 0.01;\\n  oscillator.start(context.currentTime);\\" \
+        "n  oscillator.stop(context.currentTime + duration * 0.001);\\n}\\nfunction leadi" \
+        "ng(z) {\\n  return (z < 10 ? \\'0\\' + z : z);\\n}\\nfunction add_message(from, " \
+        "msg, time) {\\n  msg = msg.replace(\\/&\\/g, \\\"&amp;\\\").replace(\\/<\\/g, \\" \
+        "\"&lt;\\\").replace(\\/>\\/g, \\\"&gt;\\\").replace(\\/\\\"\\/g, \\\"&quot;\\\")" \
+        ".replace(\\/\\'\\/g, \\\"&#039;\\\");\\n  var name_prefix = \\\"\\\";\\n  if (fr" \
+        "om) {\\n    name_prefix = from; /* beep(); */\\n  } else\\n    name_prefix = \\\"me\\\";\\n  if (!time) {\\n    var" \
+        " now = new Date();\\n    time = \\\"\\\" + leading(now.getHours()) + \\\":\\\" +" \
+        " leading(now.getMinutes());\\n  }\\n  var msg_template = \\'\\' +\\n    (from ? " \
+        "\\'<div class=\\\"container\\\">\\' : \\'<div class=\\\"container darker\\\">\\'" \
+        ") +\\n    (from ? \\'  <div class=\\\"row\\\"><div class=\\\"avatar\\\"><div cla" \
+        "ss=\\\"avname\\\">\\' + name_prefix + \\'<\\/div><\\/div><div style=\\\"flex-gro" \
+        "w: 1\\\"><p>\\' + msg + \\'<span class=\\\"time-right\\\">\\' + time + \\' <\\/s" \
+        "pan><\\/p><\\/div><\\/div>\\' :\\n    \\'  <div class=\\\"row\\\"><div style=\\\"" \
+        "flex-grow: 1\\\"><p style=\\\"text-align: right\\\">\\' + msg + \\'<br\\/><span " \
+        "class=\\\"time-left\\\">\\' + time + \\' <\\/span><\\/p><\\/div><div class=\\\"a" \
+        "vatar\\\" style=\\\"background-color: #484\\\"><div class=\\\"avname\\\">\\' + n" \
+        "ame_prefix + \\'<\\/div><\\/div><\\/div>\\') +\\n    \\'<\\/div>\\';\\n  var lis" \
+        "t = document.getElementById(\\\"list\\\");\\n  list.innerHTML += msg_template;\\" \
+        "n  list.scrollTop = list.scrollHeight - list.clientHeight;\\n  window.scrollTo(0" \
+        ",document.body.scrollHeight);\\n}\\nfunction sendmsg() {\\n  var msg = document." \
+        "getElementById(\\\"message\\\").value;\\n  msg = msg.trim();\\n  if ((!msg) || (" \
+        "msg.length === 0))\\n    return;\\n  add_message(null, msg);\\n  document.getEle" \
+        "mentById(\\\"message\\\").value = \\\"\\\";\\n  var xhttp = new XMLHttpRequest()" \
+        ";\\n  xhttp.open(\\\"GET\\\", \\\"sendmsg?msg=\\\" + encodeURIComponent(msg), tr" \
+        "ue);\\n  xhttp.send();\\n}\\nvar last_id = 0;\\nfunction refresh() {\\n  var xht" \
+        "tp = new XMLHttpRequest();\\n  xhttp.onload = function(e) {\\n    var data = JSO" \
+        "N.parse(xhttp.response);\\n    if (data) {\\n      for (var i = 0; i < data.leng" \
+        "th; i ++) {\\n        add_message(data[i].from, data[i].msg);" \
+        "\\n        last_id = data[i].id;\\n      }\\n    }\\n  }\\n  xhttp.open(\\\"GET\\" \
+        "\", \\\"msg?id=\\\" + last_id, true);\\n  xhttp.send();\\n}\\nfunction refresh_t" \
+        "imer() {\\n  try {\\n    refresh();\\n  } catch (e) {\\n    console.log(e);\\n  " \
+        "}\\n  setTimeout(refresh_timer, 2000);\\n}\\nrefresh_timer();\\n<\\/script>\\n<\\" \
+        "/head>\\n<body>\\n<div class=\\\"list\\\" id=\\\"list\\\">\\n<\\/div>\\n<div cla" \
+        "ss=\\\"footer\\\">\\n<div class=\\\"footercontainer\\\">\\n  <input type=\\\"tex" \
+        "t\\\" class=\\\"message\\\" onkeydown=\\\"if (event.which == 13) sendmsg();\\\" " \
+        "id=\\\"message\\\">\\n  <input type=\\\"button\\\" class=\\\"btn\\\" value=\\\"S" \
+        "end\\\" onclick=\\\"sendmsg()\\\";>\\n<\\/div>\\n<\\/div>\\n<\\/body>\\n<\\/html" \
+        ">\\n\";\nvar cached = [ ];\nvar id = 1;\nlora.setPins(18, 14, 19, 27, 5/*5, -1, 19, 23, 18*/);\ngloba" \
+        "l.jib = new jibprotocol.jibprotocol('LEZE2Z2WOJVDE5LSI53EIMKSOJIXUOCQMU2GYTDTKJR" \
+        "HGWJYNUZQ');\nglobal.jib.start();\nglobal.jib.onmessage = function(msg) {\nvar m" \
+        "sg = { \"from\": msg.from ? msg.from : \"NW\", \"rssi\": msg.rssi, \"msg\": new TextDecoder('utf8')." \
+        "decode(msg.message), \"id\": id ++};\nconsole.log(msg.from, msg.msg);\nwhile (cached.length >= " \
+        "10)\ncached.shift();\ncached.push(msg);console.log('message!');\n};\nconst server = http.createServer(fu" \
+        "nction(req, res) {\nconsole.log(server.connections, \"connections\");\nres.statu" \
+        "sCode = 200;\nres.setHeader('Connection', 'keep-alive');\nres.setHeader('Content" \
+        "-type', 'text/html');\nvar url = URL(req.url);\nvar pathname = url.pathname;\nif" \
+        " (!pathname)\npathname = \"/\";\nswitch (pathname) {\ncase \"/\":\nres.write(tem" \
+        "plate);\nsetTimeout(function() { res.end(\"\"); }, 100);\nbreak;\ncase \"/sendms" \
+        "g\":\nvar query = QueryString.parse(url.query.substring(1));\nif ((query.msg) &&" \
+        " (query.msg.length > 0)) {\nres.write(\"OK \" + id);\nglobal.jib.send(query.msg)" \
+        ";\n}\nsetTimeout(function() { res.end(\"\"); }, 100);\nbreak;\ncase \"/msg\":\nv" \
+        "ar query = QueryString.parse(url.query.substring(1));\nvar ref_id = query.id ? q" \
+        "uery.id : 0;\nvar data = [ ];\nfor (var i = 0; i < cached.length; i ++) {\nvar m" \
+        "sg = cached[i];\nif (msg.id > ref_id)\ndata.push(msg);\n}\nres.write(JSON.string" \
+        "ify(data));\nsetTimeout(function() { res.end(\"\"); }, 100);\nbreak;\ndefault:\n" \
+        "res.statusCode = 404;\nres.end(\"Not found\");\n}\n});\nserver.listen(port, host" \
+        "name, function() {\nconsole.log('Server running at http://' + hostname + ':' + p" \
+        "ort);\n});",
+    8297, 8297, 0},
     {"::code",
         "process.stdin.setEncoding('utf8');\n"
         "process.stdout.write('jib v1.0\\nWaiting for code (empty line for run, or end line by \\';\\')\\n\\n');\n"

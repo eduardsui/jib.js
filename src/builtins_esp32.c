@@ -7,6 +7,7 @@
 #include <driver/uart.h>
 #include <soc/rtc_wdt.h>
 #include "misc/esp32/lora.h"
+#include <stdint.h>
 
 JS_C_FUNCTION(js_lora_set_pins) {
     JS_ParameterNumber(ctx, 0); // cs
@@ -291,6 +292,21 @@ JS_C_FUNCTION(js_esp_vfs_dev_uart_use_driver) {
     JS_RETURN_NOTHING(ctx);
 }
 
+
+JS_C_FUNCTION(js_chip_id) {
+    uint8_t a[6];
+    esp_efuse_mac_get_default(a);
+    double n =  ((uint64_t)(a[0])) << 40 |
+                ((uint64_t)(a[1])) << 32 | ( 
+                    ((uint32_t)(a[2])) << 24 | 
+                    ((uint32_t)(a[3])) << 16 |
+                    ((uint32_t)(a[4])) << 8 |
+                    ((uint32_t)(a[5]))
+                );
+
+    JS_RETURN_NUMBER(ctx, n);
+}
+
 void register_esp32_functions(void *main_loop, void *js_ctx) {
     JS_CONTEXT ctx = (JS_CONTEXT )js_ctx;
 
@@ -345,6 +361,7 @@ void register_esp32_functions(void *main_loop, void *js_ctx) {
         "random", js_esp_random,
         "uartDriverInstall", js_uart_driver_install,
         "devUartUseDriver", js_esp_vfs_dev_uart_use_driver,
+        "chipId", js_chip_id,
         NULL, NULL
     );
 }
